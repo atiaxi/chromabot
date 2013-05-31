@@ -6,14 +6,10 @@ import praw
 
 from config import Config
 from db import DB, Region, User
+from parser import parse
 
-
-def base36decode(number):
-    return int(number, 36)
-
-
-def num_to_team(number):
-    return ('Orangered', 'Periwinkle')[number]
+from commands import Command, Context
+from utils import base36decode, num_to_team
 
 
 class Bot(object):
@@ -33,14 +29,22 @@ class Bot(object):
                 #pprint(submission.comments)
                 self.recruit_from_post(submission)
 
-    def check_pms(self):
+    def check_messages(self):
         unread = reddit.get_unread(True, True)
+        session = self.db.session()
         for comment in unread:
             # Only pay attention to PMs, for now
             if not comment.was_comment:
-                if 'status' in comment.body:
-                    reply = self.status_for(comment.author.name)
-                    comment.reply(reply)
+                player = session.query(User).filter_by(
+                    name=comment.author.name).first()
+                if player:
+                    parsed = parse(comment.body)
+                    parsed.execute(Context(player, self.config, session,
+                                           comment))
+                else:
+                    comment.reply(Command.FAIL_NOT_PLAYER %
+                                  self.config.headquarters)
+
             comment.mark_as_read()
 
     def recruit_from_post(self, post):
@@ -58,6 +62,9 @@ class Bot(object):
                 session.add(newbie)
 
                 cap = Region.capital_for(newbie.team, session)
+                if not cap:
+                    logging.fatal("Could not find capital for %d" %
+                                  newbie.team)
                 newbie.region = cap
 
                 session.commit()
@@ -76,32 +83,11 @@ at [%s](/r/%s).
     def run(self):
         logging.info("Bot started up")
         logging.info("Checking headquarters")
-        #self.check_hq()
-        logging.info("Checking PMs")
-        self.check_pms()
+        self.check_hq()
+        logging.info("Checking Messages")
+        self.check_messages()
         # TODO: Check hotspots
         # TODO: Sleep
-
-    def status_for(self, username):
-        session = self.db.session()
-        found = session.query(User).filter_by(name=username).first()
-        if found:
-            result = """
-You are a general in the %s army.
-
-Your forces number %d loyalists strong.
-
-You are currently encamped at [%s](/r/%s).
-""" % (num_to_team(found.team), found.loyalists, found.region.name,
-       found.region.srname)
-        else:
-            result = """
-You don't have a status because, as far as I can tell, you're not playing!
-Comment in the latest recruitment thread in /r/%s and change that!
-""" % self.config.headquarters
-            pass
-
-        return result
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
