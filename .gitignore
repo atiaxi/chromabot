@@ -1,0 +1,7 @@
+config/reddit.json
+praw.ini
+layout.txt
+.project
+.pydevproject
+*.db
+*.pyc
