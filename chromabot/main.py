@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import logging
-from pprint import pprint
 
 import praw
 from pyparsing import ParseException
@@ -79,11 +78,11 @@ class Bot(object):
                 session.commit()
                 logging.info("Created combatant %s", newbie)
 
-                reply = """
-Welcome to Chroma!  You are now a general in the %s army,
-commanding a force of loyalists %d people strong.  You are currently encamped
-at [%s](/r/%s).
-""" % (num_to_team(newbie.team), newbie.loyalists, cap.name, cap.srname)
+                reply = ("Welcome to Chroma!  You are now a general "
+                         "in the %s army, commanding a force of loyalists "
+                         "%d people strong. You are currently encamped at %s"
+                ) % (num_to_team(newbie.team), newbie.loyalists,
+                     cap.markdown())
 
                 comment.reply(reply)
             else:

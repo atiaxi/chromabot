@@ -39,18 +39,19 @@ class MoveCommand(Command):
             try:
                 context.player.move(self.amount, dest, 0)
             except InsufficientException as ie:
-                context.comment.reply("""
-You cannot move %d of your people - you only have %d""" % (ie.requested,
-                                                           ie.available))
+                context.comment.reply(
+                    "You cannot move %d of your people - you only have %d" %
+                    (ie.requested, ie.available))
                 return
-            except NonAdjacentException as nae:
-                context.comment.reply("""
-Your current region, %s, is not adjacent to %s
-""" % (context.player.region.markdown(), dest.markdown()))
+            except NonAdjacentException:
+                context.comment.reply(
+                    "Your current region, %s, is not adjacent to %s" %
+                    (context.player.region.markdown(), dest.markdown()))
                 return
-            context.comment.reply("""
-Confirmed: Your are leading %d of your people to [%s](/r/%s).  You will arrive
-in %d seconds.""" % (self.amount, dest.name, dest.srname, 0))
+            context.comment.reply((
+                    "Confirmed: Your are leading %d of your people to %s"
+                    "You will arrive in %d seconds."
+                    ) % (self.amount, dest.markdown(), 0))
 
         else:
             context.comment.reply(
@@ -70,13 +71,8 @@ class StatusCommand(Command):
 
     def status_for(self, context):
         found = context.player
-        result = """
-You are a general in the %s army.
-
-Your forces number %d loyalists strong.
-
-You are currently encamped at [%s](/r/%s).
-""" % (num_to_team(found.team), found.loyalists, found.region.name,
-       found.region.srname)
-        return result
-
+        result = ("You are a general in the %s army.\n\n"
+                  "Your forces number %d loyalists strong.\n\n"
+                  "You are currently encamped at %s")
+        return result % (num_to_team(found.team), found.loyalists,
+                         found.region.markdown())
