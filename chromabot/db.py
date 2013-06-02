@@ -1,8 +1,27 @@
+import json
 
 from sqlalchemy import (
     create_engine, Column, ForeignKey, Integer, String, Table)
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
+
+
+# Some helpful model exceptions
+class InsufficientException(Exception):
+    def __init__(self, requested, available, ofwhat):
+        Exception.__init__(self,
+                           "Insufficient %s - needed %d but only had %d" %
+                           (ofwhat, requested, available))
+        self.requested = requested
+        self.available = available
+        self.ofwhat = ofwhat
+
+
+class NonAdjacentException(Exception):
+    def __init__(self, src, dest):
+        Exception.__init__(self,
+                           "%s and %s are not adjacent!" % (src, dest))
 
 Base = declarative_base()
 
@@ -35,6 +54,21 @@ class User(Base):
         return "<User(name='%s', team='%d', loyalists='%d')>" % (
             self.name, self.team, self.loyalists)
 
+    def move(self, how_many, where, delay):
+        sess = Session.object_session(self)
+
+        if how_many > self.loyalists:
+            # TODO: Attempt to pick up loyalists
+            raise InsufficientException(how_many, self.loyalists, "loyalists")
+
+        # TODO: Drop off loyalists
+        if not where in self.region.borders:
+            raise NonAdjacentException(self.region, where)
+        # TODO: Schedule the move
+        # TODO: Change number of loyalists
+        self.region = where
+        sess.commit()
+
 region_to_region = Table("region_to_region", Base.metadata,
         Column("left_id", Integer, ForeignKey("regions.id"), primary_key=True),
         Column("right_id", Integer, ForeignKey("regions.id"),
@@ -61,6 +95,32 @@ class Region(Base):
     def capital_for(cls, team, session):
         return session.query(cls).filter_by(capital=team).first()
 
+    @classmethod
+    def create_from_json(cls, json_str=None, json_file=None):
+        if json_file is not None:
+            with open(json_file) as srcfile:
+                unconverted = json.load(srcfile)
+        else:
+            unconverted = json.loads(json_str)
+
+        atlas = {}
+        result = []
+        for region in unconverted:
+            capital = None
+            if 'capital' in region:
+                capital = region['capital']
+            created = cls(name=region['name'], srname=region['srname'],
+                          capital=capital)
+            result.append(created)
+            atlas[created.name] = created
+
+        # Hook up the regions
+        for region in unconverted:
+            created = atlas[region['name']]
+            for adjacent in region['connections']:
+                created.add_border(atlas[adjacent])
+        return result
+
     def add_border(self, other_region):
         """Adds the other region to this region's borders, and then does the
         same for the other region, to keep bidirectionality intact"""
@@ -68,6 +128,9 @@ class Region(Base):
         # just going to do it manually
         self.borders.append(other_region)
         other_region.borders.append(self)
+
+    def markdown(self):
+        return "[%s](/r/%s)" % (self.name, self.srname)
 
     def __repr__(self):
         return "<Region(id='%s', name='%s')>" % (self.id, self.name)

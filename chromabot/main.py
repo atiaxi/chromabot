@@ -83,7 +83,7 @@ at [%s](/r/%s).
     def run(self):
         logging.info("Bot started up")
         logging.info("Checking headquarters")
-        self.check_hq()
+        #self.check_hq()
         logging.info("Checking Messages")
         self.check_messages()
         # TODO: Check hotspots

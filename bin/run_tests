@@ -1,3 +1,5 @@
 #!/bin/bash
 
-PYTHONPATH="./chromabot" python chromabot/tests/parsetest.py
+PYTHONPATH="./chromabot" python chromabot/tests/parsetest.py 
+PYTHONPATH="./chromabot" python chromabot/tests/playtest.py
+

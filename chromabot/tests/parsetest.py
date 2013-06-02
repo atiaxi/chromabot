@@ -1,16 +1,34 @@
 import unittest
 
-from commands import StatusCommand
+from commands import *
 from parser import parse
 
 
 class TestMovement(unittest.TestCase):
 
     def testMoveCommand(self):
-        src = 'move 10 to "hurfendurf"'
+        src = 'lead 10 to "hurfendurf"'
         parsed = parse(src)
 
-        print parsed
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(10, parsed.amount)
+        self.assertEqual(parsed.where, "hurfendurf")
+
+    def testMoveSubreddit(self):
+        src = 'lead 10 to /r/hurfendurf'
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(10, parsed.amount)
+        self.assertEqual(parsed.where, "hurfendurf")
+
+    def testMovePlain(self):
+        src = "lead 10 to hurfendurf"
+
+        parsed = parse(src)
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(10, parsed.amount)
+        self.assertEqual(parsed.where, "hurfendurf")
 
 
 class TestStatus(unittest.TestCase):
@@ -18,9 +36,6 @@ class TestStatus(unittest.TestCase):
         src = 'status'
         parsed = parse(src)
         self.assertIsInstance(parsed, StatusCommand)
-        from pprint import pprint
-        pprint(vars(parsed))
-        print parsed
 
 if __name__ == '__main__':
     unittest.main()
