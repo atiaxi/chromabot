@@ -3,11 +3,11 @@ import logging
 from pprint import pprint
 
 import praw
+from pyparsing import ParseException
 
 from config import Config
 from db import DB, Region, User
 from parser import parse
-
 from commands import Command, Context
 from utils import base36decode, num_to_team
 
@@ -38,9 +38,18 @@ class Bot(object):
                 player = session.query(User).filter_by(
                     name=comment.author.name).first()
                 if player:
-                    parsed = parse(comment.body)
-                    parsed.execute(Context(player, self.config, session,
-                                           comment))
+                    try:
+                        parsed = parse(comment.body)
+                        parsed.execute(Context(player, self.config, session,
+                                               comment))
+                    except ParseException as pe:
+                        result = (
+                            "I'm sorry, I couldn't understand your command:"
+                            "\n\n"
+                            "> %s\n"
+                            "\nThe parsing error is below:\n\n"
+                            "    %s") % (comment.body, pe)
+                        comment.reply(result)
                 else:
                     comment.reply(Command.FAIL_NOT_PLAYER %
                                   self.config.headquarters)
