@@ -1,5 +1,6 @@
 
-from db import InsufficientException, NonAdjacentException, Region, User
+import db
+from db import Region, User
 from utils import num_to_team
 
 
@@ -28,7 +29,7 @@ that, comment in the latest recruitment thread in /r/%s"""
 class MoveCommand(Command):
     def __init__(self, tokens):
         self.amount = int(tokens["amount"])
-        self.where = tokens["where"]
+        self.where = tokens["where"].lower()
 
     def execute(self, context):
         dest = context.session.query(Region).filter_by(name=self.where).first()
@@ -36,23 +37,38 @@ class MoveCommand(Command):
             dest = context.session.query(Region).filter_by(
                 srname=self.where).first()
         if dest:
+            order = None
             try:
-                context.player.move(self.amount, dest, 0)
-            except InsufficientException as ie:
+                speed = context.config["game"]["speed"]
+                hundred_followers = self.amount / 100
+                time_taken = speed * hundred_followers
+
+                order = context.player.move(self.amount, dest, time_taken)
+            except db.InsufficientException as ie:
                 context.comment.reply(
                     "You cannot move %d of your people - you only have %d" %
                     (ie.requested, ie.available))
                 return
-            except NonAdjacentException:
+            except db.NonAdjacentException:
                 context.comment.reply(
                     "Your current region, %s, is not adjacent to %s" %
                     (context.player.region.markdown(), dest.markdown()))
                 return
-            context.comment.reply((
-                    "Confirmed: Your are leading %d of your people to %s"
-                    "You will arrive in %d seconds."
-                    ) % (self.amount, dest.markdown(), 0))
-
+            except db.AlreadyMovingException as ame:
+                context.comment.reply((
+                    "You are already leading your armies to %s - "
+                    "you can give further orders upon your arrival at %s"
+                    ) % (ame.order.dest.markdown(), ame.order.arrival_str()))
+                return
+            if order:
+                context.comment.reply((
+                    "**Confirmed**: You are leading %d of your people to %s. "
+                    "You will arrive at %s."
+                    ) % (self.amount, dest.markdown(), order.arrival_str()))
+            else:
+                context.comment.reply((
+                    "**Confirmed**: You have lead %d of your people to %s."
+                    ) % (self.amount, dest.markdown()))
         else:
             context.comment.reply(
                 "I don't know any region or subreddit named '%s'" %
@@ -71,8 +87,18 @@ class StatusCommand(Command):
 
     def status_for(self, context):
         found = context.player
+
+        moving = context.player.is_moving()
+        if moving:
+            forces = ("Your forces are currently on the march to %s "
+                      "and will arrive at %s")
+            forces = forces % (moving.dest.markdown(), moving.arrival_str())
+        else:
+            forces = ("You are currently encamped at %s" %
+                      found.region.markdown())
+
         result = ("You are a general in the %s army.\n\n"
                   "Your forces number %d loyalists strong.\n\n"
-                  "You are currently encamped at %s")
+                  "%s")
         return result % (num_to_team(found.team), found.loyalists,
-                         found.region.markdown())
+                         forces)

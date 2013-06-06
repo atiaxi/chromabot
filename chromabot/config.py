@@ -21,6 +21,9 @@ class Config(object):
         with open(self.conffile) as data_file:
             self.data = json.load(data_file)
 
+    def __getitem__(self, key):
+        return self.data[key]
+
     def check_exist(self, proposed_paths):
         for fullpath in proposed_paths:
             if fullpath and os.path.exists(fullpath):

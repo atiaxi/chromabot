@@ -5,7 +5,7 @@ import praw
 from pyparsing import ParseException
 
 from config import Config
-from db import DB, Region, User
+from db import DB, Region, User, MarchingOrder
 from parser import parse
 from commands import Command, Context
 from utils import base36decode, num_to_team
@@ -88,6 +88,10 @@ class Bot(object):
             else:
                 logging.info("Already registered %s", comment.author.name)
 
+    def update_game(self):
+        session = self.db.session()
+        MarchingOrder.update_all(session)
+
     def run(self):
         logging.info("Bot started up")
         logging.info("Checking headquarters")
@@ -95,6 +99,8 @@ class Bot(object):
         logging.info("Checking Messages")
         self.check_messages()
         # TODO: Check hotspots
+        logging.info("Updating game state")
+        self.update_game()
         # TODO: Sleep
 
 if __name__ == '__main__':

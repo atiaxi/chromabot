@@ -1,4 +1,5 @@
 import json
+import time
 
 from sqlalchemy import (
     create_engine, Column, ForeignKey, Integer, String, Table)
@@ -22,6 +23,15 @@ class NonAdjacentException(Exception):
     def __init__(self, src, dest):
         Exception.__init__(self,
                            "%s and %s are not adjacent!" % (src, dest))
+
+
+class AlreadyMovingException(Exception):
+    def __init__(self, order):
+        self.order = order
+        info = (order.source.name, order.dest.name, order.arrival_str())
+        Exception.__init__(self,
+                           "Already moving from %s to %s - will arrive at %s" %
+                           info)
 
 Base = declarative_base()
 
@@ -54,8 +64,18 @@ class User(Base):
         return "<User(name='%s', team='%d', loyalists='%d')>" % (
             self.name, self.team, self.loyalists)
 
+    def is_moving(self):
+        if self.movement:
+            return self.movement[0]
+        return None
+
     def move(self, how_many, where, delay):
+        result = None
         sess = Session.object_session(self)
+
+        already = sess.query(MarchingOrder).filter_by(leader=self).first()
+        if already:
+            raise AlreadyMovingException(already)
 
         if how_many > self.loyalists:
             # TODO: Attempt to pick up loyalists
@@ -64,15 +84,65 @@ class User(Base):
         # TODO: Drop off loyalists
         if not where in self.region.borders:
             raise NonAdjacentException(self.region, where)
-        # TODO: Schedule the move
-        # TODO: Change number of loyalists
-        self.region = where
+
+        if(delay > 0):
+            result = MarchingOrder(arrival=time.mktime(time.localtime())
+                                    + delay,
+                                   leader=self,
+                                   source=self.region,
+                                   dest=where)
+            sess.add(result)
+        else:
+            # TODO: Change number of loyalists
+            self.region = where
         sess.commit()
+
+        return result
 
 region_to_region = Table("region_to_region", Base.metadata,
         Column("left_id", Integer, ForeignKey("regions.id"), primary_key=True),
         Column("right_id", Integer, ForeignKey("regions.id"),
                primary_key=True))
+
+
+class MarchingOrder(Base):
+    __tablename__ = "marching_orders"
+
+    id = Column(Integer, primary_key=True)
+    arrival = Column(Integer)
+
+    leader_id = Column(Integer, ForeignKey('users.id'))
+    leader = relationship("User", backref="movement")
+
+    # Relationships for these defined in the Region class
+    source_id = Column(Integer, ForeignKey("regions.id"))
+    dest_id = Column(Integer, ForeignKey("regions.id"))
+
+    @classmethod
+    def update_all(cls, sess):
+        orders = sess.query(cls).all()
+        result = []
+        for order in orders:
+            if order.update():
+                result.append(order)
+        return result
+
+    def has_arrived(self):
+        now = time.mktime(time.localtime())
+        return self.arrival <= now
+
+    def arrival_str(self):
+        return time.strftime("%Y-%m-%d %H:%M:%S GMT",
+                              time.gmtime(self.arrival))
+
+    def update(self):
+        sess = Session.object_session(self)
+        if self.has_arrived():
+            self.leader.region = self.dest
+            sess.delete(self)
+            sess.commit()
+            return True
+        return False
 
 
 class Region(Base):
@@ -90,6 +160,14 @@ class Region(Base):
         secondaryjoin=id == region_to_region.c.right_id,
         cascade="all, delete",
         backref="other_borders")
+
+    outbound_armies = relationship("MarchingOrder",
+                                   foreign_keys=MarchingOrder.source_id,
+                                   backref="source")
+
+    inbound_armies = relationship("MarchingOrder",
+                                  foreign_keys=MarchingOrder.dest_id,
+                                  backref="dest")
 
     @classmethod
     def capital_for(cls, team, session):
@@ -109,16 +187,17 @@ class Region(Base):
             capital = None
             if 'capital' in region:
                 capital = region['capital']
-            created = cls(name=region['name'], srname=region['srname'],
+            created = cls(name=region['name'].lower(),
+                          srname=region['srname'].lower(),
                           capital=capital)
             result.append(created)
             atlas[created.name] = created
 
         # Hook up the regions
         for region in unconverted:
-            created = atlas[region['name']]
+            created = atlas[region['name'].lower()]
             for adjacent in region['connections']:
-                created.add_border(atlas[adjacent])
+                created.add_border(atlas[adjacent.lower()])
         return result
 
     def add_border(self, other_region):
@@ -134,3 +213,4 @@ class Region(Base):
 
     def __repr__(self):
         return "<Region(id='%s', name='%s')>" % (self.id, self.name)
+
