@@ -66,7 +66,8 @@ class Bot(object):
             if not found:
                 newbie = User(name=comment.author.name,
                               team=base10_id % 2,
-                              loyalists=100)
+                              loyalists=100,
+                              leader=True)
                 session.add(newbie)
 
                 cap = Region.capital_for(newbie.team, session)

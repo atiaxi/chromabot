@@ -1,14 +1,17 @@
 import json
+import logging
 import time
 
 from sqlalchemy import (
-    create_engine, Column, ForeignKey, Integer, String, Table)
+    create_engine, Boolean, Column, ForeignKey, Integer, String, Table)
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
 
 # Some helpful model exceptions
+
+# Movement
 class InsufficientException(Exception):
     def __init__(self, requested, available, ofwhat):
         Exception.__init__(self,
@@ -32,6 +35,17 @@ class AlreadyMovingException(Exception):
         Exception.__init__(self,
                            "Already moving from %s to %s - will arrive at %s" %
                            info)
+
+
+class OwnershipException(Exception):
+    def __init__(self, where, friendly=False):
+        self.friendly = friendly
+        self.region = where
+        if friendly:
+            msg = "%s is friendly territory!" % where.name
+        else:
+            msg = "Your team does not control %s" % where.name
+        Exception.__init__(self, msg)
 
 Base = declarative_base()
 
@@ -59,10 +73,18 @@ class User(Base):
     team = Column(Integer)
     loyalists = Column(Integer)
     region_id = Column(Integer, ForeignKey('regions.id'))
+    leader = Column(Boolean, default=False)
 
     def __repr__(self):
         return "<User(name='%s', team='%d', loyalists='%d')>" % (
             self.name, self.team, self.loyalists)
+
+    @property
+    def rank(self):
+        if self.leader:
+            return "general"
+        else:
+            return "captain"
 
     def is_moving(self):
         if self.movement:
@@ -84,6 +106,10 @@ class User(Base):
         # TODO: Drop off loyalists
         if not where in self.region.borders:
             raise NonAdjacentException(self.region, where)
+
+        if where.owner != self.team:
+            if not where.battle:
+                raise OwnershipException(where)
 
         if(delay > 0):
             result = MarchingOrder(arrival=time.mktime(time.localtime())
@@ -109,7 +135,7 @@ class MarchingOrder(Base):
     __tablename__ = "marching_orders"
 
     id = Column(Integer, primary_key=True)
-    arrival = Column(Integer)
+    arrival = Column(Integer, default=0)
 
     leader_id = Column(Integer, ForeignKey('users.id'))
     leader = relationship("User", backref="movement")
@@ -152,6 +178,7 @@ class Region(Base):
     name = Column(String(255))
     srname = Column(String(255))
     capital = Column(Integer)
+    owner = Column(Integer)
 
     people = relationship("User", backref="region")
 
@@ -185,11 +212,16 @@ class Region(Base):
         result = []
         for region in unconverted:
             capital = None
+            owner = None
             if 'capital' in region:
                 capital = region['capital']
+                owner = capital
+            if 'owner' in region:
+                owner = region['owner']
             created = cls(name=region['name'].lower(),
                           srname=region['srname'].lower(),
-                          capital=capital)
+                          capital=capital,
+                          owner=owner)
             result.append(created)
             atlas[created.name] = created
 
@@ -214,3 +246,16 @@ class Region(Base):
     def __repr__(self):
         return "<Region(id='%s', name='%s')>" % (self.id, self.name)
 
+
+class Battle(Base):
+    __tablename__ = "battles"
+
+    id = Column(Integer, primary_key=True)
+    begins = Column(Integer, default=0)
+
+    region_id = Column(Integer, ForeignKey('regions.id'))
+    region = relationship("Region", uselist=False, backref="battle")
+
+    def is_ready(self):
+        now = time.mktime(time.localtime())
+        return now >= self.begins

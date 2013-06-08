@@ -97,8 +97,8 @@ class StatusCommand(Command):
             forces = ("You are currently encamped at %s" %
                       found.region.markdown())
 
-        result = ("You are a general in the %s army.\n\n"
+        result = ("You are a %s in the %s army.\n\n"
                   "Your forces number %d loyalists strong.\n\n"
                   "%s")
-        return result % (num_to_team(found.team), found.loyalists,
+        return result % (found.rank, num_to_team(found.team), found.loyalists,
                          forces)

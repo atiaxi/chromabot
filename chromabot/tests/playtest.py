@@ -1,8 +1,9 @@
+import logging
 import time
 import unittest
 
 import db
-from db import (DB, Region, MarchingOrder, User)
+from db import (DB, Battle, Region, MarchingOrder, User)
 
 
 TEST_LANDS = """
@@ -46,7 +47,8 @@ TEST_LANDS = """
     {
         "name": "Orange Londo",
         "srname": "ct_orangelondo",
-        "connections": ["Oraistedarg"]
+        "connections": ["Oraistedarg"],
+        "owner": 0
     },
     {
         "name": "Oraistedarg",
@@ -68,14 +70,35 @@ class MockConf(object):
         return self._dbstring
 
 
-class TestPlaying(unittest.TestCase):
-
+class TestRegions(unittest.TestCase):
     def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
         conf = MockConf(dbstring="sqlite://")
         self.db = DB(conf)
         self.db.create_all()
         self.sess = self.db.session()
         # And we will call it... this land
+        self.sess.add_all(Region.create_from_json(TEST_LANDS))
+
+        self.sess.commit()
+
+    def test_region_autocapital(self):
+        """A region that's a capital is automatically owned by the same team"""
+        cap = Region.capital_for(0, self.sess)
+        self.assertEqual(cap.capital, cap.owner)
+
+        cap = Region.capital_for(1, self.sess)
+        self.assertEqual(cap.capital, cap.owner)
+
+
+class TestPlaying(unittest.TestCase):
+
+    def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
+        conf = MockConf(dbstring="sqlite://")
+        self.db = DB(conf)
+        self.db.create_all()
+        self.sess = self.db.session()
         self.sess.add_all(Region.create_from_json(TEST_LANDS))
 
         self.sess.commit()
@@ -95,6 +118,26 @@ class TestPlaying(unittest.TestCase):
         region = self.sess.query(Region).filter_by(name=name).first()
         return region
 
+    def test_battle_creation(self):
+        """Typical battle announcement"""
+        londo = self.get_region("Orange Londo")
+        now = time.mktime(time.localtime())
+        battle = Battle(
+            region=londo,
+            begins=now + 60 * 60 * 24
+            )
+        self.sess.add(battle)
+        self.sess.commit()
+
+        # Unless that commit took 24 hours, the battle's not ready yet
+        self.assertFalse(battle.is_ready())
+
+        # Move the deadline back
+        battle.begins = now
+        self.sess.commit()
+
+        self.assert_(battle.is_ready())
+
     def test_movement(self):
         """Move Alice from the Orangered capital to an adjacent region"""
         sess = self.sess
@@ -109,6 +152,29 @@ class TestPlaying(unittest.TestCase):
 
         # Now she should be there
         self.assertEqual(self.alice.region.id, londo.id)
+
+    def test_disallow_unscheduled_invasion(self):
+        """Can't move somewhere you don't own or aren't invading"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        with self.assertRaises(db.OwnershipException):
+            self.alice.move(100, londo, 0)
+
+    def test_allow_scheduled_invasion(self):
+        """Can move somewhere that's not yours if you are invading"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        battle = Battle(region=londo)
+        self.sess.add(battle)
+        self.sess.commit()
+
+        self.alice.move(100, londo, 0)
+
+        self.assertEqual(self.alice.region, londo)
 
     def test_disallow_overdraw_movement(self):
         """Make sure you can't move more people than you have"""
