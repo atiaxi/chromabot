@@ -4,7 +4,7 @@ import time
 
 from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, String, Table)
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -33,14 +33,14 @@ class InProgressException(Exception):
         Exception.__init__(self, "You're already doing that!")
 
 
-class OwnershipException(Exception):
-    def __init__(self, where, friendly=False):
+class TeamException(Exception):
+    def __init__(self, what, friendly=False):
         self.friendly = friendly
-        self.region = where
+        self.what = what
         if friendly:
-            msg = "%s is friendly territory!" % where.name
+            msg = "%s is friendly!" % what
         else:
-            msg = "Your team does not control %s" % where.name
+            msg = "%s is not friendly!" % what
         Exception.__init__(self, msg)
 
 
@@ -51,6 +51,9 @@ class RankException(Exception):
 
 
 class Model(object):
+
+    def session(self):
+        return Session.object_session(self)
 
     def timestr(self, secs=None):
         if secs is None:
@@ -83,6 +86,7 @@ class User(Base):
     name = Column(String(255))
     team = Column(Integer)
     loyalists = Column(Integer)
+    committed_loyalists = Column(Integer, default=0)
     region_id = Column(Integer, ForeignKey('regions.id'))
     leader = Column(Boolean, default=False)
 
@@ -120,7 +124,7 @@ class User(Base):
 
         if where.owner != self.team:
             if not where.battle:
-                raise OwnershipException(where)
+                raise TeamException(where)
 
         if(delay > 0):
             result = MarchingOrder(arrival=time.mktime(time.localtime())
@@ -255,7 +259,7 @@ class Region(Base):
             raise RankException()
 
         if self.owner == by_who.team:
-            raise OwnershipException(self, friendly=True)
+            raise TeamException(self, friendly=True)
 
         if self.battle:
             raise InProgressException(self.battle)
@@ -314,6 +318,13 @@ class Battle(Base):
     def begins_str(self):
         return self.timestr(self.begins)
 
+    def create_skirmish(self, who, howmany):
+        sess = self.session()
+        sa = SkirmishAction.create(sess, who, howmany)
+        sa.battle = self
+        sess.commit()
+        return sa
+
     def has_started(self):
         """
         A battle has started if its time has come, and there's a thread
@@ -335,3 +346,93 @@ class Battle(Base):
             return True
 
         return False
+
+
+class SkirmishAction(Base):
+    __tablename__ = "skirmish_actions"
+
+    id = Column(Integer, primary_key=True)
+    comment_id = Column(String)
+    amount = Column(Integer, default=0)
+    hinder = Column(Boolean, default=True)
+
+    battle_id = Column(Integer, ForeignKey('battles.id'))
+    battle = relationship("Battle", backref="skirmishes")
+
+    participant_id = Column(Integer, ForeignKey('users.id'))
+    participant = relationship("User", backref="skirmishes")
+
+    parent_id = Column(Integer, ForeignKey('skirmish_actions.id'))
+    children = relationship("SkirmishAction",
+                            backref=backref('parent', remote_side=[id]))
+
+    @classmethod
+    def create(cls, sess, who, howmany, hinder=True, parent=None):
+        sa = SkirmishAction(participant=who,
+                            amount=howmany,
+                            hinder=hinder,
+                            parent=parent)
+        sa.commit_if_valid()
+
+        return sa
+
+    def react(self, who, howmany, hinder=True):
+        sess = self.session()
+        sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self)
+        sess.commit()
+
+        return sa
+
+    def commit_if_valid(self):
+        self.validate()
+
+        sess = self.session()
+        sess.add(self)
+        sess.commit()
+
+        self.participant.committed_loyalists += self.amount
+
+    def validate(self):
+        """Raise exceptions if this is not a valid skirmish"""
+        sess = self.session()
+
+        if self.parent:
+            sameteam = self.parent.participant.team == self.participant.team
+            if self.hinder == sameteam:
+                sess.rollback()
+                raise TeamException(self, friendly=sameteam)
+        else:
+            # Make sure our participant doesn't have another toplevel
+            s = (sess.query(SkirmishAction).
+                 filter_by(parent_id=None).
+                 filter_by(participant=self.participant)).count()
+            # This is '1' and not '0' because for some damn reason that query
+            # will count the newly created one
+            if s > 1:
+                sess.rollback()
+                raise InProgressException(s)
+
+        requested = self.amount + self.participant.committed_loyalists
+        available = self.participant.loyalists
+        if requested > available:
+            sess.rollback()
+            raise InsufficientException(requested, available, "loyalists")
+
+        if requested <= 0:
+            sess.rollback()
+            raise InsufficientException(1, requested, "argument")
+
+        return self
+
+    def __repr__(self):
+        if self.battle:
+            pstr = str(self.battle)
+        else:
+            pstr = str(self.parent)
+
+        result = ("<SkirmishAction(participant=%s, amount=%s, "
+                  "hinder=%s parent=%s)>") % (self.participant.name,
+                                              self.amount,
+                                              self.hinder,
+                                              pstr)
+        return result

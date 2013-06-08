@@ -3,7 +3,7 @@ import time
 import unittest
 
 import db
-from db import (DB, Battle, Region, MarchingOrder, User)
+from db import (DB, Battle, Region, MarchingOrder, SkirmishAction, User)
 
 
 TEST_LANDS = """
@@ -108,8 +108,12 @@ class TestPlaying(ChromaTest):
         # For testing purposes, londo is now neutral
         londo.owner = None
 
-        with self.assertRaises(db.OwnershipException):
+        with self.assertRaises(db.TeamException):
             self.alice.move(100, londo, 0)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
 
     def test_allow_scheduled_invasion(self):
         """Can move somewhere that's not yours if you are invading"""
@@ -136,6 +140,10 @@ class TestPlaying(ChromaTest):
         # She should still be in the capital
         self.assertEqual(self.alice.region.id, old.id)
 
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
+
     def test_disallow_nonadjacent_movement(self):
         """Make sure you can't move to somewhere that's not next to you"""
         old = self.alice.region
@@ -147,6 +155,9 @@ class TestPlaying(ChromaTest):
 
         # Actually, no, nevermind, let's stay here
         self.assertEqual(self.alice.region.id, old.id)
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
 
     def test_delayed_movement(self):
         """Most movement should take a while"""
@@ -196,9 +207,24 @@ class TestPlaying(ChromaTest):
             # Sending to londo because Alice is technically still in the
             # capital, otherwise we'd get a NotAdjacentException
             self.alice.move(100, londo, 0)
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 1)
 
 
 class TestBattle(ChromaTest):
+
+    def setUp(self):
+        ChromaTest.setUp(self)
+        sapphire = self.get_region("Sapphire")
+
+        self.alice.region = sapphire
+        self.bob.region = sapphire
+        self.sess.commit()
+
+        now = time.mktime(time.localtime())
+        self.battle = sapphire.invade(self.bob, now)
+        self.assert_(self.battle)
 
     def test_battle_creation(self):
         """Typical battle announcement"""
@@ -236,19 +262,26 @@ class TestBattle(ChromaTest):
         with self.assertRaises(db.InProgressException):
             londo.invade(self.alice, when)
 
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 2)
+
     def test_disallow_nonadjacent_invasion(self):
         """Invasion must come from somewhere you control"""
         pericap = self.get_region("Periopolis")
 
         with self.assertRaises(db.NonAdjacentException):
             pericap.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 1)
 
     def test_disallow_friendly_invasion(self):
         """Can't invade somewhere you already control"""
         londo = self.get_region("Orange Londo")
 
-        with self.assertRaises(db.OwnershipException):
+        with self.assertRaises(db.TeamException):
             londo.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 1)
 
     def test_disallow_peon_invasion(self):
         """Must have .leader set to invade"""
@@ -258,18 +291,105 @@ class TestBattle(ChromaTest):
 
         with self.assertRaises(db.RankException):
             londo.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 1)
 
-    # Now that the formalities are out of the way
-    def test_full_battle(self):
-        londo = self.get_region("Orange Londo")
-        self.alice.region = londo
+    def test_skirmish_parenting(self):
+        """Make sure I set up relationships correctly w/ skirmishes"""
+        root = SkirmishAction()
+        a1 = SkirmishAction()
+        a2 = SkirmishAction()
+        self.sess.add_all([root, a1, a2])
         self.sess.commit()
-        sapphire = self.get_region("Sapphire")
 
-        # Let's have Periwinkle start the hostilities
-        now = time.mktime(time.localtime())
-        battle = sapphire.invade(self.bob, now)
+        root.children.append(a1)
+        root.children.append(a2)
+        self.sess.commit()
 
+        self.assertEqual(a1.parent_id, root.id)
+        self.assertEqual(a2.parent_id, root.id)
+
+    def test_battle_skirmish_assoc(self):
+        """Make sure top-level skirmishes are associated with their battles"""
+        battle = self.battle
+
+        s1 = battle.create_skirmish(self.alice, 1)
+        s2 = battle.create_skirmish(self.bob, 1)
+
+        s3 = s2.react(self.alice, 1)
+
+        self.assertEqual(len(battle.skirmishes), 2)
+        self.assertIn(s1, battle.skirmishes)
+        self.assertIn(s2, battle.skirmishes)
+        self.assertNotIn(s3, battle.skirmishes)
+
+        self.assertEqual(s1.battle, battle)
+
+    def test_single_toplevel_skirmish_each(self):
+        """Each participant can only make one toplevel skirmish"""
+        self.battle.create_skirmish(self.alice, 1)
+
+        with self.assertRaises(db.InProgressException):
+            self.battle.create_skirmish(self.alice, 1)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
+
+    def test_commit_at_least_one(self):
+        """It isn't a skirmish without fighters"""
+        with self.assertRaises(db.InsufficientException):
+            self.battle.create_skirmish(self.alice, 0)
+
+        with self.assertRaises(db.InsufficientException):
+            self.battle.create_skirmish(self.alice, -5)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_no_overdraw_skirmish(self):
+        """Can't start a skirmish with more loyalists than you have"""
+        with self.assertRaises(db.InsufficientException):
+            self.battle.create_skirmish(self.alice, 9999999)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_no_adds_to_overdraw_skirmish(self):
+        """Can't commit more loyalists than you have"""
+        s1 = self.battle.create_skirmish(self.alice, 99)
+        with self.assertRaises(db.InsufficientException):
+            s1.react(self.alice, 2, hinder=False)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
+
+    def test_stop_hitting_yourself(self):
+        """Can't hinder your own team"""
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        with self.assertRaises(db.TeamException):
+            s1.react(self.alice, 1, hinder=True)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
+
+    def test_disallow_betrayal(self):
+        """Can't help the opposing team"""
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        with self.assertRaises(db.TeamException):
+            s1.react(self.bob, 1, hinder=False)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
+
+    def test_full_battle(self):
+        """Full battle"""
+        battle = self.battle
         # Battle should be ready, but not started
         self.assert_(battle.is_ready())
         self.assertFalse(battle.has_started())

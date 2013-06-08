@@ -59,7 +59,7 @@ class InvadeCommand(Command):
             except db.RankException:
                 context.reply("You don't have the authority "
                               "to invade a region!")
-            except db.OwnershipException:
+            except db.TeamException:
                 context.reply("You can't invade %s, you already own it!" %
                               dest.markdown())
             except db.NonAdjacentException:
