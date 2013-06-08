@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import logging
+from pprint import pprint
 
 import praw
 from pyparsing import ParseException
 
 from config import Config
-from db import DB, Region, User, MarchingOrder
+from db import DB, Battle, Region, User, MarchingOrder
 from parser import parse
 from commands import Command, Context
 from utils import base36decode, num_to_team
@@ -37,23 +38,26 @@ class Bot(object):
                 player = session.query(User).filter_by(
                     name=comment.author.name).first()
                 if player:
-                    try:
-                        parsed = parse(comment.body)
-                        parsed.execute(Context(player, self.config, session,
-                                               comment))
-                    except ParseException as pe:
-                        result = (
-                            "I'm sorry, I couldn't understand your command:"
-                            "\n\n"
-                            "> %s\n"
-                            "\nThe parsing error is below:\n\n"
-                            "    %s") % (comment.body, pe)
-                        comment.reply(result)
+                    context = Context(player, self.config, session,
+                                               comment, self.reddit)
+                    self.command(comment.body, context)
                 else:
                     comment.reply(Command.FAIL_NOT_PLAYER %
                                   self.config.headquarters)
-
             comment.mark_as_read()
+
+    def command(self, text, context):
+        try:
+            parsed = parse(text)
+            parsed.execute(context)
+        except ParseException as pe:
+            result = (
+                "I'm sorry, I couldn't understand your command:"
+                "\n\n"
+                "> %s\n"
+                "\nThe parsing error is below:\n\n"
+                "    %s") % (text, pe)
+            context.comment.reply(result)
 
     def recruit_from_post(self, post):
         flat_comments = praw.helpers.flatten_tree(post.comments)
@@ -79,10 +83,10 @@ class Bot(object):
                 session.commit()
                 logging.info("Created combatant %s", newbie)
 
-                reply = ("Welcome to Chroma!  You are now a general "
+                reply = ("Welcome to Chroma!  You are now a %s "
                          "in the %s army, commanding a force of loyalists "
                          "%d people strong. You are currently encamped at %s"
-                ) % (num_to_team(newbie.team), newbie.loyalists,
+                ) % (newbie.rank, num_to_team(newbie.team), newbie.loyalists,
                      cap.markdown())
 
                 comment.reply(reply)
@@ -92,11 +96,21 @@ class Bot(object):
     def update_game(self):
         session = self.db.session()
         MarchingOrder.update_all(session)
+        results = Battle.update_all(session)
+        for ready in results['begin']:
+            title = "[Battle] The invaders have arrived!"
+            text = ("War is now at your doorstep!  Mobilize your armies!\n\n"
+                    "    Enter your commands in this thread")
+            submitted = self.reddit.submit(ready.region.srname,
+                                           title=title,
+                                           text=text)
+            ready.submission_id = submitted.id
+            session.commit()
 
     def run(self):
         logging.info("Bot started up")
         logging.info("Checking headquarters")
-        #self.check_hq()
+        self.check_hq()
         logging.info("Checking Messages")
         self.check_messages()
         # TODO: Check hotspots

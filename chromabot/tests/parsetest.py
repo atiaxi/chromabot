@@ -30,6 +30,13 @@ class TestMovement(unittest.TestCase):
         self.assertEqual(10, parsed.amount)
         self.assertEqual(parsed.where, "hurfendurf")
 
+    def testInvadeCommand(self):
+        src = "invade hurfendurf"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, InvadeCommand)
+        self.assertEqual(parsed.where, "hurfendurf")
+
 
 class TestStatus(unittest.TestCase):
     def testStatusCommand(self):

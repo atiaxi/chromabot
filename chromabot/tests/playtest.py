@@ -11,37 +11,12 @@ TEST_LANDS = """
     {
         "name": "Periopolis",
         "srname": "ct_periopolis",
-        "connections": ["Sapphire"],
+            "connections": ["Sapphire"],
         "capital": 1
     },
     {
         "name": "Sapphire",
         "srname": "ct_sapphire",
-        "connections": ["Ameythest Cove", "Torquois Moors"]
-    },
-    {
-        "name": "Torquois Moors",
-        "srname": "ct_fortiris",
-        "connections": ["Snooland"]
-    },
-    {
-        "name": "Ameythest Cove",
-        "srname": "ct_amethestcove",
-        "connections": ["Snooland"]
-    },
-    {
-        "name": "Snooland",
-        "srname": "ct_snooland",
-        "connections": ["Aegis", "Novum Persarum"]
-    },
-    {
-        "name": "Aegis",
-        "srname": "ct_aegis",
-        "connections": ["Orange Londo"]
-    },
-    {
-        "name": "Novum Persarum",
-        "srname": "ct_novumpersarum",
         "connections": ["Orange Londo"]
     },
     {
@@ -70,28 +45,7 @@ class MockConf(object):
         return self._dbstring
 
 
-class TestRegions(unittest.TestCase):
-    def setUp(self):
-        logging.basicConfig(level=logging.DEBUG)
-        conf = MockConf(dbstring="sqlite://")
-        self.db = DB(conf)
-        self.db.create_all()
-        self.sess = self.db.session()
-        # And we will call it... this land
-        self.sess.add_all(Region.create_from_json(TEST_LANDS))
-
-        self.sess.commit()
-
-    def test_region_autocapital(self):
-        """A region that's a capital is automatically owned by the same team"""
-        cap = Region.capital_for(0, self.sess)
-        self.assertEqual(cap.capital, cap.owner)
-
-        cap = Region.capital_for(1, self.sess)
-        self.assertEqual(cap.capital, cap.owner)
-
-
-class TestPlaying(unittest.TestCase):
+class ChromaTest(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
@@ -104,9 +58,10 @@ class TestPlaying(unittest.TestCase):
         self.sess.commit()
         # Create some users
         self.alice = self.create_user("alice", 0)
+        self.bob = self.create_user("bob", 1)
 
     def create_user(self, name, team):
-        newbie = User(name=name, team=team, loyalists=100)
+        newbie = User(name=name, team=team, loyalists=100, leader=True)
         self.sess.add(newbie)
         cap = Region.capital_for(team, self.sess)
         newbie.region = cap
@@ -118,25 +73,19 @@ class TestPlaying(unittest.TestCase):
         region = self.sess.query(Region).filter_by(name=name).first()
         return region
 
-    def test_battle_creation(self):
-        """Typical battle announcement"""
-        londo = self.get_region("Orange Londo")
-        now = time.mktime(time.localtime())
-        battle = Battle(
-            region=londo,
-            begins=now + 60 * 60 * 24
-            )
-        self.sess.add(battle)
-        self.sess.commit()
 
-        # Unless that commit took 24 hours, the battle's not ready yet
-        self.assertFalse(battle.is_ready())
+class TestRegions(ChromaTest):
 
-        # Move the deadline back
-        battle.begins = now
-        self.sess.commit()
+    def test_region_autocapital(self):
+        """A region that's a capital is automatically owned by the same team"""
+        cap = Region.capital_for(0, self.sess)
+        self.assertEqual(cap.capital, cap.owner)
 
-        self.assert_(battle.is_ready())
+        cap = Region.capital_for(1, self.sess)
+        self.assertEqual(cap.capital, cap.owner)
+
+
+class TestPlaying(ChromaTest):
 
     def test_movement(self):
         """Move Alice from the Orangered capital to an adjacent region"""
@@ -243,10 +192,91 @@ class TestPlaying(unittest.TestCase):
         order = self.alice.move(100, londo, 60 * 60 * 24)
         self.assert_(order)
 
-        with self.assertRaises(db.AlreadyMovingException):
+        with self.assertRaises(db.InProgressException):
             # Sending to londo because Alice is technically still in the
             # capital, otherwise we'd get a NotAdjacentException
             self.alice.move(100, londo, 0)
+
+
+class TestBattle(ChromaTest):
+
+    def test_battle_creation(self):
+        """Typical battle announcement"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        now = time.mktime(time.localtime())
+        when = now + 60 * 60 * 24
+        battle = londo.invade(self.alice, when)
+
+        self.assert_(battle)
+
+        # Unless that commit took 24 hours, the battle's not ready yet
+        self.assertFalse(battle.is_ready())
+
+        # Move the deadline back
+        battle.begins = now
+        self.sess.commit()
+
+        self.assert_(battle.is_ready())
+
+    def test_disallow_invadeception(self):
+        """Can't invade if you're already invading!"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        now = time.mktime(time.localtime())
+        when = now + 60 * 60 * 24
+        battle = londo.invade(self.alice, when)
+
+        self.assert_(battle)
+
+        with self.assertRaises(db.InProgressException):
+            londo.invade(self.alice, when)
+
+    def test_disallow_nonadjacent_invasion(self):
+        """Invasion must come from somewhere you control"""
+        pericap = self.get_region("Periopolis")
+
+        with self.assertRaises(db.NonAdjacentException):
+            pericap.invade(self.alice, 0)
+
+    def test_disallow_friendly_invasion(self):
+        """Can't invade somewhere you already control"""
+        londo = self.get_region("Orange Londo")
+
+        with self.assertRaises(db.OwnershipException):
+            londo.invade(self.alice, 0)
+
+    def test_disallow_peon_invasion(self):
+        """Must have .leader set to invade"""
+        londo = self.get_region("Orange Londo")
+        londo.owner = None
+        self.alice.leader = False
+
+        with self.assertRaises(db.RankException):
+            londo.invade(self.alice, 0)
+
+    # Now that the formalities are out of the way
+    def test_full_battle(self):
+        londo = self.get_region("Orange Londo")
+        self.alice.region = londo
+        self.sess.commit()
+        sapphire = self.get_region("Sapphire")
+
+        # Let's have Periwinkle start the hostilities
+        now = time.mktime(time.localtime())
+        battle = sapphire.invade(self.bob, now)
+
+        # Battle should be ready, but not started
+        self.assert_(battle.is_ready())
+        self.assertFalse(battle.has_started())
+
+        # Let's get a party started
+        battle.submission_id = "TEST"
+        self.assert_(battle.has_started())
 
 if __name__ == '__main__':
     unittest.main()

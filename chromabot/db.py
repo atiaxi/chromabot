@@ -11,7 +11,6 @@ from sqlalchemy.ext.declarative import declarative_base
 
 # Some helpful model exceptions
 
-# Movement
 class InsufficientException(Exception):
     def __init__(self, requested, available, ofwhat):
         Exception.__init__(self,
@@ -28,13 +27,10 @@ class NonAdjacentException(Exception):
                            "%s and %s are not adjacent!" % (src, dest))
 
 
-class AlreadyMovingException(Exception):
-    def __init__(self, order):
-        self.order = order
-        info = (order.source.name, order.dest.name, order.arrival_str())
-        Exception.__init__(self,
-                           "Already moving from %s to %s - will arrive at %s" %
-                           info)
+class InProgressException(Exception):
+    def __init__(self, other):
+        self.other = other
+        Exception.__init__(self, "You're already doing that!")
 
 
 class OwnershipException(Exception):
@@ -47,7 +43,22 @@ class OwnershipException(Exception):
             msg = "Your team does not control %s" % where.name
         Exception.__init__(self, msg)
 
-Base = declarative_base()
+
+class RankException(Exception):
+    def __init__(self):
+        Exception.__init__(self,
+                           "You do not have the rank required to do that!")
+
+
+class Model(object):
+
+    def timestr(self, secs=None):
+        if secs is None:
+            secs = time.mktime(time.localtime())
+        return time.strftime("%Y-%m-%d %H:%M:%S GMT",
+                              time.gmtime(secs))
+
+Base = declarative_base(cls=Model)
 
 
 class DB(object):
@@ -97,7 +108,7 @@ class User(Base):
 
         already = sess.query(MarchingOrder).filter_by(leader=self).first()
         if already:
-            raise AlreadyMovingException(already)
+            raise InProgressException(already)
 
         if how_many > self.loyalists:
             # TODO: Attempt to pick up loyalists
@@ -119,8 +130,8 @@ class User(Base):
                                    dest=where)
             sess.add(result)
         else:
-            # TODO: Change number of loyalists
             self.region = where
+        # TODO: Change number of loyalists
         sess.commit()
 
         return result
@@ -158,8 +169,7 @@ class MarchingOrder(Base):
         return self.arrival <= now
 
     def arrival_str(self):
-        return time.strftime("%Y-%m-%d %H:%M:%S GMT",
-                              time.gmtime(self.arrival))
+        return self.timestr(self.arrival)
 
     def update(self):
         sess = Session.object_session(self)
@@ -240,6 +250,33 @@ class Region(Base):
         self.borders.append(other_region)
         other_region.borders.append(self)
 
+    def invade(self, by_who, when):
+        if not by_who.leader:
+            raise RankException()
+
+        if self.owner == by_who.team:
+            raise OwnershipException(self, friendly=True)
+
+        if self.battle:
+            raise InProgressException(self.battle)
+
+        # Make sure that the given team owns at least one region adjacent
+        # to this one
+        bad_neighbors = [region for region in self.borders
+                         if region.owner is not None
+                            and region.owner == by_who.team]
+        if not bad_neighbors:
+            raise NonAdjacentException(self, "your territory")
+
+        sess = Session.object_session(self)
+        battle = Battle(
+            region=self,
+            begins=when
+            )
+        sess.add(battle)
+        sess.commit()
+        return battle
+
     def markdown(self):
         return "[%s](/r/%s)" % (self.name, self.srname)
 
@@ -252,10 +289,49 @@ class Battle(Base):
 
     id = Column(Integer, primary_key=True)
     begins = Column(Integer, default=0)
+    submission_id = Column(String)
 
     region_id = Column(Integer, ForeignKey('regions.id'))
     region = relationship("Region", uselist=False, backref="battle")
 
+    @classmethod
+    def update_all(cls, sess):
+        battles = sess.query(cls).all()
+        begin = []
+        ended = []
+        for battle in battles:
+            ready = battle.update()
+            if ready:
+                begin.append(battle)
+            #TODO: add to ended if this has ended
+
+        result = {
+            "begin": begin,
+            "ended": ended
+        }
+        return result
+
+    def begins_str(self):
+        return self.timestr(self.begins)
+
+    def has_started(self):
+        """
+        A battle has started if its time has come, and there's a thread
+        to do battle in.
+        """
+        if self.is_ready():
+            return self.submission_id
+        return False
+
     def is_ready(self):
         now = time.mktime(time.localtime())
         return now >= self.begins
+
+    def update(self):
+        if self.has_started():
+            # TODO: Something with this fight
+            pass
+        elif self.is_ready():
+            return True
+
+        return False
