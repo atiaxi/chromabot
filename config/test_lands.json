@@ -1,0 +1,25 @@
+[
+    {
+        "name": "Periopolis",
+        "srname": "ct_periopolis",
+            "connections": ["Sapphire"],
+        "capital": 1
+    },
+    {
+        "name": "Sapphire",
+        "srname": "ct_sapphire",
+        "connections": ["Orange Londo"]
+    },
+    {
+        "name": "Orange Londo",
+        "srname": "ct_orangelondo",
+        "connections": ["Oraistedarg"],
+        "owner": 0
+    },
+    {
+        "name": "Oraistedarg",
+        "srname": "ct_oraistedarg",
+        "connections": [],
+        "capital": 0
+    }
+]

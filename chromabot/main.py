@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 import time
-from pprint import pprint
 
 import praw
 from pyparsing import ParseException
@@ -35,7 +34,6 @@ class Bot(object):
         hq = self.reddit.get_subreddit(self.config.headquarters)
         submissions = hq.get_new()
         for submission in submissions:
-            # TODO: Check for invasion announcements
             if "[Recruitment]" in submission.title:
                 #pprint(submission.comments)
                 self.recruit_from_post(submission)
@@ -101,6 +99,8 @@ class Bot(object):
         flat_comments = praw.helpers.flatten_tree(post.comments)
         session = self.db.session()
         for comment in flat_comments:
+            if comment.author.name == self.config.username:
+                continue
             base10_id = base36decode(comment.author.id)
             # Is this author already one of us?
             found = session.query(User).filter_by(
@@ -155,7 +155,7 @@ class Bot(object):
             report.append(("## Final Score:  Team Orangered: %d "
                            "Team Periwinkle: %d") % (done.score0, done.score1))
             if done.victor:
-                report.append("# The Victor:  Team %s" %
+                report.append("\n# The Victor:  Team %s" %
                               num_to_team(done.victor))
             else:
                 report.append("# TIE")

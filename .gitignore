@@ -1,4 +1,5 @@
 config/config.json
+config/reddit.json
 praw.ini
 layout.txt
 .project

@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Periopolis",
+        "srname": "ct_periopolis",
+            "connections": ["Snooland"],
+        "capital": 1
+    },
+    {
+        "name": "Snooland",
+        "srname": "ct_snooland",
+        "connections": ["Oraistedarg"]
+    },
+
+    {
+        "name": "Oraistedarg",
+        "srname": "ct_oraistedarg",
+        "connections": [],
+        "capital": 0
+    }
+]

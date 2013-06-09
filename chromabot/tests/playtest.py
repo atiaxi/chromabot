@@ -595,9 +595,6 @@ class TestBattle(ChromaTest):
         # alice: 5 + 1 + 10, bob: 5 + 1 + 10
         self.assertEqual(result.vp, 16)
 
-        # TODO: Alice should be down 16 people
-        #self.assertEqual(soldiers - 16, self.alice.loyalists)
-
     def test_full_battle(self):
         """Full battle"""
         battle = self.battle

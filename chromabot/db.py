@@ -512,7 +512,7 @@ class SkirmishAction(Base):
         return self
 
     def report(self):
-        preamble = "*  Skirmish #%d - the victor is "
+        preamble = "*  Skirmish #%d - the victor is " % self.id
         if self.victor is None:
             vstr = None
             postamble = ""
@@ -520,7 +520,7 @@ class SkirmishAction(Base):
             vstr = num_to_team(self.victor)
             postamble = " by %d for **%d VP**" % (self.margin, self.vp)
         result = (("%s **%s** %s") %
-                  (preamble, self.id, vstr, postamble))
+                  (preamble, vstr, postamble))
         return result
 
     def commit_if_valid(self):
