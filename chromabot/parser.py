@@ -1,11 +1,17 @@
 from pyparsing import *
 
-from commands import InvadeCommand, MoveCommand, StatusCommand
+from commands import InvadeCommand, MoveCommand, SkirmishCommand, StatusCommand
 
 number = Word(nums)
 string = QuotedString('"', '\\')
 subreddit = Suppress("/r/") + Word(alphanums + "_-")
 location = string | subreddit | Word(alphanums + "_-")
+
+attack = Keyword("attack")
+support = Keyword("support")
+participate = attack | support
+skirmishcmd = participate("action") + Suppress("with") + number("amount")
+skirmishcmd.setParseAction(SkirmishCommand)
 
 invade = Keyword("invade")
 invadecmd = invade + location("where")
@@ -18,7 +24,7 @@ movecmd.setParseAction(MoveCommand)
 statuscmd = Keyword("status")
 statuscmd.setParseAction(StatusCommand)
 
-root = movecmd | statuscmd | invadecmd
+root = statuscmd | movecmd | invadecmd | skirmishcmd
 
 
 def parse(s):

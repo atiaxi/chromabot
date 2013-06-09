@@ -27,6 +27,15 @@ class NonAdjacentException(Exception):
                            "%s and %s are not adjacent!" % (src, dest))
 
 
+class NotPresentException(Exception):
+    def __init__(self, need_to_be, actually_am):
+        self.need_to_be = need_to_be
+        self.actually_am = actually_am
+        Exception.__init__(self,
+                           "To do this you need to be in %s, but are in %s" %
+                           (need_to_be.name, actually_am.name))
+
+
 class InProgressException(Exception):
     def __init__(self, other):
         self.other = other
@@ -113,6 +122,11 @@ class User(Base):
         already = sess.query(MarchingOrder).filter_by(leader=self).first()
         if already:
             raise InProgressException(already)
+
+        fighting = (sess.query(SkirmishAction).
+                    filter_by(participant=self).first())
+        if fighting:
+            raise InProgressException(fighting)
 
         if how_many > self.loyalists:
             # TODO: Attempt to pick up loyalists
@@ -320,8 +334,7 @@ class Battle(Base):
 
     def create_skirmish(self, who, howmany):
         sess = self.session()
-        sa = SkirmishAction.create(sess, who, howmany)
-        sa.battle = self
+        sa = SkirmishAction.create(sess, who, howmany, battle=self)
         sess.commit()
         return sa
 
@@ -348,6 +361,16 @@ class Battle(Base):
         return False
 
 
+class Processed(Base):
+    __tablename__ = "processed"
+
+    id = Column(Integer, primary_key=True)
+    id36 = Column(String)
+
+    battle_id = Column(Integer, ForeignKey('battles.id'))
+    battle = relationship("Battle", backref="processed_comments")
+
+
 class SkirmishAction(Base):
     __tablename__ = "skirmish_actions"
 
@@ -367,19 +390,38 @@ class SkirmishAction(Base):
                             backref=backref('parent', remote_side=[id]))
 
     @classmethod
-    def create(cls, sess, who, howmany, hinder=True, parent=None):
+    def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None):
         sa = SkirmishAction(participant=who,
                             amount=howmany,
                             hinder=hinder,
-                            parent=parent)
+                            parent=parent,
+                            battle=battle)
         sa.commit_if_valid()
 
         return sa
 
+    def get_battle(self):
+        """
+        Returns the battle that this skirmish belongs to - if this is a
+        child skirmish, will go up the chain to the root
+        """
+        if self.parent:
+            return self.get_root().get_battle()
+        else:
+            return self.battle
+
+    def get_root(self):
+        """
+        Returns the root of this skirmish, which may be itself
+        """
+        if self.parent:
+            return self.parent.get_root()
+        else:
+            return self
+
     def react(self, who, howmany, hinder=True):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self)
-        sess.commit()
 
         return sa
 
@@ -395,6 +437,13 @@ class SkirmishAction(Base):
     def validate(self):
         """Raise exceptions if this is not a valid skirmish"""
         sess = self.session()
+
+        # Are we actually there?
+        need_to_be = self.get_battle().region
+        actually_am = self.participant.region
+        if need_to_be != actually_am:
+            sess.rollback()
+            raise NotPresentException(need_to_be, actually_am)
 
         if self.parent:
             sameteam = self.parent.participant.team == self.participant.team
@@ -416,11 +465,11 @@ class SkirmishAction(Base):
         available = self.participant.loyalists
         if requested > available:
             sess.rollback()
-            raise InsufficientException(requested, available, "loyalists")
+            raise InsufficientException(self.amount, available, "loyalists")
 
-        if requested <= 0:
+        if self.amount <= 0:
             sess.rollback()
-            raise InsufficientException(1, requested, "argument")
+            raise InsufficientException(self.amount, 1, "argument")
 
         return self
 

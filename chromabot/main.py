@@ -6,10 +6,10 @@ import praw
 from pyparsing import ParseException
 
 from config import Config
-from db import DB, Battle, Region, User, MarchingOrder
+from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
 from commands import Command, Context
-from utils import base36decode, num_to_team
+from utils import base36decode, extract_command, num_to_team, name_to_id
 
 
 class Bot(object):
@@ -17,8 +17,17 @@ class Bot(object):
         self.config = config
         self.reddit = reddit
         self.db = DB(config)
+        self.db.create_all()
 
         reddit.login(c.username, c.password)
+
+    def check_battles(self):
+        session = self.db.session()
+        battles = session.query(Battle).all()
+        for battle in battles:
+            post = self.reddit.get_submission(
+                submission_id=name_to_id(battle.submission_id))
+            self.process_post_for_battle(post, battle, session)
 
     def check_hq(self):
         hq = self.reddit.get_subreddit(self.config.headquarters)
@@ -33,20 +42,21 @@ class Bot(object):
         unread = reddit.get_unread(True, True)
         session = self.db.session()
         for comment in unread:
-            # Only pay attention to PMs, for now
+            # Only PMs, we deal with comment replies in process_post_for_battle
             if not comment.was_comment:
-                player = session.query(User).filter_by(
-                    name=comment.author.name).first()
+                logging.info("Checking PM: %s" % comment.body)
+
+                player = self.find_player(comment, session)
                 if player:
                     context = Context(player, self.config, session,
-                                               comment, self.reddit)
+                                      comment, self.reddit)
                     self.command(comment.body, context)
-                else:
-                    comment.reply(Command.FAIL_NOT_PLAYER %
-                                  self.config.headquarters)
+
             comment.mark_as_read()
 
     def command(self, text, context):
+        logging.info("Processing command: '%s' by %s" %
+                     (text, context.player.name))
         try:
             parsed = parse(text)
             parsed.execute(context)
@@ -58,6 +68,34 @@ class Bot(object):
                 "\nThe parsing error is below:\n\n"
                 "    %s") % (text, pe)
             context.comment.reply(result)
+
+    def find_player(self, comment, session):
+        player = session.query(User).filter_by(
+        name=comment.author.name).first()
+        if not player and comment.was_comment:
+            comment.reply(Command.FAIL_NOT_PLAYER %
+                              self.config.headquarters)
+        return player
+
+    def process_post_for_battle(self, post, battle, sess):
+        p = sess.query(Processed).filter_by(battle=battle).all()
+        seen = [entry.id36 for entry in p]
+        flat_comments = praw.helpers.flatten_tree(post.comments)
+
+        for comment in flat_comments:
+            if comment.name in seen:
+                continue
+            if comment.author.name == self.config.username:
+                continue
+            cmd = extract_command(comment.body)
+            if cmd:
+                player = self.find_player(comment, sess)
+                if player:
+                    context = Context(player, self.config, sess,
+                                          comment, self.reddit)
+                    self.command(cmd, context)
+            sess.add(Processed(id36=comment.name, battle=battle))
+            sess.commit()
 
     def recruit_from_post(self, post):
         flat_comments = praw.helpers.flatten_tree(post.comments)
@@ -104,22 +142,23 @@ class Bot(object):
             submitted = self.reddit.submit(ready.region.srname,
                                            title=title,
                                            text=text)
-            ready.submission_id = submitted.id
+            ready.submission_id = submitted.name
             session.commit()
 
     def run(self):
         logging.info("Bot started up")
         logging.info("Checking headquarters")
-        self.check_hq()
+        #self.check_hq()
         logging.info("Checking Messages")
         self.check_messages()
-        # TODO: Check hotspots
+        logging.info("Checking Battles")
+        self.check_battles()
         logging.info("Updating game state")
         self.update_game()
         # TODO: Sleep
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     c = Config()
     reddit = c.praw()
 

@@ -1,8 +1,9 @@
+import logging
 import time
 
 import db
-from db import Battle, Region
-from utils import num_to_team
+from db import Battle, Region, SkirmishAction
+from utils import num_to_team, name_to_id
 
 
 class Context(object):
@@ -14,7 +15,7 @@ class Context(object):
         self.reddit = reddit    # root praw object
 
     def reply(self, reply):
-        self.comment.reply(reply)
+        return self.comment.reply(reply)
 
 
 class Command(object):
@@ -90,7 +91,7 @@ class MoveCommand(Command):
         self.where = tokens["where"].lower()
 
     def execute(self, context):
-        dest = self.get_region(self.where, context.session)
+        dest = self.get_region(self.where, context)
         if dest:
             order = None
             try:
@@ -110,10 +111,18 @@ class MoveCommand(Command):
                     (context.player.region.markdown(), dest.markdown()))
                 return
             except db.InProgressException as ipe:
-                context.comment.reply((
-                    "You are already leading your armies to %s - "
-                    "you can give further orders upon your arrival at %s"
-                    ) % (ipe.order.dest.markdown(), ipe.order.arrival_str()))
+                # Determine if there's a move in progress or a battle
+                if hasattr(ipe.other, 'arrival_str'):
+                    context.comment.reply((
+                        "You are already leading your armies to %s - "
+                        "you can give further orders upon your arrival at %s"
+                        ) % (ipe.other.dest.markdown(),
+                             ipe.other.arrival_str()))
+                else:
+                    context.comment.reply((
+                        "You have committed your armies to the battle at %s - "
+                        "you must see this through to the bitter end."
+                        ) % (ipe.other.get_battle().region.markdown()))
                 return
             if order:
                 context.comment.reply((
@@ -153,3 +162,67 @@ class StatusCommand(Command):
                   "%s")
         return result % (found.rank, num_to_team(found.team), found.loyalists,
                          forces)
+
+
+class SkirmishCommand(Command):
+    def __init__(self, tokens):
+        self.action = tokens['action']
+        self.amount = int(tokens['amount'])
+
+    def execute(self, context):
+        # getattr wackiness because real comments not gotten from inbox don't
+        # have "was_comment" set on them
+        if not getattr(context.comment, 'was_comment', True):
+            # PMing skirmish commands makes no sense
+            context.reply("You must enter your skirmish commands in the "
+                          "appropriate battle post")
+            return
+
+        post_id = context.comment.link_id  # Actually a 'name'
+        ongoing = context.session.query(Battle).filter_by(
+            submission_id=post_id)
+        current = ongoing.first()
+        if not current:
+            context.reply("There's no battle happening here!")
+            return
+
+        try:
+            if post_id == context.comment.parent_id:
+                skirmish = current.create_skirmish(context.player, self.amount)
+            else:
+                parent = context.session.query(SkirmishAction).filter_by(
+                    comment_id=context.comment.parent_id).first()
+                if not parent:
+                    context.reply("You can only use skirmish commands in "
+                                  "reply to other confirmed skirmish commands")
+                    return
+                hinder = self.action == 'attack'
+                skirmish = parent.react(context.player, self.amount,
+                                        hinder=hinder)
+            total = context.player.committed_loyalists
+            context.reply(("**Confirmed**: You have committed %d of your "
+                "forces to this battle.\n\n(As of now, you have "
+                "committed %d total)") % (skirmish.amount, total))
+
+            skirmish.comment_id = context.comment.name
+            context.session.commit()
+        except db.NotPresentException as npe:
+            context.reply(("Your armies are currently in %s and thus cannot "
+                           "participate in this battle.") %
+                          npe.actually_am.markdown())
+        except db.TeamException as te:
+            if te.friendly:
+                context.reply("You cannot attack someone on your team")
+            else:
+                context.reply("You cannot aid the enemy!")
+        except db.InProgressException:
+            context.reply("You can only spearhead one offensive per battle "
+                          "(though you may still assist others)")
+        except db.InsufficientException as ie:
+            if ie.requested <= 0:
+                context.reply("You must use at least 1 troop!")
+            else:
+                context.reply(("You don't have %d troops to spare! "
+                               "(you have committed %d total)") %
+                              (ie.requested,
+                               context.player.committed_loyalists))

@@ -325,6 +325,25 @@ class TestBattle(ChromaTest):
 
         self.assertEqual(s1.battle, battle)
 
+    def test_get_battle(self):
+        """get_battle and get_root work, right?"""
+        battle = self.battle
+
+        s1 = battle.create_skirmish(self.alice, 1)
+        s2 = battle.create_skirmish(self.bob, 1)
+
+        s3 = s2.react(self.alice, 1)
+
+        self.assertEqual(battle, s1.get_battle())
+        self.assertEqual(battle, s3.get_battle())
+
+    def test_committed_loyalists(self):
+        """We're actually committing to battle, right?"""
+        # Indirectly tested in test_no_adds_to_overdraw_skirmish, too
+        old = self.alice.committed_loyalists
+        self.battle.create_skirmish(self.alice, 5)
+        self.assertEqual(old + 5, self.alice.committed_loyalists)
+
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)
@@ -347,6 +366,16 @@ class TestBattle(ChromaTest):
         n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
             filter_by(participant=self.alice)).count()
         self.assertEqual(n, 0)
+
+    def test_support_at_least_one(self):
+        # Saw this happen in testing, not sure why, reproducing here:
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        with self.assertRaises(db.InsufficientException):
+            s1.react(self.alice, 0, hinder=False)
+
+        n = (self.sess.query(db.SkirmishAction).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
 
     def test_no_overdraw_skirmish(self):
         """Can't start a skirmish with more loyalists than you have"""
@@ -386,6 +415,31 @@ class TestBattle(ChromaTest):
         n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
             filter_by(participant=self.alice)).count()
         self.assertEqual(n, 1)
+
+    def test_disallow_absent_fighting(self):
+        """Can't fight in a region you're not in"""
+        londo = self.get_region("Orange Londo")
+        self.alice.region = londo
+        self.sess.commit()
+
+        with self.assertRaises(db.NotPresentException):
+            self.battle.create_skirmish(self.alice, 1)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_disallow_retreat(self):
+        """Can't move away once you've begun a fight"""
+        self.battle.create_skirmish(self.alice, 1)
+        londo = self.get_region("Orange Londo")
+
+        with self.assertRaises(db.InProgressException):
+            self.alice.move(100, londo, 0)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
 
     def test_full_battle(self):
         """Full battle"""
