@@ -59,6 +59,7 @@ class RankException(Exception):
                            "You do not have the rank required to do that!")
 
 
+# Models
 class Model(object):
 
     def session(self):
@@ -307,7 +308,12 @@ class Battle(Base):
 
     id = Column(Integer, primary_key=True)
     begins = Column(Integer, default=0)
+    ends = Column(Integer, default=0)
     submission_id = Column(String)
+
+    victor = Column(Integer)
+    score0 = Column(Integer)
+    score1 = Column(Integer)
 
     region_id = Column(Integer, ForeignKey('regions.id'))
     region = relationship("Region", uselist=False, backref="battle")
@@ -318,10 +324,11 @@ class Battle(Base):
         begin = []
         ended = []
         for battle in battles:
-            ready = battle.update()
-            if ready:
+            if not battle.has_started() and battle.is_ready():
                 begin.append(battle)
-            #TODO: add to ended if this has ended
+            elif battle.has_started() and battle.past_end_time():
+                battle.resolve()
+                ended.append(battle)
 
         result = {
             "begin": begin,
@@ -331,6 +338,9 @@ class Battle(Base):
 
     def begins_str(self):
         return self.timestr(self.begins)
+
+    def ends_str(self):
+        return self.timestr(self.ends)
 
     def create_skirmish(self, who, howmany):
         sess = self.session()
@@ -351,14 +361,30 @@ class Battle(Base):
         now = time.mktime(time.localtime())
         return now >= self.begins
 
-    def update(self):
-        if self.has_started():
-            # TODO: Something with this fight
-            pass
-        elif self.is_ready():
-            return True
+    def past_end_time(self):
+        now = time.mktime(time.localtime())
+        return now >= self.ends
 
-        return False
+    def resolve(self):
+        score = [0, 0]
+        for skirmish in self.skirmishes:
+            skirmish.resolve()
+            if skirmish.victor is not None:
+                score[skirmish.victor] += skirmish.vp
+        self.score0, self.score1 = score
+
+        if self.score0 > self.score1:
+            self.victor = 0
+        elif self.score1 > self.score0:
+            self.victor = 1
+        else:
+            self.victor = None
+
+        # The new owner of wherever this battle happened is the victor
+        if self.victor:
+            self.region.owner = self.victor
+
+        self.session().commit()
 
 
 class Processed(Base):
@@ -378,6 +404,11 @@ class SkirmishAction(Base):
     comment_id = Column(String)
     amount = Column(Integer, default=0)
     hinder = Column(Boolean, default=True)
+
+    victor = Column(Integer)
+    vp = Column(Integer)
+    margin = Column(Integer)
+    unopposed = Column(Boolean, default=False)
 
     battle_id = Column(Integer, ForeignKey('battles.id'))
     battle = relationship("Battle", backref="skirmishes")
@@ -424,6 +455,59 @@ class SkirmishAction(Base):
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self)
 
         return sa
+
+    def resolve(self):
+        # Make a results representing us
+        self.victor = self.participant.team
+        self.vp = 0
+        self.margin = self.amount
+        self.unopposed = True
+
+        # Resolve our children, if any
+        if self.children:
+            supporters = [child.resolve() for child in self.children
+                          if child.hinder == False]
+            support = self.amount
+            attack = 0
+            for supporter in supporters:
+                self.vp += supporter.vp
+                if supporter.victor == self.participant.team:
+                    # Support only counts if it didn't get ambushed on the way
+                    support += supporter.margin
+                # If the attackers overtook this support, we do nothing;
+                # attacks don't carry beyond their immediate target
+
+            attackers = [child.resolve() for child in self.children
+                         if child.hinder == True]
+            for attacker in attackers:
+                self.vp += attacker.vp
+                if attacker.victor != self.participant.team:
+                    # Attackers only count if they weren't beaten by our team
+                    attack += attacker.margin
+
+            inflicted = min(attack, support)
+            self.vp += inflicted
+
+            self.unopposed = attack == 0
+
+            if(attack > support):
+                # This skirmish loses!
+                self.margin = attack - support
+                self.victor = [1, 0][self.participant.team]
+            elif(support > attack):
+                # This skirmish wins!
+                self.margin = support - attack
+                self.victor = self.participant.team
+            else:
+                # Nobody is the winner, but this skirmish is sure the loser
+                self.victor = None
+                self.margin = 0
+        # Unopposed root nodes are worth 2x VP
+        if not self.parent and self.unopposed:
+            self.vp = max(self.vp * 2, self.amount * 2)
+
+        self.session().commit()
+        return self
 
     def commit_if_valid(self):
         self.validate()
@@ -485,3 +569,4 @@ class SkirmishAction(Base):
                                               self.hinder,
                                               pstr)
         return result
+

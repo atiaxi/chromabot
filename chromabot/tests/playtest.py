@@ -218,12 +218,21 @@ class TestBattle(ChromaTest):
         ChromaTest.setUp(self)
         sapphire = self.get_region("Sapphire")
 
+        self.sapphire = sapphire
+
         self.alice.region = sapphire
         self.bob.region = sapphire
+
+        self.carol = self.create_user("carol", 0)
+        self.carol.region = sapphire
+        self.dave = self.create_user("dave", 1)
+        self.dave.region = sapphire
+
         self.sess.commit()
 
         now = time.mktime(time.localtime())
         self.battle = sapphire.invade(self.bob, now)
+        self.battle.ends = now + 60 * 60 * 24
         self.assert_(self.battle)
 
     def test_battle_creation(self):
@@ -235,6 +244,8 @@ class TestBattle(ChromaTest):
         now = time.mktime(time.localtime())
         when = now + 60 * 60 * 24
         battle = londo.invade(self.alice, when)
+        battle.ends = when  # Also end it then, too
+        self.sess.commit()
 
         self.assert_(battle)
 
@@ -336,6 +347,34 @@ class TestBattle(ChromaTest):
 
         self.assertEqual(battle, s1.get_battle())
         self.assertEqual(battle, s3.get_battle())
+
+    def test_simple_unopposed(self):
+        """Bare attacks are unopposed"""
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        s1.resolve()
+        self.assert_(s1.unopposed)
+
+        # Should be worth 2 VP
+        self.assertEqual(s1.vp, 2)
+
+    def test_canceled_unopposed(self):
+        """Attacks that have counterattacks nullified are unopposed"""
+        s1 = self.battle.create_skirmish(self.alice, 1)   # Attack 1
+        s1a = s1.react(self.bob, 2)                       # --Attack 2
+        s1a.react(self.alice, 9)                          # ----Attack 9
+        s1.resolve()
+        self.assertEqual(s1.victor, self.alice.team)
+        self.assert_(s1.unopposed)
+
+        # Should be 4 VP (double the 2 it'd ordinarily be worth)
+        self.assertEqual(s1.vp, 4)
+
+    def test_not_unopposed(self):
+        """If there's an attack, even if ineffective, it's opposed"""
+        s1 = self.battle.create_skirmish(self.alice, 2)   # Attack 2
+        s1.react(self.bob, 1)                             # --Attack 1
+        s1.resolve()
+        self.assertFalse(s1.unopposed)
 
     def test_committed_loyalists(self):
         """We're actually committing to battle, right?"""
@@ -441,9 +480,131 @@ class TestBattle(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 0)
 
+    def test_simple_resolve(self):
+        """Easy battle resolution"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1.react(self.bob, 9)                        # --Attack 9
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.vp, 9)
+
+    def test_failed_attack(self):
+        """Stopping an attack should award VP to the ambushers"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1.react(self.bob, 19)                       # --Attack 19
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.vp, 10)
+
+    def test_supply_ambush(self):
+        """Taking out a 'support' should not escalate further"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)
+        s2 = s1.react(self.alice, 1, hinder=False)
+        s2.react(self.bob, 100)  # OVERKILL!
+
+        # Alice still wins, though - the giant 99 margin attack is just to stop
+        # reinforcements
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+
+    def test_complex_resolve_cancel(self):
+        """Multilayer battle resolution that cancels itself out"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)  # Attack 1
+        s2 = s1.react(self.alice, 1, hinder=False)  # --Support 1
+        s2.react(self.bob, 10)                      # ----Attack 10
+        s3 = s1.react(self.bob, 10)                 # --Attack 10
+        s3.react(self.alice, 10)                    # ----Attack 10
+
+        # Make sure the leaves cancel correctly
+        s2result = s2.resolve()
+        self.assert_(s2result)
+        self.assertEqual(s2result.victor, self.bob.team)
+
+        s3result = s3.resolve()
+        self.assert_(s3result)
+        self.assertEqual(s3result.victor, None)
+
+        # All the supports and attacks cancel each other out, winner should
+        # be alice by 1
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 1)
+        # s2 has 1 die, s2react has 1 die, s3 has 10 die, s3react has 10 die
+        # total = 11 each; 22 because alice ends up unopposed
+        self.assertEqual(result.vp, 22)
+
+    def test_additive_support(self):
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
+        s2 = s1.react(self.alice, 19, hinder=False)  # --Support 19
+        s2.react(self.alice, 1, hinder=False)        # ----Support 1
+        s3 = s1.react(self.bob, 20)                  # --Attack 20
+        s3.react(self.alice, 5)                      # ----Attack 5
+
+        # s2react's support adds 1 to its parent
+        # Alice gets 20 from support for total of 21, bob gets 15
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 6)
+
+    def test_additive_attacks(self):
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
+        s1.react(self.alice, 19, hinder=False)       # --Support 19
+        s3 = s1.react(self.bob, 20)                  # --Attack 20
+        s3.react(self.bob, 5, hinder=False)          # ----Support 5
+
+        # s3react's support adds 5 to its parent
+        # Alice gets 20 support total, bob gets 25 attack
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 5)
+
+    def test_complex_resolve_bob(self):
+        """Multilayer battle resolution that ends with bob winning"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
+        s2 = s1.react(self.alice, 10, hinder=False)  # --Support 10
+        s2.react(self.bob, 1)                        # ----Attack 1
+        s3 = s1.react(self.bob, 20)                  # --Attack 20
+        s3.react(self.alice, 5)                      # ----Attack 5
+
+        # Alice will win 9 support from her support,
+        # but bob will gain 15 attack from his attack
+        # Final score: alice 10 vs bob 15
+        # Winner:  Bob by 5
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 5)
+
+        # s2 has 1 die, s2react has 1 die, s3 has 5 die, s3react has 5 die
+        # final battle has 10 die on each side
+        # alice: 5 + 1 + 10, bob: 5 + 1 + 10
+        self.assertEqual(result.vp, 16)
+
+        # TODO: Alice should be down 16 people
+        #self.assertEqual(soldiers - 16, self.alice.loyalists)
+
     def test_full_battle(self):
         """Full battle"""
         battle = self.battle
+        sess = self.sess
+
+        oldowner = self.sapphire.owner
+
         # Battle should be ready, but not started
         self.assert_(battle.is_ready())
         self.assertFalse(battle.has_started())
@@ -451,6 +612,43 @@ class TestBattle(ChromaTest):
         # Let's get a party started
         battle.submission_id = "TEST"
         self.assert_(battle.has_started())
+
+        # Still going, right?
+        self.assertFalse(battle.past_end_time())
+
+        # Skirmish 1
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1a = s1.react(self.carol, 3, hinder=False)  # --Support 3
+        s1a.react(self.bob, 3)                       # ----Attack 3
+        s1.react(self.dave, 8)                       # --Attack 8
+        # Winner will be team orangered, 11 VP
+
+        # Skirmish 2
+        battle.create_skirmish(self.bob, 15)         # Attack 15
+        # Winner will be team periwinkle, 30 VP for unopposed
+
+        # Skirmish 3
+        s3 = battle.create_skirmish(self.carol, 10)  # Attack 10
+        s3.react(self.bob, 5)                        # --Attack 5
+        # Winner will be team orangered, 5 VP
+        # Overall winner should be team periwinkle, 30 to 16
+
+        # End this bad boy
+        self.battle.ends = 0
+        sess.commit()
+        self.assert_(battle.past_end_time())
+
+        updates = Battle.update_all(sess)
+        sess.commit()
+
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], battle)
+        self.assertEqual(battle.victor, 1)
+        self.assertEqual(battle.score0, 16)
+        self.assertEqual(battle.score1, 30)
+
+        self.assertNotEqual(oldowner, battle.region.owner)
+        self.assertEqual(battle.region.owner, 1)
 
 if __name__ == '__main__':
     unittest.main()
