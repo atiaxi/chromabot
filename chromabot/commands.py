@@ -124,6 +124,10 @@ class MoveCommand(Command):
                         "you must see this through to the bitter end."
                         ) % (ipe.other.get_battle().region.markdown()))
                 return
+            except db.TeamException:
+                context.reply(("%s is not friendly territory - invade first "
+                               "if you want to go there") % self.where)
+                return
             if order:
                 context.comment.reply((
                     "**Confirmed**: You are leading %d of your people to %s. "

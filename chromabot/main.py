@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import time
 from pprint import pprint
 
 import praw
@@ -25,9 +26,10 @@ class Bot(object):
         session = self.db.session()
         battles = session.query(Battle).all()
         for battle in battles:
-            post = self.reddit.get_submission(
-                submission_id=name_to_id(battle.submission_id))
-            self.process_post_for_battle(post, battle, session)
+            if battle.has_started():
+                post = self.reddit.get_submission(
+                    submission_id=name_to_id(battle.submission_id))
+                self.process_post_for_battle(post, battle, session)
 
     def check_hq(self):
         hq = self.reddit.get_subreddit(self.config.headquarters)
@@ -44,8 +46,6 @@ class Bot(object):
         for comment in unread:
             # Only PMs, we deal with comment replies in process_post_for_battle
             if not comment.was_comment:
-                logging.info("Checking PM: %s" % comment.body)
-
                 player = self.find_player(comment, session)
                 if player:
                     context = Context(player, self.config, session,
@@ -129,13 +129,15 @@ class Bot(object):
 
                 comment.reply(reply)
             else:
-                logging.info("Already registered %s", comment.author.name)
+                #logging.info("Already registered %s", comment.author.name)
+                pass
 
     def update_game(self):
         session = self.db.session()
         MarchingOrder.update_all(session)
         results = Battle.update_all(session)
         for ready in results['begin']:
+            ready.ends = ready.begins + self.config["game"]["battle_time"]
             title = "[Battle] The invaders have arrived!"
             text = ("War is now at your doorstep!  Mobilize your armies!\n\n"
                     "    Enter your commands in this thread")
@@ -144,18 +146,41 @@ class Bot(object):
                                            text=text)
             ready.submission_id = submitted.name
             session.commit()
+        for done in results['ended']:
+            report = ["The battle is complete...\n"]
+            for skirmish in done.skirmishes:
+                report.append(skirmish.report())
+
+            report.append("")
+            report.append(("## Final Score:  Team Orangered: %d "
+                           "Team Periwinkle: %d") % (done.score0, done.score1))
+            if done.victor:
+                report.append("# The Victor:  Team %s" %
+                              num_to_team(done.victor))
+            else:
+                report.append("# TIE")
+
+            text = "\n".join(report)
+            post = self.reddit.get_submission(
+                submission_id=name_to_id(done.submission_id))
+            post.edit(text)
+
+            session.delete(done)
+            session.commit()
 
     def run(self):
         logging.info("Bot started up")
-        logging.info("Checking headquarters")
-        #self.check_hq()
-        logging.info("Checking Messages")
-        self.check_messages()
-        logging.info("Checking Battles")
-        self.check_battles()
-        logging.info("Updating game state")
-        self.update_game()
-        # TODO: Sleep
+        while(True):
+            logging.info("Checking headquarters")
+            self.check_hq()
+            logging.info("Checking Messages")
+            self.check_messages()
+            logging.info("Checking Battles")
+            self.check_battles()
+            logging.info("Updating game state")
+            self.update_game()
+            logging.info("Sleeping")
+            time.sleep(self.config["bot"]["sleep"])
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

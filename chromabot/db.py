@@ -8,6 +8,8 @@ from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
+from utils import num_to_team
+
 
 # Some helpful model exceptions
 
@@ -508,6 +510,18 @@ class SkirmishAction(Base):
 
         self.session().commit()
         return self
+
+    def report(self):
+        preamble = "*  Skirmish #%d - the victor is "
+        if self.victor is None:
+            vstr = None
+            postamble = ""
+        else:
+            vstr = num_to_team(self.victor)
+            postamble = " by %d for **%d VP**" % (self.margin, self.vp)
+        result = (("%s **%s** %s") %
+                  (preamble, self.id, vstr, postamble))
+        return result
 
     def commit_if_valid(self):
         self.validate()
