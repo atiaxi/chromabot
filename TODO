@@ -2,7 +2,6 @@
 * After battle, move losers somewhere
 * Implement archers/infantry/cavalry
 * Pick up / drop off loyalists
-* Add 'oppose' as synonym for 'attack'
 * Add cascades to 'battle' model to de-clutter db
 * Feedback as to what skirmishes are what (after-action report mentions
   numbers but there's no indication as to what they mean)

@@ -8,8 +8,9 @@ subreddit = Suppress("/r/") + Word(alphanums + "_-")
 location = string | subreddit | Word(alphanums + "_-")
 
 attack = Keyword("attack")
+oppose = Keyword("oppose")
 support = Keyword("support")
-participate = attack | support
+participate = attack | oppose | support
 skirmishcmd = participate("action") + Suppress("with") + number("amount")
 skirmishcmd.setParseAction(SkirmishCommand)
 

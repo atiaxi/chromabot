@@ -64,6 +64,21 @@ class TestBattle(unittest.TestCase):
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
 
+    def test_support(self):
+        src = "support with 30"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "support")
+        self.assertEqual(parsed.amount, 30)
+
+    def test_oppose(self):
+        src = "oppose with 30"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+
 
 class TestStatus(unittest.TestCase):
     def testStatusCommand(self):

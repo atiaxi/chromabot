@@ -178,6 +178,8 @@ class StatusCommand(Command):
 class SkirmishCommand(Command):
     def __init__(self, tokens):
         self.action = tokens['action']
+        if self.action == 'oppose':  # Clearer-sounding synonym for 'attack'
+            self.action = 'attack'
         self.amount = int(tokens['amount'])
 
     def execute(self, context):
