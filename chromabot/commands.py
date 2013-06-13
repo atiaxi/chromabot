@@ -181,6 +181,9 @@ class SkirmishCommand(Command):
         if self.action == 'oppose':  # Clearer-sounding synonym for 'attack'
             self.action = 'attack'
         self.amount = int(tokens['amount'])
+        self.troop_type = 'infantry'
+        if 'troop_type' in tokens:
+            self.troop_type = tokens['troop_type']
 
     def execute(self, context):
         # getattr wackiness because real comments not gotten from inbox don't
@@ -201,7 +204,8 @@ class SkirmishCommand(Command):
 
         try:
             if post_id == context.comment.parent_id:
-                skirmish = current.create_skirmish(context.player, self.amount)
+                skirmish = current.create_skirmish(context.player, self.amount,
+                                                   troop_type=self.troop_type)
             else:
                 parent = context.session.query(SkirmishAction).filter_by(
                     comment_id=context.comment.parent_id).first()
@@ -211,13 +215,16 @@ class SkirmishCommand(Command):
                     return
                 hinder = self.action == 'attack'
                 skirmish = parent.react(context.player, self.amount,
-                                        hinder=hinder)
+                                        hinder=hinder,
+                                        troop_type=self.troop_type)
             total = context.player.committed_loyalists
             context.reply(("**Confirmed**: You have committed %d of your "
-                "forces to **Skirmish #%d**.\n\n(As of now, you have "
-                "committed %d total)") % (skirmish.amount,
-                                          skirmish.get_root().id,
-                                          total))
+                "forces as **%s** to **Skirmish #%d**.\n\n(As of now, you "
+                "have committed %d total)") %
+                          (skirmish.amount,
+                           skirmish.troop_type,
+                           skirmish.get_root().id,
+                           total))
 
             skirmish.comment_id = context.comment.name
             context.session.commit()

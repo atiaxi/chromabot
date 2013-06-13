@@ -63,6 +63,23 @@ class TestBattle(unittest.TestCase):
         self.assertIsInstance(parsed, SkirmishCommand)
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "infantry")
+
+    def test_attack_with_type(self):
+        src = "attack with 30 ranged"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "ranged")
+
+    def test_attack_with_bad_type(self):
+        src = "attack with 30 muppet"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "infantry")
 
     def test_support(self):
         src = "support with 30"
