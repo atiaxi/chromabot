@@ -3,5 +3,4 @@
 * Implement archers/infantry/cavalry
 * Pick up / drop off loyalists
 * Add cascades to 'battle' model to de-clutter db
-* Feedback as to what skirmishes are what (after-action report mentions
-  numbers but there's no indication as to what they mean)
+

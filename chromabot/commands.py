@@ -214,8 +214,10 @@ class SkirmishCommand(Command):
                                         hinder=hinder)
             total = context.player.committed_loyalists
             context.reply(("**Confirmed**: You have committed %d of your "
-                "forces to this battle.\n\n(As of now, you have "
-                "committed %d total)") % (skirmish.amount, total))
+                "forces to **Skirmish #%d**.\n\n(As of now, you have "
+                "committed %d total)") % (skirmish.amount,
+                                          skirmish.get_root().id,
+                                          total))
 
             skirmish.comment_id = context.comment.name
             context.session.commit()
