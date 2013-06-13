@@ -18,7 +18,8 @@ invadecmd = invade + location("where")
 invadecmd.setParseAction(InvadeCommand)
 
 move = Keyword("lead")
-movecmd = move + number("amount") + Suppress("to") + location("where")
+movecmd = (move + Optional(number("amount") | Keyword("all")) +
+           Suppress("to") + location("where"))
 movecmd.setParseAction(MoveCommand)
 
 statuscmd = Keyword("status")

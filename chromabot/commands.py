@@ -87,13 +87,20 @@ class InvadeCommand(Command):
 
 class MoveCommand(Command):
     def __init__(self, tokens):
-        self.amount = int(tokens["amount"])
+        if "amount" in tokens:
+            self.amount = int(tokens["amount"])
+        else:
+            self.amount = -1
         self.where = tokens["where"].lower()
 
     def execute(self, context):
         dest = self.get_region(self.where, context)
         if dest:
             order = None
+
+            if self.amount == -1:  # -1 means 'everyone'
+                self.amount = context.player.loyalists
+
             try:
                 speed = context.config["game"]["speed"]
                 hundred_followers = self.amount / 100

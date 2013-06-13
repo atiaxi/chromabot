@@ -31,6 +31,22 @@ class TestMovement(unittest.TestCase):
         self.assertEqual(10, parsed.amount)
         self.assertEqual(parsed.where, "hurfendurf")
 
+    def test_move_all(self):
+        src = "lead all to hurfendurf"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(-1, parsed.amount)
+        self.assertEqual(parsed.where, "hurfendurf")
+
+    def test_move_implied_all(self):
+        src = "lead to hurfendurf"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(-1, parsed.amount)
+        self.assertEqual(parsed.where, "hurfendurf")
+
 
 class TestBattle(unittest.TestCase):
 
