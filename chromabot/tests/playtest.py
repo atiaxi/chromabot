@@ -383,6 +383,26 @@ class TestBattle(ChromaTest):
         self.battle.create_skirmish(self.alice, 5)
         self.assertEqual(old + 5, self.alice.committed_loyalists)
 
+    def test_decommit_after_battle(self):
+        """When the battle's over, we no longer commit, right?"""
+        sess = self.sess
+        self.battle.submission_id = "TEST"  # So update_all will work correctly
+
+        old = self.alice.committed_loyalists
+        self.battle.create_skirmish(self.alice, 5)
+
+        # And just like that, the battle's over
+        self.battle.ends = 0
+        sess.commit()
+
+        updates = Battle.update_all(sess)
+        sess.commit()
+
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], self.battle)
+
+        self.assertEqual(self.alice.committed_loyalists, old)
+
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)

@@ -363,6 +363,9 @@ class Battle(Base):
         now = time.mktime(time.localtime())
         return now >= self.begins
 
+    def participants(self):
+        return {skirmish.participant for skirmish in self.skirmishes}
+
     def past_end_time(self):
         now = time.mktime(time.localtime())
         return now >= self.ends
@@ -385,6 +388,10 @@ class Battle(Base):
         # The new owner of wherever this battle happened is the victor
         if self.victor:
             self.region.owner = self.victor
+
+        # Un-commit all the loyalists for this fight
+        for participant in self.participants():
+            participant.committed_loyalists = 0
 
         self.session().commit()
 
