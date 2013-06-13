@@ -344,9 +344,10 @@ class Battle(Base):
     def ends_str(self):
         return self.timestr(self.ends)
 
-    def create_skirmish(self, who, howmany):
+    def create_skirmish(self, who, howmany, troop_type='infantry'):
         sess = self.session()
-        sa = SkirmishAction.create(sess, who, howmany, battle=self)
+        sa = SkirmishAction.create(sess, who, howmany, battle=self,
+                                   troop_type=troop_type)
         sess.commit()
         return sa
 
@@ -413,6 +414,7 @@ class SkirmishAction(Base):
     comment_id = Column(String)
     amount = Column(Integer, default=0)
     hinder = Column(Boolean, default=True)
+    troop_type = Column(String, default='infantry')
 
     victor = Column(Integer)
     vp = Column(Integer)
@@ -430,15 +432,30 @@ class SkirmishAction(Base):
                             backref=backref('parent', remote_side=[id]))
 
     @classmethod
-    def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None):
+    def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
+               troop_type='infantry'):
         sa = SkirmishAction(participant=who,
                             amount=howmany,
                             hinder=hinder,
                             parent=parent,
-                            battle=battle)
+                            battle=battle,
+                            troop_type=troop_type)
         sa.commit_if_valid()
 
         return sa
+
+    def adjusted_for_type(self, other_type, amount):
+        """Certain types will be more effective vs. this skirmish"""
+        ordering = ["ranged", "infantry", "cavalry"]
+        our_index = ordering.index(self.troop_type)
+        penalty = ordering[our_index - 1]
+        bonus = ordering[(our_index + 1) % len(ordering)]
+        result = amount
+        if other_type == penalty:
+            result = int(amount / 2)
+        elif other_type == bonus:
+            result = int(amount * 1.5)
+        return result
 
     def get_battle(self):
         """
@@ -459,9 +476,10 @@ class SkirmishAction(Base):
         else:
             return self
 
-    def react(self, who, howmany, hinder=True):
+    def react(self, who, howmany, hinder=True, troop_type='infantry'):
         sess = self.session()
-        sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self)
+        sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self,
+                                   troop_type=troop_type)
 
         return sa
 
@@ -477,7 +495,9 @@ class SkirmishAction(Base):
             supporters = [child.resolve() for child in self.children
                           if child.hinder == False]
             support = self.amount
+            raw_support = support
             attack = 0
+            raw_attack = attack
             for supporter in supporters:
                 self.vp += supporter.vp
                 if supporter.victor == self.participant.team:
@@ -492,10 +512,10 @@ class SkirmishAction(Base):
                 self.vp += attacker.vp
                 if attacker.victor != self.participant.team:
                     # Attackers only count if they weren't beaten by our team
-                    attack += attacker.margin
-
-            inflicted = min(attack, support)
-            self.vp += inflicted
+                    amount = attacker.margin
+                    raw_attack += amount
+                    attack += self.adjusted_for_type(attacker.troop_type,
+                                                     amount)
 
             self.unopposed = attack == 0
 
@@ -503,14 +523,17 @@ class SkirmishAction(Base):
                 # This skirmish loses!
                 self.margin = attack - support
                 self.victor = [1, 0][self.participant.team]
+                self.vp += support
             elif(support > attack):
                 # This skirmish wins!
                 self.margin = support - attack
                 self.victor = self.participant.team
+                self.vp += raw_attack
             else:
                 # Nobody is the winner, but this skirmish is sure the loser
                 self.victor = None
                 self.margin = 0
+                self.vp += max(raw_attack, support)
         # Unopposed root nodes are worth 2x VP
         if not self.parent and self.unopposed:
             self.vp = max(self.vp * 2, self.amount * 2)

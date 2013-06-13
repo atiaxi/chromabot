@@ -615,6 +615,70 @@ class TestBattle(ChromaTest):
         # alice: 5 + 1 + 10, bob: 5 + 1 + 10
         self.assertEqual(result.vp, 16)
 
+    def test_attack_types(self):
+        """Using the right type of attack can boost its effectiveness"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
+        s1.react(self.bob, 8, troop_type='cavalry')  # --Attack 8 cavalry
+
+        # Cavalry should get a 50% bonus here, for a total of 8+4=12
+        # So Bob should win by 2 despite lesser numbers
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.vp, 10)
+
+        s2 = battle.create_skirmish(self.bob, 10,
+                                    troop_type='cavalry')  # attack 10 cavalry
+        s2.react(self.alice, 8, troop_type='ranged')       # -- oppose 8 ranged
+        result = s2.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.vp, 10)
+
+        s3 = battle.create_skirmish(self.carol, 10,      # Attack 10 ranged
+                                    troop_type='ranged')
+        s3.react(self.bob, 8)                            # -- oppose 8 infantry
+        result = s3.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.vp, 10)
+
+    def test_bad_attack_types(self):
+        """Using the wrong type of attack can hinder its effectiveness"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
+        s1.react(self.bob, 12, troop_type='ranged')  # --Attack 12 ranged
+
+        # Ranged should get a 50% penalty here, for a total of 12/2 = 6
+        # So Alice should win by 4 despite lesser numbers
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 12)
+
+        s2 = battle.create_skirmish(self.bob, 10,        # attack 10 ranged
+                                    troop_type='ranged')
+        s2.react(self.alice, 12, troop_type='cavalry')   # -- oppose 12 cavalry
+        result = s2.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 12)
+
+        s3 = battle.create_skirmish(self.carol, 10,     # Attack 10 cavalry
+                                    troop_type='cavalry')
+        s3.react(self.bob, 12)                          # -- oppose 12 infantry
+        result = s3.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.carol.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 12)
+
     def test_full_battle(self):
         """Full battle"""
         battle = self.battle
