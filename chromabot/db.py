@@ -455,9 +455,12 @@ class SkirmishAction(Base):
 
         return sa
 
-    def adjusted_for_type(self, other_type, amount):
+    def adjusted_for_type(self, other_type, amount, support=False):
         """Certain types will be more effective vs. this skirmish"""
-        ordering = ["ranged", "infantry", "cavalry"]
+        if support:
+            ordering = ["cavalry", "infantry", "ranged"]
+        else:
+            ordering = ["ranged", "infantry", "cavalry"]
         our_index = ordering.index(self.troop_type)
         penalty = ordering[our_index - 1]
         bonus = ordering[(our_index + 1) % len(ordering)]
@@ -513,7 +516,11 @@ class SkirmishAction(Base):
                 self.vp += supporter.vp
                 if supporter.victor == self.participant.team:
                     # Support only counts if it didn't get ambushed on the way
-                    support += supporter.margin
+                    amount = supporter.margin
+                    raw_support += amount
+                    support += self.adjusted_for_type(supporter.troop_type,
+                                                      amount,
+                                                      support=True)
                 # If the attackers overtook this support, we do nothing;
                 # attacks don't carry beyond their immediate target
 
@@ -534,7 +541,7 @@ class SkirmishAction(Base):
                 # This skirmish loses!
                 self.margin = attack - support
                 self.victor = [1, 0][self.participant.team]
-                self.vp += support
+                self.vp += raw_support
             elif(support > attack):
                 # This skirmish wins!
                 self.margin = support - attack

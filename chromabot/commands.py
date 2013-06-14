@@ -3,7 +3,7 @@ import time
 
 import db
 from db import Battle, Region, SkirmishAction
-from utils import num_to_team, name_to_id
+from utils import num_to_team
 
 
 class Context(object):

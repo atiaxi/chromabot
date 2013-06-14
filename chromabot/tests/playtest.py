@@ -725,6 +725,87 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.margin, 4)
         self.assertEqual(result.vp, 12)
 
+    def test_support_types(self):
+        battle = self.battle
+
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
+        s1.react(self.bob, 19)                       # -- oppose 19 infantry
+        s1.react(self.alice, 8,                      # -- support 8 ranged
+                 troop_type="ranged", hinder=False)
+        # Ranged should get a 50% support bonus here, for a total of
+        # 10 + 8 + 4 = 22 - alice should win by 3
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 3)
+        self.assertEqual(result.vp, 19)
+
+        s2 = battle.create_skirmish(self.bob, 10,
+                troop_type="ranged")                 # Attack 10 ranged
+        s2.react(self.alice, 19,
+                 troop_type="ranged")                # -- oppose 19 ranged
+        s2.react(self.bob, 8,                        # -- support 8 cavalry
+                 troop_type="cavalry", hinder=False)
+
+        result = s2.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 3)
+        self.assertEqual(result.vp, 19)
+
+        s3 = battle.create_skirmish(self.carol, 10,
+                troop_type="cavalry")                 # Attack 10 cavalry
+        s3.react(self.bob, 19,
+                 troop_type="cavalry")                # -- oppose 19 cavalry
+        s3.react(self.carol, 8, hinder=False)           # -- support 8 infantry
+
+        result = s3.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.carol.team)
+        self.assertEqual(result.margin, 3)
+        self.assertEqual(result.vp, 19)
+
+    def test_bad_support_types(self):
+        battle = self.battle
+
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
+        s1.react(self.bob, 19)                       # -- oppose 19 infantry
+        s1.react(self.alice, 10,                     # -- support 10 cavalry
+                 troop_type="cavalry", hinder=False)
+        # Cavalry should get a 50% support penalty here, for a total of
+        # 10 + 5 = 15 - bob should win by 4
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 20)
+
+        s2 = battle.create_skirmish(self.bob, 10,
+                troop_type="ranged")                 # Attack 10 ranged
+        s2.react(self.alice, 19,
+                 troop_type="ranged")                # -- oppose 19 ranged
+        s2.react(self.bob, 10, hinder=False)         # -- support 10 infantry
+
+        result = s2.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 20)
+
+        s3 = battle.create_skirmish(self.carol, 10,
+                troop_type="cavalry")                 # Attack 10 cavalry
+        s3.react(self.bob, 19,
+                 troop_type="cavalry")                # -- oppose 19 cavalry
+        s3.react(self.carol, 10,
+                 troop_type="ranged",
+                 hinder=False)                        # -- support 10 ranged
+
+        result = s3.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 20)
+
     def test_orangered_victory(self):
         """Make sure orangered victories actually count"""
         self.assertEqual(None, self.sapphire.owner)
