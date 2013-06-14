@@ -403,6 +403,28 @@ class TestBattle(ChromaTest):
 
         self.assertEqual(self.alice.committed_loyalists, old)
 
+    def test_ejection_after_battle(self):
+        """We don't want the losers sticking around after the fight"""
+        self.battle.submission_id = "TEST"  # So update_all will work correctly
+
+        old_bob_region = self.bob.region
+        old_alice_region = self.alice.region
+        self.battle.create_skirmish(self.alice, 5)
+
+        self.battle.ends = 0
+        self.sess.commit()
+
+        updates = Battle.update_all(self.sess)
+        self.sess.commit()
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], self.battle)
+
+        self.assertEqual(self.battle.victor, self.alice.team)
+
+        self.assertNotEqual(self.bob.region, self.alice.region)
+        self.assertNotEqual(self.bob.region, old_bob_region)
+        self.assertEqual(self.alice.region, old_alice_region)
+
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)

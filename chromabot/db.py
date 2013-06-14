@@ -390,9 +390,15 @@ class Battle(Base):
         if self.victor:
             self.region.owner = self.victor
 
-        # Un-commit all the loyalists for this fight
-        for participant in self.participants():
-            participant.committed_loyalists = 0
+        # Un-commit all the loyalists for this fight, kick out the losers
+        losercap = None
+        for person in self.region.people:
+            person.committed_loyalists = 0
+            if person.team != self.victor:
+                if not losercap:
+                    losercap = Region.capital_for(person.team,
+                                                  self.session())
+                person.region = losercap
 
         self.session().commit()
 
