@@ -156,6 +156,14 @@ class StatusCommand(Command):
         status = self.status_for(context)
         context.comment.reply(status)
 
+    def lands_status(self, context):
+        regions = context.session.query(Region).all()
+        fmt = "* **%s**:  %s"
+        result = [fmt % (region.markdown(), num_to_team(region.owner))
+                  for region in regions]
+        lands = "\n".join(result)
+        return "State of Chroma:\n\n" + lands
+
     def status_for(self, context):
         found = context.player
 
@@ -171,8 +179,9 @@ class StatusCommand(Command):
         result = ("You are a %s in the %s army.\n\n"
                   "Your forces number %d loyalists strong.\n\n"
                   "%s")
-        return result % (found.rank, num_to_team(found.team), found.loyalists,
-                         forces)
+        personal = result % (found.rank, num_to_team(found.team),
+                             found.loyalists, forces)
+        return personal + "\n\n" + self.lands_status(context)
 
 
 class SkirmishCommand(Command):
