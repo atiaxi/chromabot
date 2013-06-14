@@ -35,8 +35,8 @@ class Bot(object):
         submissions = hq.get_new()
         for submission in submissions:
             if "[Recruitment]" in submission.title:
-                #pprint(submission.comments)
                 self.recruit_from_post(submission)
+                break  # Only recruit from the first one
 
     def check_messages(self):
         unread = reddit.get_unread(True, True)
