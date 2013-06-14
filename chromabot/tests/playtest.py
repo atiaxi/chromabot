@@ -725,6 +725,22 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.margin, 4)
         self.assertEqual(result.vp, 12)
 
+    def test_orangered_victory(self):
+        """Make sure orangered victories actually count"""
+        self.assertEqual(None, self.sapphire.owner)
+        sess = self.sess
+        self.battle.submission_id = "TEST"
+        self.battle.create_skirmish(self.alice, 5)
+
+        self.battle.ends = 0
+        sess.commit()
+        updates = Battle.update_all(sess)
+        sess.commit()
+
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], self.battle)
+        self.assertEqual(0, self.sapphire.owner)
+
     def test_full_battle(self):
         """Full battle"""
         battle = self.battle

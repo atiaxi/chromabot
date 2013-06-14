@@ -387,7 +387,7 @@ class Battle(Base):
             self.victor = None
 
         # The new owner of wherever this battle happened is the victor
-        if self.victor:
+        if self.victor is not None:
             self.region.owner = self.victor
 
         # Un-commit all the loyalists for this fight, kick out the losers

@@ -139,8 +139,10 @@ class Bot(object):
         for ready in results['begin']:
             ready.ends = ready.begins + self.config["game"]["battle_time"]
             title = "[Battle] The invaders have arrived!"
-            text = ("War is now at your doorstep!  Mobilize your armies!\n\n"
-                    "    Enter your commands in this thread")
+            text = ("War is now at your doorstep!  Mobilize your armies! "
+                    "The battle has begun now, and will end at %s.\n\n"
+                    "> Enter your commands in this thread, prefixed with "
+                    "'>'") % ready.ends_str()
             submitted = self.reddit.submit(ready.region.srname,
                                            title=title,
                                            text=text)
