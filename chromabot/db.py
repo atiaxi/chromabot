@@ -410,7 +410,9 @@ class Processed(Base):
     id36 = Column(String)
 
     battle_id = Column(Integer, ForeignKey('battles.id'))
-    battle = relationship("Battle", backref="processed_comments")
+    battle = relationship("Battle",
+                          backref=backref("processed_comments",
+                                          cascade="all, delete"))
 
 
 class SkirmishAction(Base):
@@ -428,14 +430,17 @@ class SkirmishAction(Base):
     unopposed = Column(Boolean, default=False)
 
     battle_id = Column(Integer, ForeignKey('battles.id'))
-    battle = relationship("Battle", backref="skirmishes")
+    battle = relationship("Battle",
+                          backref=backref("skirmishes",
+                                          cascade="all, delete"))
 
     participant_id = Column(Integer, ForeignKey('users.id'))
     participant = relationship("User", backref="skirmishes")
 
     parent_id = Column(Integer, ForeignKey('skirmish_actions.id'))
     children = relationship("SkirmishAction",
-                            backref=backref('parent', remote_side=[id]))
+        backref=backref('parent', remote_side=[id],
+                        cascade="all, delete"))
 
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
@@ -485,7 +490,7 @@ class SkirmishAction(Base):
     def react(self, who, howmany, hinder=True, troop_type='infantry'):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self,
-                                   troop_type=troop_type)
+                                   troop_type=troop_type, battle=self.battle)
 
         return sa
 

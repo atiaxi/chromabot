@@ -3,7 +3,8 @@ import time
 import unittest
 
 import db
-from db import (DB, Battle, Region, MarchingOrder, SkirmishAction, User)
+from db import (DB, Battle, Region, MarchingOrder, Processed, SkirmishAction,
+                User)
 
 
 TEST_LANDS = """
@@ -329,12 +330,35 @@ class TestBattle(ChromaTest):
 
         s3 = s2.react(self.alice, 1)
 
-        self.assertEqual(len(battle.skirmishes), 2)
+        self.assertEqual(len(battle.skirmishes), 3)
         self.assertIn(s1, battle.skirmishes)
         self.assertIn(s2, battle.skirmishes)
-        self.assertNotIn(s3, battle.skirmishes)
+        # s3 should inherit its battle from its parents
+        self.assertIn(s3, battle.skirmishes)
 
         self.assertEqual(s1.battle, battle)
+
+    def test_proper_cascade(self):
+        """When a battle is deleted, everything should go with it"""
+        battle = self.battle
+
+        battle.create_skirmish(self.alice, 1)
+        s2 = battle.create_skirmish(self.bob, 1)
+        s2.react(self.alice, 1)
+
+        # Make up some processed comments
+        battle.processed_comments.append(Processed(id36="foo"))
+        battle.processed_comments.append(Processed(id36="bar"))
+        self.sess.commit()
+        self.assertNotEqual(self.sess.query(Processed).count(), 0)
+        self.assertNotEqual(self.sess.query(SkirmishAction).count(), 0)
+
+        self.sess.delete(battle)
+        self.sess.commit()
+
+        # Shouldn't be any skirmishes or processed
+        self.assertEqual(self.sess.query(Processed).count(), 0)
+        self.assertEqual(self.sess.query(SkirmishAction).count(), 0)
 
     def test_get_battle(self):
         """get_battle and get_root work, right?"""

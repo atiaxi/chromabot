@@ -1,4 +1,3 @@
 
-* After battle, move losers somewhere
 * Pick up / drop off loyalists
-* Add cascades to 'battle' model to de-clutter db
+* Initial battle announcement should show end time

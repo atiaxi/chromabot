@@ -154,7 +154,7 @@ class Bot(object):
             report.append("")
             report.append(("## Final Score:  Team Orangered: %d "
                            "Team Periwinkle: %d") % (done.score0, done.score1))
-            if done.victor:
+            if done.victor is not None:
                 report.append("\n# The Victor:  Team %s" %
                               num_to_team(done.victor))
             else:
