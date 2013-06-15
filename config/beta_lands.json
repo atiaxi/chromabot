@@ -1,0 +1,40 @@
+[
+    {
+        "name": "Periopolis",
+        "srname": "ct_periopolis",
+        "connections": ["Sapphire", "Snooland", "Aegis"],
+        "capital": 1
+    },
+    {
+        "name": "Sapphire",
+        "srname": "ct_sapphire",
+        "connections": ["Snooland", "Tentorahogo"]
+    },
+    {
+        "name": "Tentorahogo",
+        "srname": "ct_tentorahogo",
+        "connections": ["Snooland", "Oraistedarg"]
+    },
+    {
+        "name": "Snooland",
+        "srname": "ct_snooland",
+        "connections": ["Aegis", "Orange Londo", "Oraistedarg"]
+    },
+    {
+        "name": "Aegis",
+        "srname": "ct_aegis",
+        "connections": ["Orange Londo"]
+    },
+    {
+        "name": "Orange Londo",
+        "srname": "ct_orangelondo",
+        "connections": ["Oraistedarg"]
+    },
+    {
+        "name": "Oraistedarg",
+        "srname": "ct_oraistedarg",
+        "connections": [],
+        "capital": 0
+    }
+    
+]

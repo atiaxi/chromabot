@@ -15,8 +15,17 @@ from utils import *
 def all(cls, **kw):
     return query(cls, **kw).all()
 
+def all_as_dict(cls):
+    result = {}
+    for item in all(cls):
+        result[item.name] = item
+    return result
+
 def by_id(cls, id):
     return query(cls, id=id).first()
+
+def by_name(cls, name):
+    return query(cls, name=name).first()
 
 def commit():
     return sess.commit()
