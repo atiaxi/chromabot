@@ -23,4 +23,6 @@ def name_to_id(name):
 
 
 def num_to_team(number):
-    return ('Orangered', 'Periwinkle')[number]
+    if number is not None:
+        return ('Orangered', 'Periwinkle')[number]
+    return "Neutral"
