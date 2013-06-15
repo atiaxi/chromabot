@@ -55,6 +55,16 @@ class InvadeCommand(Command):
             now = time.mktime(time.localtime())
             begins = now + context.config["game"]["battle_delay"]
             battle = None
+
+            # TODO: Remove this after the beta weekend, put in something
+            #       saner on the backend
+            # For beta weekend, capitals can't be invaded
+            caps = context.session.query(Region).filter(
+                Region.capital.in_([0, 1]))
+            if dest in caps:
+                context.reply("Capital invasion is temporarily disabled")
+                return
+
             try:
                 battle = dest.invade(context.player, begins)
             except db.RankException:
