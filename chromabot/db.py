@@ -402,6 +402,9 @@ class Battle(Base):
 
         self.session().commit()
 
+    def __repr__(self):
+        return "<Battle(id='%s', region='%s'>" % (self.id, self.region)
+
 
 class Processed(Base):
     __tablename__ = "processed"
@@ -551,7 +554,7 @@ class SkirmishAction(Base):
                 # Nobody is the winner, but this skirmish is sure the loser
                 self.victor = None
                 self.margin = 0
-                self.vp += max(raw_attack, support)
+                self.vp += max(raw_attack, raw_support)
         # Unopposed root nodes are worth 2x VP
         if not self.parent and self.unopposed:
             self.vp = max(self.vp * 2, self.amount * 2)

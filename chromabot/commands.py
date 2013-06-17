@@ -56,15 +56,6 @@ class InvadeCommand(Command):
             begins = now + context.config["game"]["battle_delay"]
             battle = None
 
-            # TODO: Remove this after the beta weekend, put in something
-            #       saner on the backend
-            # For beta weekend, capitals can't be invaded
-            caps = context.session.query(Region).filter(
-                Region.capital.in_([0, 1]))
-            if dest in caps:
-                context.reply("Capital invasion is temporarily disabled")
-                return
-
             try:
                 battle = dest.invade(context.player, begins)
             except db.RankException:
@@ -239,11 +230,11 @@ class SkirmishCommand(Command):
             total = context.player.committed_loyalists
             context.reply(("**Confirmed**: You have committed %d of your "
                 "forces as **%s** to **Skirmish #%d**.\n\n(As of now, you "
-                "have committed %d total)") %
+                "have committed %d total)  **For %s!**") %
                           (skirmish.amount,
                            skirmish.troop_type,
                            skirmish.get_root().id,
-                           total))
+                           total, num_to_team(context.player.team)))
 
             skirmish.comment_id = context.comment.name
             context.session.commit()

@@ -21,6 +21,11 @@ def all_as_dict(cls):
         result[item.name] = item
     return result
 
+def battle_adopt(battle, postid):
+    battle.ends = battle.begins + 10800
+    battle.submission_id="t3_%s" % postid
+    sess.commit()
+
 def by_id(cls, id):
     return query(cls, id=id).first()
 
@@ -33,8 +38,18 @@ def commit():
 def first(cls, **kw):
     return query(cls, **kw).first()
 
+def now():
+    result = time.mktime(time.localtime())
+    return (result, timestr(result))
+
 def query(cls, **kw):
     return sess.query(cls).filter_by(**kw)
+
+def timestr(self, secs=None):
+    if secs is None:
+        secs = time.mktime(time.localtime())
+    return time.strftime("%Y-%m-%d %H:%M:%S GMT",
+                          time.gmtime(secs))
 
 def main():
     global sess

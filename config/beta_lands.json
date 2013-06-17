@@ -8,7 +8,8 @@
     {
         "name": "Sapphire",
         "srname": "ct_sapphire",
-        "connections": ["Snooland", "Tentorahogo"]
+        "connections": ["Snooland", "Tentorahogo"],
+        "owner": 1
     },
     {
         "name": "Tentorahogo",
@@ -28,7 +29,8 @@
     {
         "name": "Orange Londo",
         "srname": "ct_orangelondo",
-        "connections": ["Oraistedarg"]
+        "connections": ["Oraistedarg"],
+        "owner": 0
     },
     {
         "name": "Oraistedarg",

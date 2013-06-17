@@ -21,6 +21,13 @@ class Bot(object):
 
         reddit.login(c.username, c.password)
 
+    def attempt_post(self, srname, title, text):
+        try:
+            result = self.reddit.submit(srname, title=title, text=text)
+            return result
+        except praw.errors.APIException:
+            return None
+
     def check_battles(self):
         session = self.db.session()
         battles = session.query(Battle).all()
@@ -53,6 +60,7 @@ class Bot(object):
             comment.mark_as_read()
 
     def command(self, text, context):
+        text = text.lower()
         logging.info("Processing command: '%s' by %s" %
                      (text, context.player.name))
         try:
@@ -78,9 +86,13 @@ class Bot(object):
     def process_post_for_battle(self, post, battle, sess):
         p = sess.query(Processed).filter_by(battle=battle).all()
         seen = [entry.id36 for entry in p]
-        flat_comments = praw.helpers.flatten_tree(post.comments)
+
+        post.replace_more_comments()
+        flat_comments = praw.helpers.flatten_tree(
+            post.comments)
 
         for comment in flat_comments:
+
             if comment.name in seen:
                 continue
             if comment.author.name == self.config.username:
@@ -136,6 +148,7 @@ class Bot(object):
         session = self.db.session()
         MarchingOrder.update_all(session)
         results = Battle.update_all(session)
+
         for ready in results['begin']:
             ready.ends = ready.begins + self.config["game"]["battle_time"]
             title = "[Battle] The invaders have arrived!"
@@ -143,15 +156,20 @@ class Bot(object):
                     "The battle has begun now, and will end at %s.\n\n"
                     "> Enter your commands in this thread, prefixed with "
                     "'>'") % ready.ends_str()
-            submitted = self.reddit.submit(ready.region.srname,
-                                           title=title,
-                                           text=text)
-            ready.submission_id = submitted.name
-            session.commit()
+            submitted = self.attempt_post(ready.region.srname,
+                                          title=title,
+                                          text=text)
+            if submitted:
+                ready.submission_id = submitted.name
+                session.commit()
+            else:
+                logging.warn("Being rate limited!  Could not post battle")
+                session.rollback()
         for done in results['ended']:
             report = ["The battle is complete...\n"]
             for skirmish in done.skirmishes:
-                report.append(skirmish.report())
+                if skirmish.parent_id is None:
+                    report.append(skirmish.report())
 
             report.append("")
             report.append(("## Final Score:  Team Orangered: %d "
@@ -185,7 +203,7 @@ class Bot(object):
             time.sleep(self.config["bot"]["sleep"])
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     c = Config()
     reddit = c.praw()
 

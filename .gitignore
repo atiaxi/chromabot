@@ -2,6 +2,7 @@ config/config.json
 config/reddit.json
 praw.ini
 layout.txt
+exploits.txt
 .project
 .pydevproject
 *.db
