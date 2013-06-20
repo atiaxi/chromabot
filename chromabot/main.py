@@ -78,7 +78,7 @@ class Bot(object):
     def find_player(self, comment, session):
         player = session.query(User).filter_by(
         name=comment.author.name).first()
-        if not player and comment.was_comment:
+        if not player and getattr(comment, 'was_comment', None):
             comment.reply(Command.FAIL_NOT_PLAYER %
                               self.config.headquarters)
         return player
@@ -87,12 +87,11 @@ class Bot(object):
         p = sess.query(Processed).filter_by(battle=battle).all()
         seen = [entry.id36 for entry in p]
 
-        post.replace_more_comments()
+        post.replace_more_comments(threshold=0)
         flat_comments = praw.helpers.flatten_tree(
             post.comments)
 
         for comment in flat_comments:
-
             if comment.name in seen:
                 continue
             if comment.author.name == self.config.username:
@@ -203,7 +202,7 @@ class Bot(object):
             time.sleep(self.config["bot"]["sleep"])
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     c = Config()
     reddit = c.praw()
 
