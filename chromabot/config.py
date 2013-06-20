@@ -18,8 +18,7 @@ class Config(object):
             logging.error("Could not locate config file!")
             raise SystemExit
 
-        with open(self.conffile) as data_file:
-            self.data = json.load(data_file)
+        self.refresh()
 
     def __getitem__(self, key):
         return self.data[key]
@@ -36,6 +35,10 @@ class Config(object):
         ua = self.data["bot"]["useragent"]
         site = self.data["bot"].get('site')
         return praw.Reddit(user_agent=ua, site_name=site)
+
+    def refresh(self):
+        with open(self.conffile) as data_file:
+            self.data = json.load(data_file)
 
     # Useful properties follow
     @property

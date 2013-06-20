@@ -190,6 +190,7 @@ class Bot(object):
     def run(self):
         logging.info("Bot started up")
         while(True):
+            self.config.refresh()
             logging.info("Checking headquarters")
             self.check_hq()
             logging.info("Checking Messages")
