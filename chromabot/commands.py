@@ -3,7 +3,7 @@ import time
 
 import db
 from db import Battle, Region, SkirmishAction
-from utils import num_to_team
+from utils import now, num_to_team
 
 
 class Context(object):
@@ -58,6 +58,9 @@ class InvadeCommand(Command):
 
             try:
                 battle = dest.invade(context.player, begins)
+                if "battle_lockout" in context.config["game"]:
+                    battle.lockout = context.config["game"]["battle_lockout"]
+                    context.session.commit()
             except db.RankException:
                 context.reply("You don't have the authority "
                               "to invade a region!")
@@ -258,3 +261,6 @@ class SkirmishCommand(Command):
                                "(you have committed %d total)") %
                               (ie.requested,
                                context.player.committed_loyalists))
+        except db.TimingException:
+            context.reply(("Top-level attacks are disallowed in the last "
+                           "%d seconds of a battle") % current.lockout)

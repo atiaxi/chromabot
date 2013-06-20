@@ -8,7 +8,7 @@ from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
-from utils import num_to_team
+from utils import now, num_to_team
 
 
 # Some helpful model exceptions
@@ -53,6 +53,11 @@ class TeamException(Exception):
         else:
             msg = "%s is not friendly!" % what
         Exception.__init__(self, msg)
+
+
+class TimingException(Exception):
+    """Someone did something normally valid, but at the wrong time"""
+    pass
 
 
 class RankException(Exception):
@@ -319,6 +324,8 @@ class Battle(Base):
 
     region_id = Column(Integer, ForeignKey('regions.id'))
     region = relationship("Region", uselist=False, backref="battle")
+    
+    lockout = Column(Integer, default=0)
 
     @classmethod
     def update_all(cls, sess):
@@ -609,6 +616,14 @@ class SkirmishAction(Base):
             if s > 1:
                 sess.rollback()
                 raise InProgressException(s)
+
+            # If the battle has a lockout, make sure we're not past it
+            battle = self.get_battle()
+            lockout = getattr(battle, 'lockout', 0)
+            if lockout:
+                locktime = battle.ends - lockout
+                if now() >= locktime:
+                    raise TimingException()
 
         requested = self.amount + self.participant.committed_loyalists
         available = self.participant.loyalists

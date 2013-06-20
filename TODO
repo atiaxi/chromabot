@@ -8,8 +8,7 @@
   * to support/oppose bot's parent
 * "your armies are currently in..." message should mention if armies en route
 * Make sure that commands buried under 'more comments' are actually getting 
-  processed (they do not appear to be)
-  - See http://www.reddit.com/r/ct_aegis/comments/1gezje/battle_the_invaders_have_arrived/cajk83m 
+  processed (they appear to be now, but make sure) 
 * Implement 'defect' command so that people who are mistakenly sorted into
   the wrong team can fix that
 * Add committed forces to status
@@ -23,5 +22,4 @@
   terrotories and assings flairs when someone signs up on the recruitment
   thread)
 * pm telling you your army has arrived
-* Lock out toplevel attacks in the last X minutes of the battle
 * Dynamic reloading of config

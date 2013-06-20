@@ -460,6 +460,14 @@ class TestBattle(ChromaTest):
             filter_by(participant=self.alice)).count()
         self.assertEqual(n, 1)
 
+    def test_no_last_minute_ambush(self):
+        """
+        Can't make toplevel attacks within the last X seconds of the battle
+        """
+        self.battle.lockout = 60 * 60 * 24
+        with self.assertRaises(db.TimingException):
+            self.battle.create_skirmish(self.alice, 1)
+
     def test_commit_at_least_one(self):
         """It isn't a skirmish without fighters"""
         with self.assertRaises(db.InsufficientException):

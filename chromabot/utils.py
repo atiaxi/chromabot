@@ -1,4 +1,5 @@
 import re
+import time
 
 
 def base36decode(number):
@@ -21,6 +22,8 @@ def name_to_id(name):
         raise ValueError("Expected %s to be splittable!" % name)
     return results[1]
 
+def now():
+    return time.mktime(time.localtime())
 
 def num_to_team(number):
     if number is not None:

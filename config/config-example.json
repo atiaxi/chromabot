@@ -9,12 +9,13 @@
         "password": "PUT_PASSWORD_HERE",
         "useragent": "chromabot by /u/YOU",
         "site": "chroma-test",
-        "sleep": 10
+        "sleep": 60
     },
     
     "game": {
-        "speed": 30,
-        "battle_delay": 60,
-        "battle_time": 3600
+        "speed": 1200,
+        "battle_delay": 3600,
+        "battle_time": 10800,
+        "battle_lockout": 1800,
     }
 }
