@@ -1,9 +1,5 @@
 
 * Pick up / drop off loyalists
-* Figure out some way so that HQ checks aren't hitting about/.json all the
-  damn time.  Either less frequent HQ checks or making PRAW work right or
-  caching on my end.
-* Can we have the bot list multiple time zones in its declaration? 
 * Ability to reply to the bot:
   * to support/oppose bot's parent
 * "your armies are currently in..." message should mention if armies en route

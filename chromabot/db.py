@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from urllib import quote_plus
 
 from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, String, Table)
@@ -76,8 +77,12 @@ class Model(object):
     def timestr(self, secs=None):
         if secs is None:
             secs = time.mktime(time.localtime())
-        return time.strftime("%Y-%m-%d %H:%M:%S GMT",
-                              time.gmtime(secs))
+
+        timeresult = time.gmtime(secs)
+        timestresult = time.strftime("%Y-%m-%d %H:%M:%S GMT", timeresult)
+        url = ("http://www.wolframalpha.com/input/?i=%s+in+local+time" %
+               quote_plus(timestresult))
+        return "[%s](%s)" % (timestresult, url)
 
 Base = declarative_base(cls=Model)
 
