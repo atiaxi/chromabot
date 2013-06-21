@@ -110,14 +110,16 @@ class Bot(object):
         flat_comments = praw.helpers.flatten_tree(post.comments)
         session = self.db.session()
         for comment in flat_comments:
-            if comment.author.name == self.config.username:
+            name = comment.author.name
+            if name == self.config.username:
                 continue
-            base10_id = base36decode(comment.author.id)
+
             # Is this author already one of us?
             found = session.query(User).filter_by(
-                name=comment.author.name).first()
+                name=name).first()
             if not found:
-                newbie = User(name=comment.author.name,
+                base10_id = base36decode(comment.author.id)
+                newbie = User(name=name,
                               team=base10_id % 2,
                               loyalists=100,
                               leader=True)
