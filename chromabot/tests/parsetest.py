@@ -143,5 +143,20 @@ class TestCommandExtraction(unittest.TestCase):
         self.goodparse(text)
 
 
+class TestDefection(unittest.TestCase):
+    def test_basic_defect(self):
+        text = "defect"
+        parsed = parse(text)
+
+        self.assertIsInstance(parsed, DefectCommand)
+        self.assertEqual(None, parsed.team)
+
+    def test_specific_defect(self):
+        text = "defect to periwinkle"
+        parsed = parse(text)
+
+        self.assertIsInstance(parsed, DefectCommand)
+        self.assertEqual(parsed.team, 1)
+
 if __name__ == '__main__':
     unittest.main()

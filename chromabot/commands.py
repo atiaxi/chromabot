@@ -3,7 +3,7 @@ import time
 
 import db
 from db import Battle, Region, SkirmishAction
-from utils import now, num_to_team
+from utils import now, num_to_team, team_to_num
 
 
 class Context(object):
@@ -43,6 +43,29 @@ that, comment in the latest recruitment thread in /r/%s"""
                 "I don't know any region or subreddit named '%s'" %
                 self.where)
         return dest
+
+
+class DefectCommand(Command):
+    def __init__(self, tokens):
+        self.team = None
+        if "team" in tokens:
+            self.team = team_to_num(tokens["team"])
+
+    def execute(self, context):
+        if self.team is None:
+            self.team = [0, 1][context.player.team - 1]
+        try:
+            context.player.defect(self.team)
+            context.comment.reply(("Done - you are now on team %s and encamped"
+                                  " in their capital of %s") %
+                                  (num_to_team(context.player.team),
+                                  context.player.region.markdown()))
+        except db.TeamException:
+            context.comment.reply("You're trying to defect to the team you're "
+                                  "already on!")
+        except db.TimingException:
+            context.comment.reply("You can only defect if you haven't taken "
+                                  "any actions.")
 
 
 class InvadeCommand(Command):
@@ -139,6 +162,7 @@ class MoveCommand(Command):
                 context.reply(("%s is not friendly territory - invade first "
                                "if you want to go there") % self.where)
                 return
+            context.player.defectable = False
             if order:
                 context.comment.reply((
                     "**Confirmed**: You are leading %d of your people to %s. "
@@ -148,6 +172,7 @@ class MoveCommand(Command):
                 context.comment.reply((
                     "**Confirmed**: You have lead %d of your people to %s."
                     ) % (self.amount, dest.markdown()))
+            context.session.commit()
 
     def __repr__(self):
         return "<MoveCommand(amount='%s', where='%s')>" % (

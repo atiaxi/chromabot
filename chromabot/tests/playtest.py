@@ -88,6 +88,35 @@ class TestRegions(ChromaTest):
 
 class TestPlaying(ChromaTest):
 
+    def test_defect(self):
+        """For periwinkle!"""
+        old_team = self.alice.team
+        old_cap = self.alice.region
+        self.alice.defect(1)
+
+        self.assertEqual(self.alice.team, 1)
+        self.assertNotEqual(self.alice.team, old_team)
+        self.assertNotEqual(self.alice.region, old_cap)
+
+    def test_ineffective_defect(self):
+        """For... orangered?"""
+        old_team = self.alice.team
+        with self.assertRaises(db.TeamException):
+            self.alice.defect(0)
+
+        self.assertEqual(self.alice.team, old_team)
+
+    def test_too_late_defect(self):
+        """Can't defect once you've done something"""
+        old_team = self.alice.team
+        londo = self.get_region("Orange Londo")
+
+        self.alice.move(100, londo, 0)
+        with self.assertRaises(db.TimingException):
+            self.alice.defect(1)
+
+        self.assertEqual(self.alice.team, old_team)
+
     def test_movement(self):
         """Move Alice from the Orangered capital to an adjacent region"""
         sess = self.sess

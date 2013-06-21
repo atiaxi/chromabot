@@ -9,8 +9,6 @@
 * "your armies are currently in..." message should mention if armies en route
 * Make sure that commands buried under 'more comments' are actually getting 
   processed (they appear to be now, but make sure) 
-* Implement 'defect' command so that people who are mistakenly sorted into
-  the wrong team can fix that
 * Add committed forces to status
 * You might want to add "range" as well as the common misspelling of
   "calvary" to the types it recognizes.

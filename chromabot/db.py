@@ -57,7 +57,8 @@ class TeamException(Exception):
 
 class TimingException(Exception):
     """Someone did something normally valid, but at the wrong time"""
-    pass
+    def __init__(self, soon_or_late="late"):
+        Exception.__init__(self, "too %s" % soon_or_late)
 
 
 class RankException(Exception):
@@ -106,6 +107,7 @@ class User(Base):
     committed_loyalists = Column(Integer, default=0)
     region_id = Column(Integer, ForeignKey('regions.id'))
     leader = Column(Boolean, default=False)
+    defectable = Column(Boolean, default=True)
 
     def __repr__(self):
         return "<User(name='%s', team='%d', loyalists='%d')>" % (
@@ -117,6 +119,17 @@ class User(Base):
             return "general"
         else:
             return "captain"
+
+    def defect(self, team):
+        if team == self.team or team > 1:
+            raise TeamException("The team you are attempting to defect to",
+                                True)
+        if not self.defectable:
+            raise TimingException()
+
+        self.team = team
+        self.region = Region.capital_for(team, self.session())
+        self.session().commit()
 
     def is_moving(self):
         if self.movement:
@@ -158,6 +171,7 @@ class User(Base):
         else:
             self.region = where
         # TODO: Change number of loyalists
+        self.defectable = False
         sess.commit()
 
         return result
@@ -300,6 +314,7 @@ class Region(Base):
             begins=when
             )
         sess.add(battle)
+        by_who.defectable = False
         sess.commit()
         return battle
 
@@ -586,6 +601,7 @@ class SkirmishAction(Base):
 
         sess = self.session()
         sess.add(self)
+        self.participant.defectable = False
         sess.commit()
 
         self.participant.committed_loyalists += self.amount
