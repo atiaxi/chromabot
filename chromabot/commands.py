@@ -214,14 +214,22 @@ class StatusCommand(Command):
 
 
 class SkirmishCommand(Command):
+
+    ALIASES = {
+        "calvalry": "cavalry",
+        "calvary":  "cavalry",
+        "range":    "ranged"
+    }
+
     def __init__(self, tokens):
-        self.action = tokens['action']
+        self.action = self.ALIASES.get(tokens['action'], tokens['action'])
         if self.action == 'oppose':  # Clearer-sounding synonym for 'attack'
             self.action = 'attack'
         self.amount = int(tokens['amount'])
         self.troop_type = 'infantry'
         if 'troop_type' in tokens:
-            self.troop_type = tokens['troop_type']
+            self.troop_type = SkirmishCommand.ALIASES.get(tokens['troop_type'],
+                                                          tokens['troop_type'])
 
     def execute(self, context):
         # getattr wackiness because real comments not gotten from inbox don't

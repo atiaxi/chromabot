@@ -96,6 +96,29 @@ class TestBattle(unittest.TestCase):
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
 
+    def test_misspellings(self):
+        """Common mis-spellings are aliased"""
+        src = "attack with 30 range"
+        parsed = parse(src)
+
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "ranged")
+
+        src = "attack with 30 calvary"
+        parsed = parse(src)
+
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "cavalry")
+
+        src = "attack with 30 calvalry"
+        parsed = parse(src)
+
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "cavalry")
+
 
 class TestStatus(unittest.TestCase):
     def testStatusCommand(self):

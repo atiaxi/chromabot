@@ -13,8 +13,9 @@ oppose = Keyword("oppose")
 support = Keyword("support")
 participate = attack | oppose | support
 troop_types = Keyword("cavalry") | Keyword("infantry") | Keyword("ranged")
+troop_aliases = Keyword("calvary") | Keyword("calvalry") | Keyword("range")
 skirmishcmd = (participate("action") + Suppress("with") + number("amount") +
-               Optional(troop_types("troop_type")))
+               Optional(troop_types | troop_aliases)("troop_type"))
 skirmishcmd.setParseAction(SkirmishCommand)
 
 invade = Keyword("invade")

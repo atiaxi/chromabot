@@ -10,8 +10,6 @@
 * Make sure that commands buried under 'more comments' are actually getting 
   processed (they appear to be now, but make sure) 
 * Add committed forces to status
-* You might want to add "range" as well as the common misspelling of
-  "calvary" to the types it recognizes.
 * Make bot post fewer threads - have it turn initial [Invasion] thread into
   a battle thread.
 * Make us able to move multiple territories at once, but make the time
