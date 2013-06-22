@@ -32,10 +32,9 @@ class Bot(object):
         session = self.db.session()
         battles = session.query(Battle).all()
         for battle in battles:
-            if battle.has_started():
-                post = self.reddit.get_submission(
-                    submission_id=name_to_id(battle.submission_id))
-                self.process_post_for_battle(post, battle, session)
+            post = self.reddit.get_submission(
+                submission_id=name_to_id(battle.submission_id))
+            self.process_post_for_battle(post, battle, session)
 
     def check_hq(self):
         hq = self.reddit.get_subreddit(self.config.headquarters)
@@ -152,20 +151,15 @@ class Bot(object):
 
         for ready in results['begin']:
             ready.ends = ready.begins + self.config["game"]["battle_time"]
-            title = "[Battle] The invaders have arrived!"
             text = ("War is now at your doorstep!  Mobilize your armies! "
                     "The battle has begun now, and will end at %s.\n\n"
                     "> Enter your commands in this thread, prefixed with "
                     "'>'") % ready.ends_str()
-            submitted = self.attempt_post(ready.region.srname,
-                                          title=title,
-                                          text=text)
-            if submitted:
-                ready.submission_id = submitted.name
-                session.commit()
-            else:
-                logging.warn("Being rate limited!  Could not post battle")
-                session.rollback()
+            post = self.reddit.get_submission(
+                submission_id=name_to_id(ready.submission_id))
+            post.edit(text)
+            session.commit()
+
         for done in results['ended']:
             report = ["The battle is complete...\n"]
             for skirmish in done.skirmishes:

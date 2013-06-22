@@ -5,6 +5,7 @@ import unittest
 import db
 from db import (DB, Battle, Region, MarchingOrder, Processed, SkirmishAction,
                 User)
+from utils import now
 
 
 TEST_LANDS = """
@@ -263,7 +264,10 @@ class TestBattle(ChromaTest):
         now = time.mktime(time.localtime())
         self.battle = sapphire.invade(self.bob, now)
         self.battle.ends = now + 60 * 60 * 24
+        self.battle.submission_id = "TEST"
         self.assert_(self.battle)
+
+        self.sess.commit()
 
     def test_battle_creation(self):
         """Typical battle announcement"""
@@ -410,6 +414,23 @@ class TestBattle(ChromaTest):
         # Should be worth 2 VP
         self.assertEqual(s1.vp, 2)
 
+    def test_no_early_fights(self):
+        """
+        Even if battle thread's live, can't fight until the battle
+        actually starts
+        """
+        self.battle.begins = now() + 60 * 60 * 12
+
+        self.assertFalse(self.battle.is_ready())
+        self.assertFalse(self.battle.has_started())
+
+        with self.assertRaises(db.TimingException):
+            self.battle.create_skirmish(self.alice, 1)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 0)
+
     def test_canceled_unopposed(self):
         """Attacks that have counterattacks nullified are unopposed"""
         s1 = self.battle.create_skirmish(self.alice, 1)   # Attack 1
@@ -445,7 +466,7 @@ class TestBattle(ChromaTest):
         self.battle.create_skirmish(self.alice, 5)
 
         # And just like that, the battle's over
-        self.battle.ends = 0
+        self.battle.ends = self.battle.begins
         sess.commit()
 
         updates = Battle.update_all(sess)
@@ -464,7 +485,7 @@ class TestBattle(ChromaTest):
         old_alice_region = self.alice.region
         self.battle.create_skirmish(self.alice, 5)
 
-        self.battle.ends = 0
+        self.battle.ends = self.battle.begins
         self.sess.commit()
 
         updates = Battle.update_all(self.sess)
@@ -847,10 +868,9 @@ class TestBattle(ChromaTest):
         """Make sure orangered victories actually count"""
         self.assertEqual(None, self.sapphire.owner)
         sess = self.sess
-        self.battle.submission_id = "TEST"
         self.battle.create_skirmish(self.alice, 5)
 
-        self.battle.ends = 0
+        self.battle.ends = self.battle.begins
         sess.commit()
         updates = Battle.update_all(sess)
         sess.commit()
@@ -866,12 +886,8 @@ class TestBattle(ChromaTest):
 
         oldowner = self.sapphire.owner
 
-        # Battle should be ready, but not started
+        # Battle should be ready and started
         self.assert_(battle.is_ready())
-        self.assertFalse(battle.has_started())
-
-        # Let's get a party started
-        battle.submission_id = "TEST"
         self.assert_(battle.has_started())
 
         # Still going, right?
@@ -895,7 +911,7 @@ class TestBattle(ChromaTest):
         # Overall winner should be team periwinkle, 30 to 16
 
         # End this bad boy
-        self.battle.ends = 0
+        self.battle.ends = self.battle.begins
         sess.commit()
         self.assert_(battle.past_end_time())
 

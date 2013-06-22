@@ -6,8 +6,6 @@
 * Make sure that commands buried under 'more comments' are actually getting 
   processed (they appear to be now, but make sure) 
 * Add committed forces to status
-* Make bot post fewer threads - have it turn initial [Invasion] thread into
-  a battle thread.
 * Make us able to move multiple territories at once, but make the time
   equivilant to the number of moves
 * Add an auto assign flair system to reduce confusion (/u/chromabot mods all

@@ -107,9 +107,11 @@ class InvadeCommand(Command):
                         "will soon be upon you.\n\n"
                         "Gather your forces while you can, for your enemy "
                         "shall arrive at %s") % battle.begins_str()
-                context.reddit.submit(dest.srname,
-                                      title=title,
-                                      text=text)
+                submitted = context.reddit.submit(dest.srname,
+                                                  title=title,
+                                                  text=text)
+                battle.submission_id = submitted.name
+                context.session.commit()
 
 
 class MoveCommand(Command):
@@ -294,6 +296,9 @@ class SkirmishCommand(Command):
                                "(you have committed %d total)") %
                               (ie.requested,
                                context.player.committed_loyalists))
-        except db.TimingException:
-            context.reply(("Top-level attacks are disallowed in the last "
-                           "%d seconds of a battle") % current.lockout)
+        except db.TimingException as te:
+            if te.side == 'late':
+                context.reply(("Top-level attacks are disallowed in the last "
+                               "%d seconds of a battle") % current.lockout)
+            else:
+                context.reply("The battle has not yet begun!")

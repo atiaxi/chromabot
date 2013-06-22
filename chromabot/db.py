@@ -59,6 +59,7 @@ class TeamException(Exception):
 class TimingException(Exception):
     """Someone did something normally valid, but at the wrong time"""
     def __init__(self, soon_or_late="late"):
+        self.side = soon_or_late
         Exception.__init__(self, "too %s" % soon_or_late)
 
 
@@ -344,7 +345,7 @@ class Battle(Base):
 
     region_id = Column(Integer, ForeignKey('regions.id'))
     region = relationship("Region", uselist=False, backref="battle")
-    
+
     lockout = Column(Integer, default=0)
 
     @classmethod
@@ -380,11 +381,12 @@ class Battle(Base):
 
     def has_started(self):
         """
-        A battle has started if its time has come, and there's a thread
-        to do battle in.
+        A battle has started if its time has come, there's a thread
+        to do battle in, and its end time is after its begin time
         """
         if self.is_ready():
-            return self.submission_id
+            if self.submission_id:
+                return self.ends >= self.begins
         return False
 
     def is_ready(self):
@@ -614,6 +616,11 @@ class SkirmishAction(Base):
     def validate(self):
         """Raise exceptions if this is not a valid skirmish"""
         sess = self.session()
+
+        # This battle's actually... happening, right?
+        if not self.get_battle().has_started():
+            sess.rollback()
+            raise TimingException("soon")
 
         # Are we actually there?
         need_to_be = self.get_battle().region
