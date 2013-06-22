@@ -277,9 +277,15 @@ class SkirmishCommand(Command):
             skirmish.comment_id = context.comment.name
             context.session.commit()
         except db.NotPresentException as npe:
-            context.reply(("Your armies are currently in %s and thus cannot "
-                           "participate in this battle.") %
-                          npe.actually_am.markdown())
+            standard = (("Your armies are currently in %s and thus cannot "
+                         "participate in this battle.") %
+                         npe.actually_am.markdown())
+            marching = ""
+            moving = context.player.is_moving()
+            if moving:
+                marching = ("\n\n(Your forces will arrive in %s at %s )" %
+                            (moving.dest.markdown(), moving.arrival_str()))
+            context.reply("%s%s" % (standard, marching))
         except db.TeamException as te:
             if te.friendly:
                 context.reply("You cannot attack someone on your team")
