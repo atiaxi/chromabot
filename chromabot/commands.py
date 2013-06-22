@@ -93,8 +93,9 @@ class InvadeCommand(Command):
             except db.NonAdjacentException:
                 context.reply("%s is not next to any territory you control" %
                               dest.markdown())
-            except db.InProgressException:
-                context.reply("%s is already being invaded!" % dest.markdown())
+            except db.InProgressException as ipe:
+                context.reply("%s is %s being invaded!" % (dest.markdown(),
+                              ipe.other.markdown("already")))
 
             if battle:
                 context.reply("**Confirmed**  Battle will begin at %s" %
@@ -189,9 +190,15 @@ class StatusCommand(Command):
 
     def lands_status(self, context):
         regions = context.session.query(Region).all()
-        fmt = "* **%s**:  %s"
-        result = [fmt % (region.markdown(), num_to_team(region.owner))
-                  for region in regions]
+        fmt = "* **%s**:  %s%s"
+        result = []
+        for region in regions:
+            dispute = ""
+            if region.battle:
+                dispute = " ( %s )" % region.battle.markdown()
+            result.append(fmt % (region.markdown(),
+                                 num_to_team(region.owner),
+                                 dispute))
         lands = "\n".join(result)
         return "State of Chroma:\n\n" + lands
 

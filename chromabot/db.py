@@ -9,7 +9,7 @@ from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
-from utils import now, num_to_team
+from utils import name_to_id, now, num_to_team
 
 
 # Some helpful model exceptions
@@ -344,7 +344,7 @@ class Battle(Base):
     score1 = Column(Integer)
 
     region_id = Column(Integer, ForeignKey('regions.id'))
-    region = relationship("Region", uselist=False, backref="battle")
+    region = relationship("Region", backref=backref("battle", uselist=False))
 
     lockout = Column(Integer, default=0)
 
@@ -392,6 +392,11 @@ class Battle(Base):
     def is_ready(self):
         now = time.mktime(time.localtime())
         return now >= self.begins
+
+    def markdown(self, text="Disputed"):
+        url = "/r/%s/comments/%s" % (self.region.srname,
+                                     name_to_id(self.submission_id))
+        return "[%s](%s)" % (text, url)
 
     def participants(self):
         return {skirmish.participant for skirmish in self.skirmishes}
