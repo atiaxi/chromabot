@@ -207,11 +207,15 @@ class StatusCommand(Command):
             forces = ("You are currently encamped at %s" %
                       found.region.markdown())
 
+        commit_str = ""
+        if found.committed_loyalists:
+            commit_str = (", %d of which are committed to battle" %
+                          found.committed_loyalists)
         result = ("You are a %s in the %s army.\n\n"
-                  "Your forces number %d loyalists strong.\n\n"
+                  "Your forces number %d loyalists%s.\n\n"
                   "%s")
         personal = result % (found.rank, num_to_team(found.team),
-                             found.loyalists, forces)
+                             found.loyalists, commit_str, forces)
         return personal + "\n\n" + self.lands_status(context)
 
 
