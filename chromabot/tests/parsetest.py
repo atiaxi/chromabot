@@ -127,6 +127,22 @@ class TestStatus(unittest.TestCase):
         self.assertIsInstance(parsed, StatusCommand)
 
 
+class TestPromotion(unittest.TestCase):
+    def testPromoteCommand(self):
+        src = 'promote hurfendurf'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, PromoteCommand)
+        self.assertEqual(parsed.who, "hurfendurf")
+        self.assertEqual(parsed.direction, 1)
+
+    def testDemoteCommand(self):
+        src = "demote hurfendurf"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, PromoteCommand)
+        self.assertEqual(parsed.who, "hurfendurf")
+        self.assertEqual(parsed.direction, 0)
+
+
 class TestCommandExtraction(unittest.TestCase):
 
     def goodparse(self, text):

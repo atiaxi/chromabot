@@ -112,7 +112,7 @@ class User(Base):
     loyalists = Column(Integer)
     committed_loyalists = Column(Integer, default=0)
     region_id = Column(Integer, ForeignKey('regions.id'))
-    leader = Column(Boolean, default=False)
+    leader = Column(Integer, default=0)
     defectable = Column(Boolean, default=True)
 
     def __repr__(self):

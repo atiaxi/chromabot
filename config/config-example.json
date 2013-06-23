@@ -17,5 +17,6 @@
         "battle_delay": 3600,
         "battle_time": 10800,
         "battle_lockout": 1800,
+        "leaders": ['YOU']
     }
 }

@@ -118,10 +118,11 @@ class Bot(object):
                 name=name).first()
             if not found:
                 base10_id = base36decode(comment.author.id)
+                is_leader = name in self.config["game"]["leaders"]
                 newbie = User(name=name,
                               team=base10_id % 2,
                               loyalists=100,
-                              leader=True)
+                              leader=is_leader)
                 session.add(newbie)
 
                 cap = Region.capital_for(newbie.team, session)

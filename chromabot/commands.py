@@ -2,7 +2,7 @@ import logging
 import time
 
 import db
-from db import Battle, Region, SkirmishAction
+from db import Battle, Region, SkirmishAction, User
 from utils import now, num_to_team, team_to_num
 
 
@@ -224,6 +224,30 @@ class StatusCommand(Command):
         personal = result % (found.rank, num_to_team(found.team),
                              found.loyalists, commit_str, forces)
         return personal + "\n\n" + self.lands_status(context)
+
+
+class PromoteCommand(Command):
+    def __init__(self, tokens):
+        self.who = tokens["who"]
+        if tokens["direction"] == "promote":
+            self.direction = 1
+        else:
+            self.direction = 0
+        self.direction_str = tokens["direction"]
+
+    def execute(self, context):
+        person = context.session.query(User).filter_by(name=self.who).first()
+        if person:
+            if context.player.leader:
+                person.leader = self.direction
+                context.reply("%s has been %sd!" % (self.who,
+                                                    self.direction_str))
+                context.session.commit()
+            else:
+                context.reply("You can't promote if you aren't a leader "
+                              "yourself!")
+        else:
+            context.reply("I don't know who %s is" % self.who)
 
 
 class SkirmishCommand(Command):
