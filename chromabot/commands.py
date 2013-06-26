@@ -133,8 +133,8 @@ class MoveCommand(Command):
 
             try:
                 speed = context.config["game"]["speed"]
-                hundred_followers = self.amount / 100
-                time_taken = speed * hundred_followers
+                #hundred_followers = self.amount / 100
+                time_taken = speed  # * hundred_followers
 
                 order = context.player.move(self.amount, dest, time_taken)
             except db.InsufficientException as ie:

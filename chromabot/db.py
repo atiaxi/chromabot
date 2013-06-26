@@ -426,13 +426,16 @@ class Battle(Base):
 
         # Un-commit all the loyalists for this fight, kick out the losers
         losercap = None
-        for person in self.region.people:
+        # Make a copy so deletion won't screw things up
+        people = list(self.region.people)
+        for person in people:
             person.committed_loyalists = 0
             if person.team != self.victor:
                 if not losercap:
                     losercap = Region.capital_for(person.team,
                                                   self.session())
                 person.region = losercap
+            self.session().commit()
 
         self.session().commit()
 
@@ -656,6 +659,7 @@ class SkirmishAction(Base):
             if lockout:
                 locktime = battle.ends - lockout
                 if now() >= locktime:
+                    sess.rollback()
                     raise TimingException()
 
         requested = self.amount + self.participant.committed_loyalists

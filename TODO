@@ -1,12 +1,29 @@
 
 * Pick up / drop off loyalists
-* Ability to reply to the bot:
-  * to support/oppose bot's parent
+* Ability to reply to the bot to support/oppose bot's parent (deletion exploit)
 * Make sure that commands buried under 'more comments' are actually getting 
   processed (they appear to be now, but make sure) 
+  * Is this still not working? http://www.reddit.com/r/ct_snooland/comments/1gx7b7/invasion_the_periwinkle_armies_march/caoqmid
+  * But it works here http://www.reddit.com/r/ct_snooland/comments/1gx7b7/invasion_the_periwinkle_armies_march/caoqjgn
 * Make us able to move multiple territories at once, but make the time
   equivilant to the number of moves
 * Add an auto assign flair system to reduce confusion (/u/chromabot mods all
   terrotories and assings flairs when someone signs up on the recruitment
   thread)
 * pm telling you your army has arrived
+* Proper capital invasion
+* Bot should listen to recruitment thread for commands(?)
+* Bot should survive site downtime (504, etc)
+* Better parse error messages if at all possible
+* "committed your armies to the battle at" should link to said battle.
+* Double check math here: 
+http://www.reddit.com/r/ct_snooland/comments/1gx7b7/invasion_the_periwinkle_armies_march/
+  * seems peri should have 0, I believe it's counting sub-skirmishes (which is probably fine?)
+  * Totals seem way off: 277+40+80+50 != 1230.  May also not be counting sub-skirmishes in skirmish breakdown
+    * http://www.reddit.com/r/ct_tentorahogo/comments/1gx8i5/invasion_the_periwinkle_armies_march/
+* Link to battle thread in confirmation PM
+* Timestamps in log
+* Link to the commands reference in the text the bot posts up top
+* Attempts to reply to deleted comments raise an APIException (DELETED_COMMENT)
+* Battle cooldown
+* Battle troop rewards

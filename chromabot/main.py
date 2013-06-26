@@ -52,9 +52,12 @@ class Bot(object):
             if not comment.was_comment:
                 player = self.find_player(comment, session)
                 if player:
+                    cmd = extract_command(comment.body)
+                    if not cmd:
+                        cmd = comment.body
                     context = Context(player, self.config, session,
                                       comment, self.reddit)
-                    self.command(comment.body, context)
+                    self.command(cmd, context)
 
             comment.mark_as_read()
 
@@ -86,12 +89,16 @@ class Bot(object):
         p = sess.query(Processed).filter_by(battle=battle).all()
         seen = [entry.id36 for entry in p]
 
-        post.replace_more_comments(threshold=0)
+        replaced = post.replace_more_comments(threshold=0)
+        if replaced:
+            logging.info("Comments that went un-replaced: %s" % replaced)
         flat_comments = praw.helpers.flatten_tree(
             post.comments)
 
         for comment in flat_comments:
             if comment.name in seen:
+                continue
+            if not comment.author:  # Deleted comments don't have an author
                 continue
             if comment.author.name == self.config.username:
                 continue
@@ -106,9 +113,12 @@ class Bot(object):
             sess.commit()
 
     def recruit_from_post(self, post):
+        post.replace_more_comments(threshold=0)
         flat_comments = praw.helpers.flatten_tree(post.comments)
         session = self.db.session()
         for comment in flat_comments:
+            if not comment.author:  # Deleted comments don't have an author
+                continue
             name = comment.author.name
             if name == self.config.username:
                 continue
