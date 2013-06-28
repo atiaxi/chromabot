@@ -410,9 +410,16 @@ class Battle(Base):
         now = time.mktime(time.localtime())
         return now >= self.ends
 
+    def report(self, expand=False):
+        result = []
+        for skirmish in self.skirmishes:
+            if skirmish.parent is None or expand:
+                result.append(skirmish.report())
+        return result
+
     def resolve(self):
         score = [0, 0]
-        for skirmish in self.skirmishes:
+        for skirmish in [s for s in self.skirmishes if s.parent is None]:
             skirmish.resolve()
             if skirmish.victor is not None:
                 score[skirmish.victor] += skirmish.vp

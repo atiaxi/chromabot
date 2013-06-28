@@ -169,9 +169,7 @@ class Bot(object):
 
         for done in results['ended']:
             report = ["The battle is complete...\n"]
-            for skirmish in done.skirmishes:
-                if skirmish.parent_id is None:
-                    report.append(skirmish.report())
+            report += done.report()
 
             report.append("")
             report.append(("## Final Score:  Team Orangered: %d "

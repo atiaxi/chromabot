@@ -895,7 +895,7 @@ class TestBattle(ChromaTest):
 
         # Skirmish 1
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
-        s1a = s1.react(self.carol, 3, hinder=False)  # --Support 3
+        s1a = s1.react(self.carol, 4, hinder=False)  # --Support 4
         s1a.react(self.bob, 3)                       # ----Attack 3
         s1.react(self.dave, 8)                       # --Attack 8
         # Winner will be team orangered, 11 VP
