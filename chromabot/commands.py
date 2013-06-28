@@ -1,9 +1,29 @@
 import logging
+import socket
 import time
+import traceback
+
+import praw
+from requests.exceptions import Timeout
 
 import db
 from db import Battle, Region, SkirmishAction, User
 from utils import now, num_to_team, team_to_num
+
+
+def failable(f):
+    def wrapped(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except praw.errors.APIException:
+            full = traceback.format_exc()
+            logging.warning("Reddit API call failed! %s" % full)
+            return None
+        except Timeout:
+            full = traceback.format_exc()
+            logging.warning("Socket timeout! %s" % full)
+            return None
+    return wrapped
 
 
 class Context(object):
@@ -14,8 +34,13 @@ class Context(object):
         self.comment = comment  # a praw object
         self.reddit = reddit    # root praw object
 
+    @failable
     def reply(self, reply):
         return self.comment.reply(reply)
+
+    @failable
+    def submit(self, srname, title, text):
+        return self.reddit.submit(srname, title=title, text=text)
 
 
 class Command(object):
@@ -39,7 +64,7 @@ that, comment in the latest recruitment thread in /r/%s"""
             dest = sess.query(Region).filter_by(
                 srname=where).first()
         if require and not dest:
-            context.comment.reply(
+            context.reply(
                 "I don't know any region or subreddit named '%s'" %
                 self.where)
         return dest
@@ -56,15 +81,15 @@ class DefectCommand(Command):
             self.team = [0, 1][context.player.team - 1]
         try:
             context.player.defect(self.team)
-            context.comment.reply(("Done - you are now on team %s and encamped"
+            context.reply(("Done - you are now on team %s and encamped"
                                   " in their capital of %s") %
                                   (num_to_team(context.player.team),
                                   context.player.region.markdown()))
         except db.TeamException:
-            context.comment.reply("You're trying to defect to the team you're "
+            context.reply("You're trying to defect to the team you're "
                                   "already on!")
         except db.TimingException:
-            context.comment.reply("You can only defect if you haven't taken "
+            context.reply("You can only defect if you haven't taken "
                                   "any actions.")
 
 
@@ -108,11 +133,15 @@ class InvadeCommand(Command):
                         "will soon be upon you.\n\n"
                         "Gather your forces while you can, for your enemy "
                         "shall arrive at %s") % battle.begins_str()
-                submitted = context.reddit.submit(dest.srname,
-                                                  title=title,
-                                                  text=text)
-                battle.submission_id = submitted.name
-                context.session.commit()
+                submitted = context.submit(dest.srname,
+                                           title=title,
+                                           text=text)
+                if submitted:
+                    battle.submission_id = submitted.name
+                    context.session.commit()
+                else:
+                    logging.warn("Couldn't submit invasion thread")
+                    context.session.rollback()
 
 
 class MoveCommand(Command):
@@ -138,25 +167,25 @@ class MoveCommand(Command):
 
                 order = context.player.move(self.amount, dest, time_taken)
             except db.InsufficientException as ie:
-                context.comment.reply(
+                context.reply(
                     "You cannot move %d of your people - you only have %d" %
                     (ie.requested, ie.available))
                 return
             except db.NonAdjacentException:
-                context.comment.reply(
+                context.reply(
                     "Your current region, %s, is not adjacent to %s" %
                     (context.player.region.markdown(), dest.markdown()))
                 return
             except db.InProgressException as ipe:
                 # Determine if there's a move in progress or a battle
                 if hasattr(ipe.other, 'arrival_str'):
-                    context.comment.reply((
+                    context.reply((
                         "You are already leading your armies to %s - "
                         "you can give further orders upon your arrival at %s"
                         ) % (ipe.other.dest.markdown(),
                              ipe.other.arrival_str()))
                 else:
-                    context.comment.reply((
+                    context.reply((
                         "You have committed your armies to the battle at %s - "
                         "you must see this through to the bitter end."
                         ) % (ipe.other.get_battle().region.markdown()))
@@ -167,12 +196,12 @@ class MoveCommand(Command):
                 return
             context.player.defectable = False
             if order:
-                context.comment.reply((
+                context.reply((
                     "**Confirmed**: You are leading %d of your people to %s. "
                     "You will arrive at %s."
                     ) % (self.amount, dest.markdown(), order.arrival_str()))
             else:
-                context.comment.reply((
+                context.reply((
                     "**Confirmed**: You have lead %d of your people to %s."
                     ) % (self.amount, dest.markdown()))
             context.session.commit()
@@ -186,7 +215,7 @@ class StatusCommand(Command):
 
     def execute(self, context):
         status = self.status_for(context)
-        context.comment.reply(status)
+        context.reply(status)
 
     def lands_status(self, context):
         regions = context.session.query(Region).all()

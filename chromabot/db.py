@@ -394,9 +394,11 @@ class Battle(Base):
         return now >= self.begins
 
     def markdown(self, text="Disputed"):
-        url = "/r/%s/comments/%s" % (self.region.srname,
-                                     name_to_id(self.submission_id))
-        return "[%s](%s)" % (text, url)
+        if self.submission_id:
+            url = "/r/%s/comments/%s" % (self.region.srname,
+                                         name_to_id(self.submission_id))
+            return "[%s](%s)" % (text, url)
+        return text
 
     def participants(self):
         return {skirmish.participant for skirmish in self.skirmishes}

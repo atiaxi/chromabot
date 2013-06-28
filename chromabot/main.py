@@ -8,7 +8,7 @@ from pyparsing import ParseException
 from config import Config
 from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
-from commands import Command, Context
+from commands import Command, Context, failable
 from utils import base36decode, extract_command, num_to_team, name_to_id
 
 
@@ -19,23 +19,17 @@ class Bot(object):
         self.db = DB(config)
         self.db.create_all()
 
-        reddit.login(c.username, c.password)
-
-    def attempt_post(self, srname, title, text):
-        try:
-            result = self.reddit.submit(srname, title=title, text=text)
-            return result
-        except praw.errors.APIException:
-            return None
-
+    @failable
     def check_battles(self):
         session = self.db.session()
         battles = session.query(Battle).all()
         for battle in battles:
             post = self.reddit.get_submission(
                 submission_id=name_to_id(battle.submission_id))
-            self.process_post_for_battle(post, battle, session)
+            if post:
+                self.process_post_for_battle(post, battle, session)
 
+    @failable
     def check_hq(self):
         hq = self.reddit.get_subreddit(self.config.headquarters)
         submissions = hq.get_new()
@@ -44,6 +38,7 @@ class Bot(object):
                 self.recruit_from_post(submission)
                 break  # Only recruit from the first one
 
+    @failable
     def check_messages(self):
         unread = reddit.get_unread(True, True)
         session = self.db.session()
@@ -75,7 +70,7 @@ class Bot(object):
                 "> %s\n"
                 "\nThe parsing error is below:\n\n"
                 "    %s") % (text, pe)
-            context.comment.reply(result)
+            context.reply(result)
 
     def find_player(self, comment, session):
         player = session.query(User).filter_by(
@@ -112,6 +107,7 @@ class Bot(object):
             sess.add(Processed(id36=comment.name, battle=battle))
             sess.commit()
 
+    @failable
     def recruit_from_post(self, post):
         post.replace_more_comments(threshold=0)
         flat_comments = praw.helpers.flatten_tree(post.comments)
@@ -149,12 +145,12 @@ class Bot(object):
                          "%d people strong. You are currently encamped at %s"
                 ) % (newbie.rank, num_to_team(newbie.team), newbie.loyalists,
                      cap.markdown())
-
                 comment.reply(reply)
             else:
                 #logging.info("Already registered %s", comment.author.name)
                 pass
 
+    @failable
     def update_game(self):
         session = self.db.session()
         MarchingOrder.update_all(session)
@@ -194,9 +190,15 @@ class Bot(object):
             session.delete(done)
             session.commit()
 
+    @failable
+    def login(self):
+        reddit.login(c.username, c.password)
+        return True
+
     def run(self):
         logging.info("Bot started up")
-        while(True):
+        logged_in = self.login()
+        while(logged_in):
             self.config.refresh()
             logging.info("Checking headquarters")
             self.check_hq()
@@ -208,6 +210,7 @@ class Bot(object):
             self.update_game()
             logging.info("Sleeping")
             time.sleep(self.config["bot"]["sleep"])
+        logging.fatal("Unable to log into bot; shutting down")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
