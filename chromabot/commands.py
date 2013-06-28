@@ -1,5 +1,5 @@
 import logging
-import socket
+import re
 import time
 import traceback
 
@@ -7,7 +7,7 @@ import praw
 from requests.exceptions import Timeout
 
 import db
-from db import Battle, Region, SkirmishAction, User
+from db import Battle, Region, Processed, SkirmishAction, User
 from utils import now, num_to_team, team_to_num
 
 
@@ -319,23 +319,34 @@ class SkirmishCommand(Command):
                 skirmish = current.create_skirmish(context.player, self.amount,
                                                    troop_type=self.troop_type)
             else:
-                parent = context.session.query(SkirmishAction).filter_by(
-                    comment_id=context.comment.parent_id).first()
+                parent = self.find_skirmish_named(context.comment.parent_id,
+                                                  context)
                 if not parent:
-                    context.reply("You can only use skirmish commands in "
-                                  "reply to other confirmed skirmish commands")
-                    return
+                    sub = self.extract_subskirmish(context, current)
+                    if sub:
+                        parent = self.find_skirmish_by_id(sub, context)
+                    if not parent:
+                        context.reply("You can only use skirmish commands in "
+                                      "reply to other confirmed skirmish "
+                                      "commands")
+                        return
                 hinder = self.action == 'attack'
                 skirmish = parent.react(context.player, self.amount,
                                         hinder=hinder,
                                         troop_type=self.troop_type)
             total = context.player.committed_loyalists
+
+            subskirmish = ""
+            if skirmish.get_root().id != skirmish.id:
+                subskirmish = " (subskirmish %d)" % skirmish.id
+
             context.reply(("**Confirmed**: You have committed %d of your "
-                "forces as **%s** to **Skirmish #%d**.\n\n(As of now, you "
-                "have committed %d total)  **For %s!**") %
+                "forces as **%s** to **Skirmish #%d**%s.\n\nAs of now, you "
+                "have committed %d total.  **For %s!**") %
                           (skirmish.amount,
                            skirmish.troop_type,
                            skirmish.get_root().id,
+                           subskirmish,
                            total, num_to_team(context.player.team)))
 
             skirmish.comment_id = context.comment.name
@@ -372,3 +383,52 @@ class SkirmishCommand(Command):
                                "%d seconds of a battle") % current.lockout)
             else:
                 context.reply("The battle has not yet begun!")
+
+    @failable
+    def extract_subskirmish(self, context, battle):
+        if not context.comment.author:
+            return None
+
+        # If we've already processed the parent, it wasn't us
+        # (we bail out if we see ourself as author before marking as processed)
+        pid = context.comment.parent_id
+        found = context.session.query(Processed).filter_by(id36=pid).count()
+        if found:
+            return None
+
+        parent = context.reddit.get_info(thing_id=pid)
+        if not parent:
+            logging.warn("Can't get parent %s" % pid)
+            return None
+
+        if not parent.author:  # Parent was deleted!
+            return None
+
+        if parent.author.name != context.config.username:
+            # Record this in our processed list so we don't have to do this
+            # again.
+            context.session.add(Processed(id36=parent.name, battle=battle))
+            context.session.commit()
+            return None
+
+        regex = re.compile(r"\(subskirmish (\d+)\)")
+        result = regex.search(parent.body)
+        if result:
+            result = int(result.group(1))
+            return result
+        # The "\*" is the closing bold markup
+        regex = re.compile(r"Skirmish #(\d+)\*")
+        result = regex.search(parent.body)
+        if result:
+            result = int(result.group(1))
+            return result
+
+    def find_skirmish_named(self, name, context):
+        parent = context.session.query(SkirmishAction).filter_by(
+                    comment_id=name).first()
+        return parent
+
+    def find_skirmish_by_id(self, skid, context):
+        parent = context.session.query(SkirmishAction).filter_by(
+            id=skid).first()
+        return parent

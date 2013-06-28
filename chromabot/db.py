@@ -217,6 +217,9 @@ class MarchingOrder(Base):
     def arrival_str(self):
         return self.timestr(self.arrival)
 
+    def set_complete(self):
+        self.arrival = now()
+
     def update(self):
         sess = Session.object_session(self)
         if self.has_arrived():
@@ -440,6 +443,9 @@ class Battle(Base):
             self.session().commit()
 
         self.session().commit()
+
+    def set_complete(self):
+        self.ends = now()
 
     def __repr__(self):
         return "<Battle(id='%s', region='%s'>" % (self.id, self.region)

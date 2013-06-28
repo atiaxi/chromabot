@@ -27,10 +27,14 @@ def battle_adopt(battle, postid):
     sess.commit()
 
 def by_id(cls, id):
-    return query(cls, id=id).first()
+    result = query(cls, id=id).first()
+    print result
+    return result
 
 def by_name(cls, name):
-    return query(cls, name=name).first()
+    result = query(cls, name=name).first()
+    print result
+    return result
 
 def commit():
     return sess.commit()
