@@ -4,11 +4,11 @@ import time
 import traceback
 
 import praw
-from requests.exceptions import Timeout
+from requests.exceptions import HTTPError, Timeout
 
 import db
 from db import Battle, Region, Processed, SkirmishAction, User
-from utils import now, num_to_team, team_to_num
+from utils import now, num_to_team, team_to_num, timestr
 
 
 def failable(f):
@@ -22,6 +22,10 @@ def failable(f):
         except Timeout:
             full = traceback.format_exc()
             logging.warning("Socket timeout! %s" % full)
+            return None
+        except HTTPError:
+            full = traceback.format_exc()
+            logging.warning("HTTP error timeout! %s" % full)
             return None
     return wrapped
 
@@ -432,3 +436,9 @@ class SkirmishCommand(Command):
         parent = context.session.query(SkirmishAction).filter_by(
             id=skid).first()
         return parent
+
+
+class TimeCommand(Command):
+
+    def execute(self, context):
+        context.reply("The current time is: %s" % timestr())

@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-from urllib import quote_plus
 
 from sqlalchemy import (
     create_engine, Boolean, Column, ForeignKey, Integer, String, Table)
@@ -9,6 +8,7 @@ from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
+import utils
 from utils import name_to_id, now, num_to_team
 
 
@@ -76,14 +76,7 @@ class Model(object):
         return Session.object_session(self)
 
     def timestr(self, secs=None):
-        if secs is None:
-            secs = time.mktime(time.localtime())
-
-        timeresult = time.gmtime(secs)
-        timestresult = time.strftime("%Y-%m-%d %H:%M:%S GMT", timeresult)
-        url = ("http://www.wolframalpha.com/input/?i=%s+in+local+time" %
-               quote_plus(timestresult))
-        return "[%s](%s)" % (timestresult, url)
+        return utils.timestr(secs)
 
 Base = declarative_base(cls=Model)
 

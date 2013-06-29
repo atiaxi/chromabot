@@ -1,5 +1,6 @@
 import re
 import time
+from urllib import quote_plus
 
 
 def base36decode(number):
@@ -36,3 +37,14 @@ def num_to_team(number):
 def team_to_num(team):
     teams = {"orangered": 0, "periwinkle": 1}
     return teams.get(team.lower(), None)
+
+
+def timestr(secs=None):
+    if secs is None:
+        secs = time.mktime(time.localtime())
+
+    timeresult = time.gmtime(secs)
+    timestresult = time.strftime("%Y-%m-%d %H:%M:%S GMT", timeresult)
+    url = ("http://www.wolframalpha.com/input/?i=%s+in+local+time" %
+           quote_plus(timestresult))
+    return "[%s](%s)" % (timestresult, url)

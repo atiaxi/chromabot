@@ -1,7 +1,8 @@
 from pyparsing import *
 
 from commands import (DefectCommand, InvadeCommand, MoveCommand,
-                      PromoteCommand, SkirmishCommand, StatusCommand)
+                      PromoteCommand, SkirmishCommand, StatusCommand,
+                      TimeCommand)
 
 number = Word(nums)
 string = QuotedString('"', '\\')
@@ -36,10 +37,14 @@ promote = (Keyword("promote") | Keyword("demote"))
 promotecmd = promote("direction") + Word(alphanums + "_-")("who")
 promotecmd.setParseAction(PromoteCommand)
 
+timecmd = Keyword("time")
+timecmd.setParseAction(TimeCommand)
+
 statuscmd = Keyword("status")
 statuscmd.setParseAction(StatusCommand)
 
-root = statuscmd | movecmd | invadecmd | skirmishcmd | defectcmd | promotecmd
+root = (statuscmd | movecmd | invadecmd | skirmishcmd | defectcmd |
+        promotecmd | timecmd)
 
 
 def parse(s):
