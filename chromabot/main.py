@@ -211,7 +211,8 @@ class Bot(object):
         logging.fatal("Unable to log into bot; shutting down")
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    fmt = "%(asctime)s: %(levelname)s %(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=fmt)
     c = Config()
     reddit = c.praw()
 
