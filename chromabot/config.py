@@ -38,7 +38,7 @@ class Config(object):
 
     def refresh(self):
         with open(self.conffile) as data_file:
-            self.data = json.load(data_file)
+            self.data = json.loads(data_file.read())
 
     # Useful properties follow
     @property

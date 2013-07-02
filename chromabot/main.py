@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import random
 import time
 
 import praw
@@ -124,10 +125,16 @@ class Bot(object):
             found = session.query(User).filter_by(
                 name=name).first()
             if not found:
-                base10_id = base36decode(comment.author.id)
+                team = 0
+                assignment = self.config['game']['assignment']
+                if assignment == 'uid':
+                    base10_id = base36decode(comment.author.id)
+                    team = base10_id % 2
+                elif assignment == "random":
+                    team = random.randint(0, 1)
                 is_leader = name in self.config["game"]["leaders"]
                 newbie = User(name=name,
-                              team=base10_id % 2,
+                              team=team,
                               loyalists=100,
                               leader=is_leader)
                 session.add(newbie)
@@ -144,7 +151,9 @@ class Bot(object):
                 reply = ("Welcome to Chroma!  You are now a %s "
                          "in the %s army, commanding a force of loyalists "
                          "%d people strong. You are currently encamped at %s"
-                ) % (newbie.rank, num_to_team(newbie.team), newbie.loyalists,
+                ) % (newbie.rank,
+                     num_to_team(newbie.team, self.config),
+                     newbie.loyalists,
                      cap.markdown())
                 comment.reply(reply)
             else:
@@ -170,14 +179,14 @@ class Bot(object):
 
         for done in results['ended']:
             report = ["The battle is complete...\n"]
-            report += done.report()
+            report += done.report(self.config)
 
             report.append("")
             report.append(("## Final Score:  Team Orangered: %d "
                            "Team Periwinkle: %d") % (done.score0, done.score1))
             if done.victor is not None:
                 report.append("\n# The Victor:  Team %s" %
-                              num_to_team(done.victor))
+                              num_to_team(done.victor, self.config))
             else:
                 report.append("# TIE")
 

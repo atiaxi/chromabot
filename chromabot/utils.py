@@ -28,9 +28,15 @@ def now():
     return time.mktime(time.localtime())
 
 
-def num_to_team(number):
+def num_to_team(number, config=None):
+    if config is None:
+        config = {
+            "game": {
+                "sides": ["Orangered", "Periwinkle"]
+            }
+        }
     if number is not None:
-        return ('Orangered', 'Periwinkle')[number]
+        return config['game']['sides'][number]
     return "Neutral"
 
 

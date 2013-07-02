@@ -403,11 +403,11 @@ class Battle(Base):
         now = time.mktime(time.localtime())
         return now >= self.ends
 
-    def report(self, expand=False):
+    def report(self, config=None, expand=False):
         result = []
         for skirmish in self.skirmishes:
             if skirmish.parent is None or expand:
-                result.append(skirmish.report())
+                result.append(skirmish.report(config))
         return result
 
     def resolve(self):
@@ -607,13 +607,13 @@ class SkirmishAction(Base):
         self.session().commit()
         return self
 
-    def report(self):
+    def report(self, config=None):
         preamble = "*  Skirmish #%d - the victor is " % self.id
         if self.victor is None:
             vstr = None
             postamble = ""
         else:
-            vstr = num_to_team(self.victor)
+            vstr = num_to_team(self.victor, config)
             postamble = " by %d for **%d VP**" % (self.margin, self.vp)
         result = (("%s **%s** %s") %
                   (preamble, vstr, postamble))

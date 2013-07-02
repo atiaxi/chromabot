@@ -46,6 +46,9 @@ class Context(object):
     def submit(self, srname, title, text):
         return self.reddit.submit(srname, title=title, text=text)
 
+    def team_name(self):
+        return num_to_team(self.player.team, self.config)
+
 
 class Command(object):
 
@@ -87,7 +90,7 @@ class DefectCommand(Command):
             context.player.defect(self.team)
             context.reply(("Done - you are now on team %s and encamped"
                                   " in their capital of %s") %
-                                  (num_to_team(context.player.team),
+                                  (context.team_name(),
                                   context.player.region.markdown()))
         except db.TeamException:
             context.reply("You're trying to defect to the team you're "
@@ -130,7 +133,7 @@ class InvadeCommand(Command):
                 context.reply("**Confirmed**  Battle will begin at %s" %
                               battle.begins_str())
                 title = ("[Invasion] The %s armies march!" %
-                         num_to_team(context.player.team))
+                         context.team_name())
                 text = ("Negotiations have broken down, and the trumpets of "
                         "war have sounded.  Even now, civilians are being "
                         "evacuated and the able-bodied drafted.  The conflict "
@@ -230,7 +233,7 @@ class StatusCommand(Command):
             if region.battle:
                 dispute = " ( %s )" % region.battle.markdown()
             result.append(fmt % (region.markdown(),
-                                 num_to_team(region.owner),
+                                 num_to_team(region.owner, context.config),
                                  dispute))
         lands = "\n".join(result)
         return "State of Chroma:\n\n" + lands
@@ -254,7 +257,7 @@ class StatusCommand(Command):
         result = ("You are a %s in the %s army.\n\n"
                   "Your forces number %d loyalists%s.\n\n"
                   "%s")
-        personal = result % (found.rank, num_to_team(found.team),
+        personal = result % (found.rank, context.team_name(),
                              found.loyalists, commit_str, forces)
         return personal + "\n\n" + self.lands_status(context)
 
@@ -351,7 +354,7 @@ class SkirmishCommand(Command):
                            skirmish.troop_type,
                            skirmish.get_root().id,
                            subskirmish,
-                           total, num_to_team(context.player.team)))
+                           total, context.team_name()))
 
             skirmish.comment_id = context.comment.name
             context.session.commit()

@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Valhalla",
+        "srname": "ct_valhalla",
+        "connections": ["Eternal Battleground"],
+        "capital": 0
+    },
+    {
+        "name": "Eternal Battleground",
+        "srname": "eternalbattleground",
+        "connections": ["Folkvangr"],
+        "eternal": 1
+    },
+    {
+        "name": "Folkvangr",
+        "srname": "folkvangr",
+        "connections": [],
+        "capital": 1
+    }
+]

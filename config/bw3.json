@@ -1,0 +1,19 @@
+[
+    {
+        "name": "Periopolis",
+        "srname": "ct_periopolis",
+        "connections": ["Viper's Peak"],
+        "capital": 1
+    },
+    {
+        "name": "Viper's Peak",
+        "srname": "viperspeak",
+        "connections": ["Oraistedarg"]
+    },
+    {
+        "name": "Oraistedarg",
+        "srname": "ct_oraistedarg",
+        "connections": [],
+        "capital": 0
+    }
+]
