@@ -25,6 +25,7 @@ class Bot(object):
         battles = session.query(Battle).all()
         for battle in battles:
             post = self.reddit.get_submission(
+                comment_limit=None,
                 submission_id=name_to_id(battle.submission_id))
             if post:
                 self.process_post_for_battle(post, battle, session)
@@ -84,7 +85,7 @@ class Bot(object):
         p = sess.query(Processed).filter_by(battle=battle).all()
         seen = [entry.id36 for entry in p]
 
-        replaced = post.replace_more_comments(threshold=0)
+        replaced = post.replace_more_comments(limit=None, threshold=0)
         if replaced:
             logging.info("Comments that went un-replaced: %s" % replaced)
         flat_comments = praw.helpers.flatten_tree(
