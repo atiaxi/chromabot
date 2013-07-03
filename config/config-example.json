@@ -19,6 +19,7 @@
         "battle_lockout": 1800,
         "leaders": ["YOU"],
         "sides": ["orangered", "periwinkle"],
-        "assignment": "uid"
+        "assignment": "uid",
+        "capital_invasion": "none"
     }
 }

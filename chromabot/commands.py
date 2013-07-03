@@ -125,6 +125,12 @@ class InvadeCommand(Command):
             begins = now + context.config["game"]["battle_delay"]
             battle = None
 
+            if dest.capital is not None:
+                invade = context.config['game']['capital_invasion']
+                if invade == 'none':
+                    context.reply("You cannot invade the enemy capital")
+                    return
+
             try:
                 battle = dest.invade(context.player, begins)
                 if "battle_lockout" in context.config["game"]:
