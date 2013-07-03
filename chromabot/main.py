@@ -9,7 +9,7 @@ from pyparsing import ParseException
 from config import Config
 from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
-from commands import Command, Context, failable
+from commands import Command, Context, failable, InvadeCommand
 from utils import base36decode, extract_command, num_to_team, name_to_id
 
 
@@ -164,6 +164,22 @@ class Bot(object):
     def update_game(self):
         session = self.db.session()
         MarchingOrder.update_all(session)
+
+        results = Region.update_all(session, self.config)
+        to_add = []
+        for newternal in results['new_eternal']:
+            title = "The Eternal Battle Rages On"
+            post = InvadeCommand.post_invasion(title, newternal, self.reddit)
+            if post:
+                newternal.submission_id = post.name
+                to_add.append(newternal)
+            else:
+                logging.warn("Couldn't submit eternal battle thread")
+                session.rollback()
+        if to_add:
+            session.add_all(to_add)
+            session.commit()
+
         results = Battle.update_all(session)
 
         for ready in results['begin']:

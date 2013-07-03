@@ -231,6 +231,7 @@ class Region(Base):
     srname = Column(String(255))
     capital = Column(Integer)
     owner = Column(Integer)
+    eternal = Column(Boolean)
 
     people = relationship("User", backref="region")
 
@@ -265,14 +266,18 @@ class Region(Base):
         for region in unconverted:
             capital = None
             owner = None
+            eternal = False
             if 'capital' in region:
                 capital = region['capital']
                 owner = capital
             if 'owner' in region:
                 owner = region['owner']
+            if 'eternal' in region:
+                eternal = bool(region['eternal'])
             created = cls(name=region['name'].lower(),
                           srname=region['srname'].lower(),
                           capital=capital,
+                          eternal=eternal,
                           owner=owner)
             result.append(created)
             atlas[created.name] = created
@@ -282,6 +287,21 @@ class Region(Base):
             created = atlas[region['name'].lower()]
             for adjacent in region['connections']:
                 created.add_border(atlas[adjacent.lower()])
+        return result
+
+    @classmethod
+    def update_all(cls, sess, config):
+        """Check for eternal battles that should be happening in the region"""
+        battles = []
+        regions = sess.query(cls).all()
+        for region in regions:
+            if region.eternal and not region.battle:
+                begins = now() + config['game']['battle_delay']
+                newbattle = region.new_battle_here(begins, autocommit=False)
+                battles.append(newbattle)
+        result = {
+            'new_eternal': battles
+        }
         return result
 
     def add_border(self, other_region):
@@ -310,14 +330,18 @@ class Region(Base):
         if not bad_neighbors:
             raise NonAdjacentException(self, "your territory")
 
+        by_who.defectable = False
+        return self.new_battle_here(when)
+
+    def new_battle_here(self, when, autocommit=True):
         sess = Session.object_session(self)
         battle = Battle(
             region=self,
             begins=when
             )
-        sess.add(battle)
-        by_who.defectable = False
-        sess.commit()
+        if autocommit:
+            sess.add(battle)
+            sess.commit()
         return battle
 
     def markdown(self):

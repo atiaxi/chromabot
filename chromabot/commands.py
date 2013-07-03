@@ -104,6 +104,20 @@ class InvadeCommand(Command):
     def __init__(self, tokens):
         self.where = tokens["where"].lower()
 
+    @staticmethod
+    @failable
+    def post_invasion(title, battle, reddit):
+        text = ("Negotiations have broken down, and the trumpets of "
+                "war have sounded.  Even now, civilians are being "
+                "evacuated and the able-bodied drafted.  The conflict "
+                "will soon be upon you.\n\n"
+                "Gather your forces while you can, for your enemy "
+                "shall arrive at %s") % battle.begins_str()
+        submitted = reddit.submit(battle.region.srname,
+                                   title=title,
+                                   text=text)
+        return submitted
+
     def execute(self, context):
         dest = self.get_region(self.where, context)
         if dest:
@@ -133,16 +147,9 @@ class InvadeCommand(Command):
                 context.reply("**Confirmed**  Battle will begin at %s" %
                               battle.begins_str())
                 title = ("[Invasion] The %s armies march!" %
-                         context.team_name())
-                text = ("Negotiations have broken down, and the trumpets of "
-                        "war have sounded.  Even now, civilians are being "
-                        "evacuated and the able-bodied drafted.  The conflict "
-                        "will soon be upon you.\n\n"
-                        "Gather your forces while you can, for your enemy "
-                        "shall arrive at %s") % battle.begins_str()
-                submitted = context.submit(dest.srname,
-                                           title=title,
-                                           text=text)
+                 context.team_name())
+                submitted = InvadeCommand.post_invasion(title, battle,
+                                                        context.reddit)
                 if submitted:
                     battle.submission_id = submitted.name
                     context.session.commit()
