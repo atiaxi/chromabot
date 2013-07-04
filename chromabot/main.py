@@ -198,8 +198,11 @@ class Bot(object):
             report += done.report(self.config)
 
             report.append("")
-            report.append(("## Final Score:  Team Orangered: %d "
-                           "Team Periwinkle: %d") % (done.score0, done.score1))
+            team0_name = num_to_team(0, self.config)
+            team1_name = num_to_team(1, self.config)
+            report.append(("## Final Score:  Team %s: %d "
+                           "Team %s: %d") % (team0_name, done.score0,
+                                             team1_name, done.score1))
             if done.victor is not None:
                 report.append("\n# The Victor:  Team %s" %
                               num_to_team(done.victor, self.config))
