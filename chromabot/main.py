@@ -238,7 +238,7 @@ class Bot(object):
 
 if __name__ == '__main__':
     fmt = "%(asctime)s: %(levelname)s %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=fmt)
+    logging.basicConfig(level=logging.INFO, format=fmt)
     c = Config()
     reddit = c.praw()
 
