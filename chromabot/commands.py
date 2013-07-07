@@ -369,8 +369,21 @@ class SkirmishCommand(Command):
                            subskirmish,
                            total, context.team_name()))
 
-            skirmish.comment_id = context.comment.name
+            if skirmish.parent:
+                skirmish.comment_id = context.comment.name
+            else:
+                # Create a top-level summary
+                rname = context.reply("(Placeholder for skirmish summary)")
+                skirmish.comment_id = rname.name
             context.session.commit()
+
+            # Update top-level summary
+            root = skirmish.get_root()
+            tls = context.reddit.get_info(
+                thing_id=root.comment_id)
+            text = "\n".join(root.full_details(config=context.config))
+            tls.edit(text)
+
         except db.NotPresentException as npe:
             standard = (("Your armies are currently in %s and thus cannot "
                          "participate in this battle.") %
@@ -416,6 +429,7 @@ class SkirmishCommand(Command):
         if found:
             return None
 
+        # get_info is what you're looking for when you want get_comment
         parent = context.reddit.get_info(thing_id=pid)
         if not parent:
             logging.warn("Can't get parent %s" % pid)

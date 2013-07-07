@@ -431,7 +431,7 @@ class Battle(Base):
         result = []
         for skirmish in self.skirmishes:
             if skirmish.parent is None or expand:
-                result.append(skirmish.report(config))
+                result.append(skirmish.report(config=config))
         return result
 
     def resolve(self):
@@ -562,6 +562,10 @@ class SkirmishAction(Base):
         else:
             return self
 
+    @property
+    def is_root(self):
+        return not self.parent
+
     def react(self, who, howmany, hinder=True, troop_type='infantry'):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self,
@@ -633,14 +637,54 @@ class SkirmishAction(Base):
 
     def report(self, config=None):
         preamble = "*  Skirmish #%d - the victor is " % self.id
+        postamble = self.winner_str(config)
+        result = (("%s %s") %
+                  (preamble, postamble))
+        return result
+
+    def winner_str(self, config=None):
         if self.victor is None:
-            vstr = None
             postamble = ""
         else:
             vstr = num_to_team(self.victor, config)
-            postamble = " by %d for **%d VP**" % (self.margin, self.vp)
-        result = (("%s **%s** %s") %
-                  (preamble, vstr, postamble))
+            postamble = ("**%s** by %d for **%d VP**" %
+                         (vstr, self.margin, self.vp))
+        return postamble
+
+    def details(self, config=None):
+        verb = 'support'
+        if self.hinder:
+            if self.parent:
+                verb = 'oppose'
+            else:
+                verb = "attack"
+        team = num_to_team(self.participant.team, config)
+        effective = self.amount
+        if self.parent:
+            effective = self.parent.adjusted_for_type(self.troop_type,
+                                                      effective,
+                                                      not self.hinder)
+
+        wins = self.winner_str(config)
+        if wins:
+            if self.children:
+                wins = "Victor: %s" % wins
+            else:
+                wins = ""
+        data = (self.id, self.participant.name, team, verb, self.amount,
+                self.troop_type, effective, wins)
+        command = "#%d %s (%s): **%s with %d %s** (effective: %d) %s" % data
+        return command
+
+    def full_details(self, indent=0, config=None):
+        result = []
+        if indent == 0:  # Add some context for root level
+            result.append("Confirmed actions for this skirmish:\n")
+
+        spacing = "  " * indent
+        result.append("%s* %s" % (spacing, self.details(config)))
+        for child in self.children:
+            result.extend(child.full_details(indent=indent + 1, config=config))
         return result
 
     def commit_if_valid(self):
