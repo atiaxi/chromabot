@@ -492,6 +492,7 @@ class SkirmishAction(Base):
 
     id = Column(Integer, primary_key=True)
     comment_id = Column(String)
+    summary_id = Column(String)
     amount = Column(Integer, default=0)
     hinder = Column(Boolean, default=True)
     troop_type = Column(String, default='infantry')
