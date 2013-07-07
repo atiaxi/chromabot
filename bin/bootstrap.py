@@ -10,6 +10,7 @@ import chromabot
 
 from chromabot import Config
 from chromabot.db import DB, User, Region
+from stamp import stamp
 
 def main():
     c = Config()
@@ -25,6 +26,8 @@ def main():
     regions = Region.create_from_json(json_file=source)
     sess.add_all(regions)
     sess.commit()
+    
+    stamp()
     
 if __name__ == '__main__':
     main()
