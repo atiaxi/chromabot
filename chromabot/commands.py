@@ -39,8 +39,18 @@ class Context(object):
         self.reddit = reddit    # root praw object
 
     @failable
-    def reply(self, reply):
-        return self.comment.reply(reply)
+    def reply(self, reply, pm=True):
+        was_comment = getattr(self.comment, 'was_comment', True)
+        header = ""
+        if was_comment and pm:
+            header = ("(In response to [this comment](%s))" %
+                      self.comment.permalink)
+        else:  # It wasn't a comment, or pm = False
+            return self.comment.reply(reply)
+
+        full_reply = "%s\n\n%s" % (header, reply)
+        self.reddit.send_message(self.player.name, "Chromabot reply",
+                                 full_reply)
 
     @failable
     def submit(self, srname, title, text):
@@ -192,9 +202,13 @@ class MoveCommand(Command):
                     (ie.requested, ie.available))
                 return
             except db.NonAdjacentException:
-                context.reply(
-                    "Your current region, %s, is not adjacent to %s" %
+                text = ("Your current region, %s, is not adjacent to %s" %
                     (context.player.region.markdown(), dest.markdown()))
+                if context.player.region == dest:
+                    text = ("How can you go to %s when "
+                            "you are *already here*?") % dest.markdown()
+                context.reply(text)
+
                 return
             except db.InProgressException as ipe:
                 # Determine if there's a move in progress or a battle
@@ -369,20 +383,18 @@ class SkirmishCommand(Command):
                            subskirmish,
                            total, context.team_name()))
 
-            if skirmish.parent:
-                skirmish.comment_id = context.comment.name
-            else:
+            skirmish.comment_id = context.comment.name
+            if not skirmish.parent:
                 # Create a top-level summary
-                rname = context.reply("(Placeholder for skirmish summary)")
-                skirmish.comment_id = rname.name
-            context.session.commit()
+                details = "\n".join(skirmish.full_details(
+                    config=context.config))
+                rname = context.reply(details, pm=False)
+                skirmish.summary_id = rname.name
+            else:
+                # Update the top-level summary
+                SkirmishCommand.update_summary(context, skirmish)
 
-            # Update top-level summary
-            root = skirmish.get_root()
-            tls = context.reddit.get_info(
-                thing_id=root.comment_id)
-            text = "\n".join(root.full_details(config=context.config))
-            tls.edit(text)
+            context.session.commit()
 
         except db.NotPresentException as npe:
             standard = (("Your armies are currently in %s and thus cannot "
@@ -466,6 +478,15 @@ class SkirmishCommand(Command):
         parent = context.session.query(SkirmishAction).filter_by(
             id=skid).first()
         return parent
+
+    @staticmethod
+    def update_summary(context, skirmish):
+        root = skirmish.get_root()
+        if root.summary_id:
+            tls = context.reddit.get_info(
+                thing_id=root.summary_id)
+            text = "\n".join(root.full_details(config=context.config))
+            tls.edit(text)
 
 
 class TimeCommand(Command):

@@ -436,7 +436,7 @@ class Battle(Base):
 
     def resolve(self):
         score = [0, 0]
-        for skirmish in [s for s in self.skirmishes if s.parent is None]:
+        for skirmish in self.toplevel_skirmishes():
             skirmish.resolve()
             if skirmish.victor is not None:
                 score[skirmish.victor] += skirmish.vp
@@ -470,6 +470,9 @@ class Battle(Base):
 
     def set_complete(self):
         self.ends = now()
+
+    def toplevel_skirmishes(self):
+        return [s for s in self.skirmishes if s.parent is None]
 
     def __repr__(self):
         return "<Battle(id='%s', region='%s'>" % (self.id, self.region)
@@ -682,7 +685,7 @@ class SkirmishAction(Base):
         if indent == 0:  # Add some context for root level
             result.append("Confirmed actions for this skirmish:\n")
 
-        spacing = "  " * indent
+        spacing = "    " * indent
         result.append("%s* %s" % (spacing, self.details(config)))
         for child in self.children:
             result.extend(child.full_details(indent=indent + 1, config=config))

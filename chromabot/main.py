@@ -9,7 +9,7 @@ from pyparsing import ParseException
 from config import Config
 from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
-from commands import Command, Context, failable, InvadeCommand
+from commands import Command, Context, failable, InvadeCommand, SkirmishCommand
 from utils import base36decode, extract_command, num_to_team, name_to_id
 
 
@@ -213,6 +213,15 @@ class Bot(object):
             post = self.reddit.get_submission(
                 submission_id=name_to_id(done.submission_id))
             post.edit(text)
+
+            # Update all the skirmish summaries
+            for s in done.toplevel_skirmishes():
+                c = Context(player=None,
+                            config=self.config,
+                            session=None,
+                            comment=None,
+                            reddit=self.reddit)
+                SkirmishCommand.update_summary(c, s)
 
             session.delete(done)
             session.commit()
