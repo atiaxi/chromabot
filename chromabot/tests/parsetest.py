@@ -96,6 +96,15 @@ class TestBattle(unittest.TestCase):
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
 
+    def test_targeted(self):
+        src = "support #7 with 30"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "support")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.target, 7)
+
     def test_misspellings(self):
         """Common mis-spellings are aliased"""
         src = "attack with 30 range"

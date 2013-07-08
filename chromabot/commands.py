@@ -330,6 +330,9 @@ class SkirmishCommand(Command):
         if 'troop_type' in tokens:
             self.troop_type = SkirmishCommand.ALIASES.get(tokens['troop_type'],
                                                           tokens['troop_type'])
+        self.target = None
+        if "target" in tokens:
+            self.target = int(tokens['target'])
 
     def execute(self, context):
         # getattr wackiness because real comments not gotten from inbox don't
@@ -349,12 +352,19 @@ class SkirmishCommand(Command):
             return
 
         try:
-            if post_id == context.comment.parent_id:
+            if not self.target and post_id == context.comment.parent_id:
                 skirmish = current.create_skirmish(context.player, self.amount,
                                                    troop_type=self.troop_type)
             else:
-                parent = self.find_skirmish_named(context.comment.parent_id,
-                                                  context)
+                if self.target:
+                    parent = self.find_skirmish_by_id(self.target, context)
+                    if parent.battle != current:
+                        context.reply("That skirmish belongs to "
+                                      "another battle!")
+                        return
+                else:
+                    parent = self.find_skirmish_named(
+                        context.comment.parent_id, context)
                 if not parent:
                     sub = self.extract_subskirmish(context, current)
                     if sub:

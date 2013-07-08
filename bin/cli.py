@@ -31,8 +31,8 @@ def end_battle(battle):
     battle.ends = battle.begins + 1
     sess.commit()
 
-def fast_battle():
-    where = by_name(Region, 'snooland')
+def fast_battle(named='snooland'):
+    where = by_name(Region, named)
     battle = where.new_battle_here(now() + 60)
     post = InvadeCommand.post_invasion("Fast battle go!", battle,
         reddit)
