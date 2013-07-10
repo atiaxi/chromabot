@@ -396,7 +396,7 @@ class SkirmishCommand(Command):
             skirmish.comment_id = context.comment.name
             if not skirmish.parent:
                 # Create a top-level summary
-                details = "\n".join(skirmish.full_details(
+                details = "\n\n".join(skirmish.full_details(
                     config=context.config))
                 rname = context.reply(details, pm=False)
                 skirmish.summary_id = rname.name
@@ -495,7 +495,7 @@ class SkirmishCommand(Command):
         if root.summary_id:
             tls = context.reddit.get_info(
                 thing_id=root.summary_id)
-            text = "\n".join(root.full_details(config=context.config))
+            text = "\n\n".join(root.full_details(config=context.config))
             tls.edit(text)
 
 

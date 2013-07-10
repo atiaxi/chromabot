@@ -677,7 +677,7 @@ class SkirmishAction(Base):
                 wins = ""
         data = (self.id, self.participant.name, team, verb, self.amount,
                 self.troop_type, effective, wins)
-        command = "#%d %s (%s): **%s with %d %s** (effective: %d) %s" % data
+        command = " \\#%d %s (%s): **%s with %d %s** (effective: %d) %s" % data
         return command
 
     def full_details(self, indent=0, config=None):
@@ -685,8 +685,8 @@ class SkirmishAction(Base):
         if indent == 0:  # Add some context for root level
             result.append("Confirmed actions for this skirmish:\n")
 
-        spacing = "    " * indent
-        result.append("%s* %s" % (spacing, self.details(config)))
+        spacing = ">" * indent
+        result.append("%s %s" % (spacing, self.details(config)))
         for child in self.children:
             result.extend(child.full_details(indent=indent + 1, config=config))
         return result
