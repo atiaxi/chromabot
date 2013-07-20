@@ -648,7 +648,7 @@ class SkirmishAction(Base):
 
     def winner_str(self, config=None):
         if self.victor is None:
-            postamble = ""
+            postamble = "**TIE**"
         else:
             vstr = num_to_team(self.victor, config)
             postamble = ("**%s** by %d for **%d VP**" %
@@ -669,12 +669,9 @@ class SkirmishAction(Base):
                                                       effective,
                                                       not self.hinder)
 
-        wins = self.winner_str(config)
-        if wins:
-            if self.children:
-                wins = "Victor: %s" % wins
-            else:
-                wins = ""
+        wins = ""
+        if self.victor is not None and self.children:
+            wins = "Victor: %s" % self.winner_str(config)
         data = (self.id, self.participant.name, team, verb, self.amount,
                 self.troop_type, effective, wins)
         command = " \\#%d %s (%s): **%s with %d %s** (effective: %d) %s" % data
