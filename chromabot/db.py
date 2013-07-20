@@ -674,7 +674,8 @@ class SkirmishAction(Base):
             wins = "Victor: %s" % self.winner_str(config)
         data = (self.id, self.participant.name, team, verb, self.amount,
                 self.troop_type, effective, wins)
-        command = " \\#%d %s (%s): **%s with %d %s** (effective: %d) %s" % data
+        command = (" \\#%d %s (%s): **%s with %d %s** "
+                   "(effective for above: %d) %s") % data
         return command
 
     def full_details(self, indent=0, config=None):
