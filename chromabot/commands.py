@@ -87,6 +87,43 @@ that, comment in the latest recruitment thread in /r/%s"""
         return dest
 
 
+class CodewordCommand(Command):
+    def __init__(self, tokens):
+        self.remove = 'remove' in tokens
+        self.all = 'all' in tokens
+        self.status = 'status' in tokens
+        if 'code' in tokens:
+            self.code = tokens['code']
+        self.word = tokens.get('troop_type', 'infantry')
+        # Correct spelling
+        self.word = SkirmishCommand.ALIASES.get(self.word, self.word)
+
+    def execute(self, context):
+        if self.remove:
+            if self.all:
+                cws = list(context.player.codewords)
+                for cw in cws:
+                    context.session.delete(cw)
+                context.session.commit()
+                context.reply("**Confirmed**:  You no longer have codewords")
+            else:
+                context.player.remove_codeword(self.code)
+                context.reply("**Confirmed**:  %s is no longer a codeword" %
+                              self.code)
+        elif self.status:
+            context.reply("Your codewords are as follows:\n\n%s" %
+                          "\n\n".join(self.status_list(context)))
+        else:
+            context.player.add_codeword(self.code, self.word)
+            context.reply(("**Confirmed**:  `%s` will now refer to %s") %
+                          (self.code, self.word))
+
+    def status_list(self, context):
+        result = ["**%s**: `%s`" % (cw.word, cw.code)
+                  for cw in context.player.codewords]
+        return result
+
+
 class DefectCommand(Command):
     def __init__(self, tokens):
         self.team = None

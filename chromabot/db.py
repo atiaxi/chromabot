@@ -119,6 +119,20 @@ class User(Base):
         else:
             return "captain"
 
+    def add_codeword(self, code, word):
+        s = self.session()
+        code = code.strip().lower()
+
+        # Does it already exist?
+        cw = s.query(CodeWord).filter_by(code=code, user=self).first()
+        if cw:
+            cw.word = word
+        else:
+            cw = CodeWord(code=code, word=word)
+            self.codewords.append(cw)
+            s.add(cw)
+        s.commit()
+
     def defect(self, team):
         if team == self.team or team > 1:
             raise TeamException("The team you are attempting to defect to",
@@ -174,6 +188,21 @@ class User(Base):
         sess.commit()
 
         return result
+
+    def remove_codeword(self, code):
+        s = self.session()
+        cw = s.query(CodeWord).filter_by(code=code, user=self).first()
+        if cw:
+            s.delete(cw)
+            s.commit()
+
+    def translate_codeword(self, code):
+        code = code.strip().lower()
+        s = self.session()
+        cw = s.query(CodeWord).filter_by(code=code, user=self).first()
+        if cw:
+            return cw.word
+        return code
 
 region_to_region = Table("region_to_region", Base.metadata,
         Column("left_id", Integer, ForeignKey("regions.id"), primary_key=True),
@@ -478,6 +507,21 @@ class Battle(Base):
         return "<Battle(id='%s', region='%s'>" % (self.id, self.region)
 
 
+class CodeWord(Base):
+    __tablename__ = 'codewords'
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(255))
+    word = Column(String(255))
+
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", backref="codewords")
+
+    def __repr__(self):
+        return "<CodeWord(code='%s', word='%s')>" % (self.code.encode('utf-8'),
+                                                     self.word.encode('utf-8'))
+
+
 class Processed(Base):
     __tablename__ = "processed"
 
@@ -492,6 +536,8 @@ class Processed(Base):
 
 class SkirmishAction(Base):
     __tablename__ = "skirmish_actions"
+
+    TROOP_TYPES = ['infantry', 'cavalry', 'ranged']
 
     id = Column(Integer, primary_key=True)
     comment_id = Column(String)
@@ -521,6 +567,11 @@ class SkirmishAction(Base):
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
                troop_type='infantry'):
+
+        troop_type = who.translate_codeword(troop_type)
+        if troop_type not in cls.TROOP_TYPES:
+            troop_type = 'infantry'
+
         sa = SkirmishAction(participant=who,
                             amount=howmany,
                             hinder=hinder,

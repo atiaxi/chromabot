@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import logging
 import time
 import unittest
@@ -403,6 +405,67 @@ class TestBattle(ChromaTest):
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
+
+    def test_default_codeword(self):
+        """Supplying an unrecognized codeword should default to 'infantry'"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1, troop_type='muppet')
+        self.assertEqual(s1.troop_type, "infantry")
+
+    def test_codeword(self):
+        """Use of codewords in top-level skirmises"""
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 0)
+        self.alice.add_codeword('muppet', 'ranged')
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 1)
+
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1, troop_type='muppet')
+        self.assertEqual(s1.troop_type, "ranged")
+
+        self.alice.remove_codeword('muppet')
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 0)
+        s2 = s1.react(self.alice, 1, hinder=False, troop_type='muppet')
+        self.assertEqual(s2.troop_type, 'infantry')
+
+    def test_unicodeword(self):
+        self.alice.add_codeword(u'ಠ_ಠ', 'ranged')
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1, troop_type=u'ಠ_ಠ')
+        self.assertEqual(s1.troop_type, "ranged")
+
+    def test_overwrite_codeword(self):
+        """Use of codewords in top-level skirmises"""
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 0)
+        self.alice.add_codeword('muppet', 'ranged')
+        self.assertEqual(self.alice.translate_codeword('muppet'), 'ranged')
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 1)
+        self.alice.add_codeword('muppet', 'infantry')
+        self.assertEqual(self.alice.translate_codeword('muppet'), 'infantry')
+        self.assertEqual(self.sess.query(db.CodeWord).count(), 1)
+
+    def test_extra_default_codeword(self):
+        """Using the wrong codeword should also default to infantry"""
+        self.alice.add_codeword("flugelhorn", "ranged")
+
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1, troop_type='muppet')
+        self.assertEqual(s1.troop_type, "infantry")
+
+    def test_response_codeword(self):
+        """Use of codewords in response skirmishes"""
+        self.bob.add_codeword('muppet', 'ranged')
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)
+        s2 = s1.react(self.bob, 100, troop_type='muppet')
+        self.assertEqual(s2.troop_type, 'ranged')
+
+    def test_no_cross_codewording(self):
+        """Bob's codewords don't work for alice"""
+        self.bob.add_codeword('muppet', 'ranged')
+
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1, troop_type='muppet')
+        self.assertEqual(s1.troop_type, "infantry")
 
     def test_complex_resolve_cancel(self):
         """Multilayer battle resolution that cancels itself out"""

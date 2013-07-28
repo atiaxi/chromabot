@@ -1,13 +1,14 @@
 from pyparsing import *
 
-from commands import (DefectCommand, InvadeCommand, MoveCommand,
-                      PromoteCommand, SkirmishCommand, StatusCommand,
-                      TimeCommand)
+from commands import (CodewordCommand, DefectCommand, InvadeCommand,
+                      MoveCommand, PromoteCommand, SkirmishCommand,
+                      StatusCommand, TimeCommand)
 
 number = Word(nums)
 string = QuotedString('"', '\\')
 subreddit = Suppress("/r/") + Word(alphanums + "_-")
 location = string | subreddit | Word(alphanums + "_-")
+eolstring = Word(printables + " ")
 
 attack = Keyword("attack")
 oppose = Keyword("oppose")
@@ -15,10 +16,11 @@ support = Keyword("support")
 participate = attack | oppose | support
 troop_types = Keyword("cavalry") | Keyword("infantry") | Keyword("ranged")
 troop_aliases = Keyword("calvary") | Keyword("calvalry") | Keyword("range")
+alltroops = troop_types | troop_aliases
 target = Suppress("#") + number("target")
 skirmishcmd = (participate("action") + Optional(target) +
                Suppress("with") + number("amount") +
-               Optional(troop_types | troop_aliases)("troop_type"))
+               Optional(eolstring)("troop_type"))
 skirmishcmd.setParseAction(SkirmishCommand)
 
 invade = Keyword("invade")
@@ -42,11 +44,19 @@ promotecmd.setParseAction(PromoteCommand)
 timecmd = Keyword("time")
 timecmd.setParseAction(TimeCommand)
 
+
+removecode = Keyword("remove")('remove') + (Keyword("all")('all')
+                                            | string("code"))
+assigncode = string("code") + Keyword("is") + alltroops("troop_type")
+statuscode = Keyword("status")('status')
+codewordcmd = Keyword("codeword") + (removecode | statuscode | assigncode)
+codewordcmd.setParseAction(CodewordCommand)
+
 statuscmd = Keyword("status")
 statuscmd.setParseAction(StatusCommand)
 
 root = (statuscmd | movecmd | invadecmd | skirmishcmd | defectcmd |
-        promotecmd | timecmd)
+        promotecmd | timecmd | codewordcmd)
 
 
 def parse(s):

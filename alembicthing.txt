@@ -1,0 +1,4 @@
+HOWTO:  Do the alembic thing
+
+alembic revision --autogenerate -m "Added account table"
+alembic upgrade head

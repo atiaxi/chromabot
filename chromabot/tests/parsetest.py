@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import unittest
 
 import utils
@@ -79,7 +81,15 @@ class TestBattle(unittest.TestCase):
         self.assertIsInstance(parsed, SkirmishCommand)
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
-        self.assertEqual(parsed.troop_type, "infantry")
+        self.assertEqual(parsed.troop_type, "muppet")
+
+    def test_attack_with_codeword(self):
+        src = "attack with 30 copies of my college thesis"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, SkirmishCommand)
+        self.assertEqual(parsed.action, "attack")
+        self.assertEqual(parsed.amount, 30)
+        self.assertEqual(parsed.troop_type, "copies of my college thesis")
 
     def test_support(self):
         src = "support with 30"
@@ -127,6 +137,60 @@ class TestBattle(unittest.TestCase):
         self.assertEqual(parsed.action, "attack")
         self.assertEqual(parsed.amount, 30)
         self.assertEqual(parsed.troop_type, "cavalry")
+
+
+class TestCodeword(unittest.TestCase):
+    def testBasicCodeword(self):
+        src = 'codeword "barf" is infantry'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertFalse(parsed.remove)
+        self.assertFalse(parsed.status)
+        self.assertEqual(parsed.code, 'barf')
+        self.assertEqual(parsed.word, "infantry")
+
+    def testBiggerCodeword(self):
+        src = 'codeword "hello, world!" is ranged'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertEqual(parsed.code, 'hello, world!')
+        self.assertEqual(parsed.word, "ranged")
+
+    def testUnicodeword(self):
+        """See what I did there?"""
+        src = u'codeword "ಠ_ಠ" is cavalry'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertEqual(parsed.code, u'ಠ_ಠ')
+        self.assertEqual(parsed.word, "cavalry")
+
+    def testCodewordAliases(self):
+        src = 'codeword "werg" is calvalry'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertEqual(parsed.code, 'werg')
+        self.assertEqual(parsed.word, "cavalry")
+
+    def testRemoveCodeword(self):
+        src = 'codeword remove "werg"'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertEqual(parsed.code, 'werg')
+        self.assert_(parsed.remove)
+        self.assertFalse(parsed.all)
+
+    def testRemoveAllCodeword(self):
+        src = 'codeword remove all'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assert_(parsed.remove)
+        self.assert_(parsed.all)
+
+    def testCodewordStatus(self):
+        src = 'codeword status'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assert_(parsed.status)
 
 
 class TestStatus(unittest.TestCase):
