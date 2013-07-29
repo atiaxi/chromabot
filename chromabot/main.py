@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+import json
 import logging
+import os.path
 import random
 import time
+from urllib import urlencode
 
 import praw
 from pyparsing import ParseException
@@ -81,6 +84,45 @@ class Bot(object):
             comment.reply(Command.FAIL_NOT_PLAYER %
                               self.config.headquarters)
         return player
+
+    def generate_reports(self):
+        rdir = self.config["bot"].get("report_dir")
+        if not rdir:
+            return
+        logging.info("Generating reports")
+        s = self.db.session()
+        regions = s.query(Region).all()
+        if dir:
+            with open(os.path.join(rdir, "report.txt"), 'w') as url:
+                urldict = {}
+                for r in regions:
+                    if r.owner is not None:
+                        owner = r.owner
+                    else:
+                        owner = -1
+                    urldict[r.srname] = owner
+                url.write(urlencode(urldict))
+
+            with open(os.path.join(rdir, "report.json"), 'w') as j:
+                jdict = {}
+                for r in regions:
+                    rdict = {}
+                    rdict['name'] = r.name
+                    rdict['srname'] = r.srname
+                    if r.owner is not None:
+                        rdict['owner'] = r.owner
+                    else:
+                        rdict['owner'] = -1
+
+                    if r.battle:
+                        if r.battle.has_started():
+                            rdict['battle'] = 'underway'
+                        else:
+                            rdict['battle'] = 'preparing'
+                    else:
+                        rdict['battle'] = 'none'
+                    jdict[r.srname] = rdict
+                j.write(json.dumps(jdict))
 
     def process_post_for_battle(self, post, battle, sess):
         p = sess.query(Processed).filter_by(battle=battle).all()
@@ -244,6 +286,8 @@ class Bot(object):
             self.check_battles()
             logging.info("Updating game state")
             self.update_game()
+            # generate_reports logs itself
+            self.generate_reports()
             logging.info("Sleeping")
             time.sleep(self.config["bot"]["sleep"])
         logging.fatal("Unable to log into bot; shutting down")
