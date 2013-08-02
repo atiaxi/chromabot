@@ -4,7 +4,7 @@ import time
 import traceback
 
 import praw
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 import db
 from db import Battle, Region, Processed, SkirmishAction, User
@@ -19,6 +19,9 @@ def failable(f):
             full = traceback.format_exc()
             logging.warning("Reddit API call failed! %s" % full)
             return None
+        except ConnectionError:
+            full = traceback.format_exc()
+            logging.warning("Connection error: %s", full)
         except Timeout:
             full = traceback.format_exc()
             logging.warning("Socket timeout! %s" % full)
