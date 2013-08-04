@@ -278,8 +278,8 @@ class Bot(object):
         logged_in = self.login()
         while(logged_in):
             self.config.refresh()
-            logging.info("Checking headquarters")
-            self.check_hq()
+            #logging.info("Checking headquarters")
+            #self.check_hq()
             logging.info("Checking Messages")
             self.check_messages()
             logging.info("Checking Battles")

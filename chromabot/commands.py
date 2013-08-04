@@ -398,9 +398,13 @@ class SkirmishCommand(Command):
             else:
                 if self.target:
                     parent = self.find_skirmish_by_id(self.target, context)
-                    if parent.battle != current:
+                    if parent and parent.battle != current:
                         context.reply("That skirmish belongs to "
                                       "another battle!")
+                        return
+                    if not parent:
+                        context.reply("That does not appear to be a valid "
+                                      "skirmish!")
                         return
                 else:
                     parent = self.find_skirmish_named(
@@ -439,7 +443,15 @@ class SkirmishCommand(Command):
                 details = "\n\n".join(skirmish.full_details(
                     config=context.config))
                 rname = context.reply(details, pm=False)
-                skirmish.summary_id = rname.name
+                if rname:
+                    skirmish.summary_id = rname.name
+                else:
+                    # Couldn't reply, bail!
+                    context.session.rollback()
+                    context.reply("I'm sorry - an error occurred and "
+                                  "I coudn't commit your skirmish.  Disregard "
+                                  "the previous confirmation")
+                    return
             else:
                 # Update the top-level summary
                 SkirmishCommand.update_summary(context, skirmish)
