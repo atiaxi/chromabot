@@ -771,6 +771,14 @@ class SkirmishAction(Base):
             if self.hinder == sameteam:
                 sess.rollback()
                 raise TeamException(self, friendly=sameteam)
+
+            # Can only react once to any given SkirmishAction
+            s = (sess.query(SkirmishAction).
+                 filter_by(parent=self.parent).
+                 filter_by(participant=self.participant)).count()
+            if s > 1:  # Off by one same as below
+                sess.rollback()
+                raise InProgressException(self.parent)
         else:
             # Make sure our participant doesn't have another toplevel
             s = (sess.query(SkirmishAction).

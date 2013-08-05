@@ -277,6 +277,18 @@ class TestBattle(ChromaTest):
             filter_by(participant=self.alice)).count()
         self.assertEqual(n, 1)
 
+    def test_single_response_to_skirmish(self):
+        """Each participant can only response once to a skirmishaction"""
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        s1.react(self.bob, 1)
+
+        with self.assertRaises(db.InProgressException):
+            s1.react(self.bob, 1)
+
+        n = (self.sess.query(db.SkirmishAction).
+             count())
+        self.assertEqual(n, 2)
+
     def test_no_last_minute_ambush(self):
         """
         Can't make toplevel attacks within the last X seconds of the battle

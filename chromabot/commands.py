@@ -477,9 +477,15 @@ class SkirmishCommand(Command):
                 context.reply("You cannot attack someone on your team")
             else:
                 context.reply("You cannot aid the enemy!")
-        except db.InProgressException:
-            context.reply("You can only spearhead one offensive per battle "
-                          "(though you may still assist others)")
+        except db.InProgressException as ipe:
+            if isinstance(ipe.other, Battle):
+                context.reply("You can only spearhead one offensive per "
+                              "battle (though you may still assist others)")
+            else:
+                context.reply("You may only respond to a specific "
+                              "sub-skirmish once (though you may still "
+                              "fight elsewhere)")
+
         except db.InsufficientException as ie:
             if ie.requested <= 0:
                 context.reply("You must use at least 1 troop!")
