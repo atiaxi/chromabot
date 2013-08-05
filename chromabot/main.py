@@ -24,10 +24,11 @@ class Bot(object):
         self.reddit = reddit
         self.db = DB(config)
         self.db.create_all()
+        self.session = self.db.session()
 
     @failable
     def check_battles(self):
-        session = self.db.session()
+        session = self.session
         battles = session.query(Battle).all()
         for battle in battles:
             post = self.reddit.get_submission(
@@ -48,7 +49,7 @@ class Bot(object):
     @failable
     def check_messages(self):
         unread = reddit.get_unread(True, True)
-        session = self.db.session()
+        session = self.session
         for comment in unread:
             # Only PMs, we deal with comment replies in process_post_for_battle
             if not comment.was_comment:
@@ -92,7 +93,7 @@ class Bot(object):
         Separate from the others as this logs to a sidebar rather than
         a file
         """
-        s = self.db.session()
+        s = self.session
 
         land_report = StatusCommand.lands_status_for(s, self.config)
         hq = self.reddit.get_subreddit(self.config.headquarters)
@@ -116,7 +117,7 @@ class Bot(object):
         rdir = self.config["bot"].get("report_dir")
         if not rdir:
             return
-        s = self.db.session()
+        s = self.session
         regions = s.query(Region).all()
         with open(os.path.join(rdir, "report.txt"), 'w') as url:
             urldict = {}
@@ -180,7 +181,7 @@ class Bot(object):
     def recruit_from_post(self, post):
         post.replace_more_comments(threshold=0)
         flat_comments = praw.helpers.flatten_tree(post.comments)
-        session = self.db.session()
+        session = self.session
         for comment in flat_comments:
             if not comment.author:  # Deleted comments don't have an author
                 continue
@@ -229,7 +230,7 @@ class Bot(object):
 
     @failable
     def update_game(self):
-        session = self.db.session()
+        session = self.session
         MarchingOrder.update_all(session)
 
         results = Region.update_all(session, self.config)
