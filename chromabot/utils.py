@@ -50,7 +50,7 @@ def timestr(secs=None):
         secs = time.mktime(time.localtime())
 
     timeresult = time.gmtime(secs)
-    timestresult = time.strftime("%Y-%m-%d %H:%M:%S GMT", timeresult)
+    timestresult = time.strftime("%Y-%m-%d %I:%M:%S %p GMT", timeresult)
     url = ("http://www.wolframalpha.com/input/?i=%s+in+local+time" %
            quote_plus(timestresult))
     return "[%s](%s)" % (timestresult, url)

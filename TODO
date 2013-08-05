@@ -18,5 +18,3 @@
 * Battle troop rewards
 * "only spearhead one offensive" should link to preexisting offensive
 * People can't participate in battles created before they were
-* GMT times that are in the AM can erroneously be interpreted as PM; explicitly
-  include AM on <12
