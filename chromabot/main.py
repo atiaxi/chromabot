@@ -12,8 +12,10 @@ from pyparsing import ParseException
 from config import Config
 from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
-from commands import Command, Context, failable, InvadeCommand, SkirmishCommand
-from utils import base36decode, extract_command, num_to_team, name_to_id
+from commands import (Command, Context, failable, InvadeCommand,
+                      SkirmishCommand, StatusCommand)
+from utils import (base36decode, extract_command, num_to_team, name_to_id, now,
+                   timestr)
 
 
 class Bot(object):
@@ -85,44 +87,67 @@ class Bot(object):
                               self.config.headquarters)
         return player
 
-    def generate_reports(self):
+    def generate_markdown_report(self, loop_start):
+        """
+        Separate from the others as this logs to a sidebar rather than
+        a file
+        """
+        s = self.db.session()
+
+        land_report = StatusCommand.lands_status_for(s, self.config)
+        hq = self.reddit.get_subreddit(self.config.headquarters)
+
+        cur = now()
+        elapsed = (cur - loop_start) + self.config["bot"]["sleep"]
+
+        bot_report = ("Bot Status:\n\n"
+                      "* Last run at %s\n\n"
+                      "* Seconds per Frame: %d") % (timestr(cur), elapsed)
+
+        report = "%s\n\n%s" % (land_report, bot_report)
+
+        # This is apparently not immediately done, or there's some caching.
+        # Keep an eye on it.
+        hq.update_settings(description=report)
+
+    def generate_reports(self, loop_start):
+        logging.info("Generating reports")
+        self.generate_markdown_report(loop_start)
         rdir = self.config["bot"].get("report_dir")
         if not rdir:
             return
-        logging.info("Generating reports")
         s = self.db.session()
         regions = s.query(Region).all()
-        if dir:
-            with open(os.path.join(rdir, "report.txt"), 'w') as url:
-                urldict = {}
-                for r in regions:
-                    if r.owner is not None:
-                        owner = r.owner
-                    else:
-                        owner = -1
-                    urldict[r.srname] = owner
-                url.write(urlencode(urldict))
+        with open(os.path.join(rdir, "report.txt"), 'w') as url:
+            urldict = {}
+            for r in regions:
+                if r.owner is not None:
+                    owner = r.owner
+                else:
+                    owner = -1
+                urldict[r.srname] = owner
+            url.write(urlencode(urldict))
 
-            with open(os.path.join(rdir, "report.json"), 'w') as j:
-                jdict = {}
-                for r in regions:
-                    rdict = {}
-                    rdict['name'] = r.name
-                    rdict['srname'] = r.srname
-                    if r.owner is not None:
-                        rdict['owner'] = r.owner
-                    else:
-                        rdict['owner'] = -1
+        with open(os.path.join(rdir, "report.json"), 'w') as j:
+            jdict = {}
+            for r in regions:
+                rdict = {}
+                rdict['name'] = r.name
+                rdict['srname'] = r.srname
+                if r.owner is not None:
+                    rdict['owner'] = r.owner
+                else:
+                    rdict['owner'] = -1
 
-                    if r.battle:
-                        if r.battle.has_started():
-                            rdict['battle'] = 'underway'
-                        else:
-                            rdict['battle'] = 'preparing'
+                if r.battle:
+                    if r.battle.has_started():
+                        rdict['battle'] = 'underway'
                     else:
-                        rdict['battle'] = 'none'
-                    jdict[r.srname] = rdict
-                j.write(json.dumps(jdict))
+                        rdict['battle'] = 'preparing'
+                else:
+                    rdict['battle'] = 'none'
+                jdict[r.srname] = rdict
+            j.write(json.dumps(jdict))
 
     def process_post_for_battle(self, post, battle, sess):
         p = sess.query(Processed).filter_by(battle=battle).all()
@@ -277,9 +302,10 @@ class Bot(object):
         logging.info("Bot started up")
         logged_in = self.login()
         while(logged_in):
+            loop_start = now()
             self.config.refresh()
-            #logging.info("Checking headquarters")
-            #self.check_hq()
+            logging.info("Checking headquarters")
+            self.check_hq()
             logging.info("Checking Messages")
             self.check_messages()
             logging.info("Checking Battles")
@@ -287,7 +313,7 @@ class Bot(object):
             logging.info("Updating game state")
             self.update_game()
             # generate_reports logs itself
-            self.generate_reports()
+            self.generate_reports(loop_start)
             logging.info("Sleeping")
             time.sleep(self.config["bot"]["sleep"])
         logging.fatal("Unable to log into bot; shutting down")

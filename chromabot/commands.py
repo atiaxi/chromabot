@@ -287,12 +287,9 @@ class MoveCommand(Command):
 
 class StatusCommand(Command):
 
-    def execute(self, context):
-        status = self.status_for(context)
-        context.reply(status)
-
-    def lands_status(self, context):
-        regions = context.session.query(Region).all()
+    @classmethod
+    def lands_status_for(cls, session, config):
+        regions = session.query(Region).all()
         fmt = "* **%s**:  %s%s"
         result = []
         for region in regions:
@@ -300,10 +297,17 @@ class StatusCommand(Command):
             if region.battle:
                 dispute = " ( %s )" % region.battle.markdown()
             result.append(fmt % (region.markdown(),
-                                 num_to_team(region.owner, context.config),
+                                 num_to_team(region.owner, config),
                                  dispute))
         lands = "\n".join(result)
-        return "State of Chroma:\n\n" + lands
+        return "State of the Lands:\n\n" + lands
+
+    def execute(self, context):
+        status = self.status_for(context)
+        context.reply(status)
+
+    def lands_status(self, context):
+        return StatusCommand.lands_status_for(context.session, context.config)
 
     def status_for(self, context):
         found = context.player
