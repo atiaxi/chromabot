@@ -88,6 +88,7 @@ class Bot(object):
                               self.config.headquarters)
         return player
 
+    @failable
     def generate_markdown_report(self, loop_start):
         """
         Separate from the others as this logs to a sidebar rather than
