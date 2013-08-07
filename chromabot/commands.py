@@ -7,7 +7,7 @@ import praw
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 import db
-from db import Battle, Region, Processed, SkirmishAction, User
+from db import Battle, Buff, Region, Processed, SkirmishAction, User
 from utils import now, num_to_team, team_to_num, timestr
 
 
@@ -378,6 +378,17 @@ class SkirmishCommand(Command):
         if "target" in tokens:
             self.target = int(tokens['target'])
 
+    def first_strike(self, context, skirm):
+        """Returns true if this skirmish is eligible for first strike"""
+        fftb = context.config['game'].get('fftb_time', 0)
+        if fftb:
+            pre = (context.session.query(SkirmishAction).
+                   filter_by(battle=skirm.battle,
+                             participant=skirm.participant)).count()
+            cutoff = skirm.battle.begins + fftb
+            if now() <= cutoff and pre <= 1:
+                return True
+
     def execute(self, context):
         # getattr wackiness because real comments not gotten from inbox don't
         # have "was_comment" set on them
@@ -427,6 +438,9 @@ class SkirmishCommand(Command):
                                         hinder=hinder,
                                         troop_type=self.troop_type)
             total = context.player.committed_loyalists
+
+            if self.first_strike(context, skirmish):
+                skirmish.buff_with(Buff.first_strike())
 
             subskirmish = ""
             if skirmish.get_root().id != skirmish.id:

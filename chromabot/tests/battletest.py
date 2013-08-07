@@ -145,6 +145,7 @@ class TestBattle(ChromaTest):
         battle.create_skirmish(self.alice, 1)
         s2 = battle.create_skirmish(self.bob, 1)
         s2.react(self.alice, 1)
+        s2.buff_with(db.Buff.first_strike())
 
         # Make up some processed comments
         battle.processed_comments.append(Processed(id36="foo"))
@@ -152,6 +153,7 @@ class TestBattle(ChromaTest):
         self.sess.commit()
         self.assertNotEqual(self.sess.query(Processed).count(), 0)
         self.assertNotEqual(self.sess.query(SkirmishAction).count(), 0)
+        self.assertNotEqual(self.sess.query(db.Buff).count(), 0)
 
         self.sess.delete(battle)
         self.sess.commit()
@@ -159,6 +161,7 @@ class TestBattle(ChromaTest):
         # Shouldn't be any skirmishes or processed
         self.assertEqual(self.sess.query(Processed).count(), 0)
         self.assertEqual(self.sess.query(SkirmishAction).count(), 0)
+        self.assertEqual(self.sess.query(db.Buff).count(), 0)
 
     def test_get_battle(self):
         """get_battle and get_root work, right?"""
@@ -703,6 +706,20 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.victor, self.bob.team)
         self.assertEqual(result.margin, 4)
         self.assertEqual(result.vp, 20)
+
+    def test_buff_first_strike(self):
+        """See that first strike works correctly"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 20)  # Attack 20 infantry
+        s1.react(self.bob, 24)                       # -- oppose 24 infantry
+
+        s1.buff_with(db.Buff.first_strike())
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 1)
+        self.assertEqual(result.vp, 24)
 
     def test_orangered_victory(self):
         """Make sure orangered victories actually count"""

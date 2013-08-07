@@ -3,7 +3,7 @@ import logging
 import time
 
 from sqlalchemy import (
-    create_engine, Boolean, Column, ForeignKey, Integer, String, Table)
+    create_engine, Boolean, Column, Float, ForeignKey, Integer, String, Table)
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -582,6 +582,12 @@ class SkirmishAction(Base):
 
         return sa
 
+    def adjusted_for_buffs(self):
+        amount = self.amount
+        for buff in self.buffs:
+            amount += (buff.value * amount)
+        return int(amount)
+
     def adjusted_for_type(self, other_type, amount, support=False):
         """Certain types will be more effective vs. this skirmish"""
         if support:
@@ -597,6 +603,11 @@ class SkirmishAction(Base):
         elif other_type == bonus:
             result = int(amount * 1.5)
         return result
+
+    def buff_with(self, buff):
+        self.buffs.append(buff)
+        self.session().add(buff)
+        self.session().commit()
 
     def get_battle(self):
         """
@@ -632,15 +643,15 @@ class SkirmishAction(Base):
         # Make a results representing us
         self.victor = self.participant.team
         self.vp = 0
-        self.margin = self.amount
+        self.margin = self.adjusted_for_buffs()
         self.unopposed = True
 
         # Resolve our children, if any
         if self.children:
             supporters = [child.resolve() for child in self.children
                           if child.hinder == False]
-            support = self.amount
-            raw_support = support
+            raw_support = self.amount
+            support = self.margin
             attack = 0
             raw_attack = attack
             for supporter in supporters:
@@ -714,19 +725,25 @@ class SkirmishAction(Base):
             else:
                 verb = "attack"
         team = num_to_team(self.participant.team, config)
-        effective = self.amount
+        amount = self.adjusted_for_buffs()
+        effective = amount
         if self.parent:
             effective = self.parent.adjusted_for_type(self.troop_type,
                                                       effective,
                                                       not self.hinder)
 
+        buffs = ["*%s*" % b.name for b in self.buffs]
+        buffs = ", ".join(buffs)
+        if buffs:
+            buffs = " (Buffs: %s) " % buffs
+
         wins = ""
         if self.victor is not None and self.children:
             wins = "Victor: %s" % self.winner_str(config)
         data = (self.id, self.participant.name, team, verb, self.amount,
-                self.troop_type, effective, wins)
-        command = (" \\#%d %s (%s): **%s with %d %s** "
-                   "(effective for above: %d) %s") % data
+                self.troop_type, buffs, amount, effective, wins)
+        command = (" \\#%d %s (%s): **%s with %d %s** %s"
+                   "(effective: %d, for above: %d) %s") % data
         return command
 
     def full_details(self, indent=0, config=None):
@@ -823,4 +840,28 @@ class SkirmishAction(Base):
                                               self.hinder,
                                               pstr)
         return result
+
+
+class Buff(Base):
+    __tablename__ = 'buffs'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, default='buff')
+    internal = Column(String, default='buff')
+    value = Column(Float, default=0)
+    expires = Column(Integer, default=0)
+
+    skirmish_id = Column(Integer, ForeignKey('skirmish_actions.id'))
+    skirmish = relationship("SkirmishAction",
+                            backref=backref('buffs', cascade='all, delete'))
+
+    region_id = Column(Integer, ForeignKey('regions.id'))
+    region = relationship('Region', backref='buffs')
+
+    # Class methods for creating all the common buffs
+    @classmethod
+    def first_strike(cls):
+        return cls(name="Fortune Favors the Brave",
+                   internal="first_strike",
+                   value=0.25)
 
