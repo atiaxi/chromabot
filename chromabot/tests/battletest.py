@@ -36,6 +36,20 @@ class TestBattle(ChromaTest):
 
         self.sess.commit()
 
+    def end_battle(self, battle=None):
+        if battle is None:
+            battle = self.battle
+        sess = self.sess
+
+        battle.ends = battle.begins
+        sess.commit()
+        updates = Battle.update_all(sess)
+        sess.commit()
+
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], battle)
+        return battle
+
     def test_battle_creation(self):
         """Typical battle announcement"""
         londo = self.get_region("Orange Londo")
@@ -236,14 +250,7 @@ class TestBattle(ChromaTest):
         self.battle.create_skirmish(self.alice, 5)
 
         # And just like that, the battle's over
-        self.battle.ends = self.battle.begins
-        sess.commit()
-
-        updates = Battle.update_all(sess)
-        sess.commit()
-
-        self.assertNotEqual(len(updates['ended']), 0)
-        self.assertEqual(updates["ended"][0], self.battle)
+        self.end_battle()
 
         self.assertEqual(self.alice.committed_loyalists, old)
 
@@ -255,13 +262,7 @@ class TestBattle(ChromaTest):
         old_alice_region = self.alice.region
         self.battle.create_skirmish(self.alice, 5)
 
-        self.battle.ends = self.battle.begins
-        self.sess.commit()
-
-        updates = Battle.update_all(self.sess)
-        self.sess.commit()
-        self.assertNotEqual(len(updates['ended']), 0)
-        self.assertEqual(updates["ended"][0], self.battle)
+        self.end_battle()
 
         self.assertEqual(self.battle.victor, self.alice.team)
 
@@ -720,6 +721,110 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.victor, self.alice.team)
         self.assertEqual(result.margin, 1)
         self.assertEqual(result.vp, 24)
+
+    def test_buff_otd(self):
+        battle = self.battle
+
+        # For the buff to work, alice needs to own this region
+        battle.region.owner = self.alice.team
+        self.sess.commit()
+
+        s1 = battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
+        s1.react(self.bob, 34)                       # -- oppose 34 infantry
+        result = s1.resolve()
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 30)
+
+        s2 = battle.create_skirmish(self.bob, 29)  # Attack with 29 infantry
+        s2.react(self.alice, 31)                   # -- oppose with 31 infantry
+        result = s2.resolve()
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.vp, 29)
+
+        # Bob's winning this, but wait!  A buff!
+        battle.region.buff_with(db.Buff.otd())
+        self.end_battle()
+
+        # Now alice should be winning, 31 to 30
+        self.assertEqual(self.battle.victor, self.alice.team)
+        # score1 is the score for team 1
+        self.assertEqual(self.battle.score1, 30)
+        # score0 should include the buff
+        self.assertEqual(self.battle.score0, 31)
+
+    def test_buff_otd_gain(self):
+        battle = self.battle
+        region = battle.region
+        self.assertEqual(region.owner, None)
+
+        battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
+
+        # No buffs before battle ends
+        self.assertEqual(self.sess.query(db.Buff).count(), 0)
+
+        self.end_battle()
+        # Should have gotten a buff for our region
+        self.assertEqual(self.sess.query(db.Buff).count(), 1)
+        self.assertEqual(len(region.buffs), 1)
+        self.assertEqual(region.buffs[0].internal, "otd")
+
+    def test_buff_expiration(self):
+        """Buffs should expire during update"""
+        sess = self.sess
+        battle = self.battle
+
+        # For the buff to work, alice needs to own this region
+        battle.region.owner = self.alice.team
+        sess.commit()
+
+        s1 = battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
+        s1.react(self.bob, 34)                       # -- oppose 34 infantry
+        result = s1.resolve()
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 30)
+
+        s2 = battle.create_skirmish(self.bob, 29)  # Attack with 29 infantry
+        s2.react(self.alice, 31)                   # -- oppose with 31 infantry
+        result = s2.resolve()
+        self.assertEqual(result.victor, self.alice.team)
+        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.vp, 29)
+
+        # Bob's winning this, but wait!  A buff that expires immediately!
+        battle.region.buff_with(db.Buff.otd(expiration=now() - 30))
+
+        # One buff should exist in DB
+        self.assertEqual(sess.query(db.Buff).count(), 1)
+        db.Buff.update_all(sess)
+        # Now it should be gone due to expiration
+        self.assertEqual(sess.query(db.Buff).count(), 0)
+
+        self.end_battle()
+
+        # Bob wins because buff expired, 30 to 29
+        self.assertEqual(self.battle.victor, self.bob.team)
+        # score1 is the score for team 1
+        self.assertEqual(self.battle.score1, 30)
+        # score0 should not include the buff
+        self.assertEqual(self.battle.score0, 29)
+
+    def test_buff_nostacking(self):
+        """Same-named buffs shouldn't stack"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 20)  # Attack 20 infantry
+        s1.react(self.bob, 26)                       # -- oppose 26 infantry
+
+        s1.buff_with(db.Buff.first_strike())
+        s1.buff_with(db.Buff.first_strike())
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 1)
+        self.assertEqual(result.vp, 20)
 
     def test_orangered_victory(self):
         """Make sure orangered victories actually count"""

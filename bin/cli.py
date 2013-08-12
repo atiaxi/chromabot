@@ -42,6 +42,7 @@ def fast_battle(named='snooland'):
     for user in all(User):
         user.region = where
     sess.commit()
+    return battle
 
 def by_id(cls, id):
     result = query(cls, id=id).first()

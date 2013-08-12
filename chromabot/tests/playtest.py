@@ -4,6 +4,7 @@ import unittest
 
 import db
 from db import (DB, Battle, Region, MarchingOrder, User)
+from utils import now
 
 
 TEST_LANDS = """

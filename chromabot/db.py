@@ -341,6 +341,16 @@ class Region(Base):
         self.borders.append(other_region)
         other_region.borders.append(self)
 
+    def buff_with(self, buff):
+        # Comitted the cardinal sin of copy-pasting this from SkirmishAction
+        preexist = next((b for b in self.buffs
+                         if b .internal == buff.internal), None)
+        if preexist:
+            return
+        self.buffs.append(buff)
+        self.session().add(buff)
+        self.session().commit()
+
     def invade(self, by_who, when):
         if not by_who.leader:
             raise RankException()
@@ -469,6 +479,14 @@ class Battle(Base):
             skirmish.resolve()
             if skirmish.victor is not None:
                 score[skirmish.victor] += skirmish.vp
+
+        # Apply buffs
+        for buff in self.region.buffs:
+            # For now:  Buffs apply to whoever owns the region
+            if self.region.owner is not None:
+                team = self.region.owner
+                score[team] += int(score[team] * buff.value)
+
         self.score0, self.score1 = score
 
         if self.score0 > self.score1:
@@ -478,9 +496,15 @@ class Battle(Base):
         else:
             self.victor = None
 
+        # Ephemeral, for buff reporting only
+        self.old_owner = self.region.owner
+        self.old_buffs = self.region.buffs[:]
+
         # The new owner of wherever this battle happened is the victor
         if self.victor is not None:
             self.region.owner = self.victor
+            if self.old_owner != self.victor:  # Invaders get the otd buff
+                self.region.buff_with(Buff.otd())
 
         # Un-commit all the loyalists for this fight, kick out the losers
         losercap = None
@@ -605,6 +629,11 @@ class SkirmishAction(Base):
         return result
 
     def buff_with(self, buff):
+        # Hold on, do we already have this buff?
+        preexist = next((b for b in self.buffs
+                         if b .internal == buff.internal), None)
+        if preexist:
+            return
         self.buffs.append(buff)
         self.session().add(buff)
         self.session().commit()
@@ -865,3 +894,25 @@ class Buff(Base):
                    internal="first_strike",
                    value=0.25)
 
+    @classmethod
+    def otd(cls, expiration=None):
+        """On the Defensive - 10% VP for a week on capturing"""
+        # With no expiration, this expires in a week
+        if expiration is None:
+            expiration = now() + 3600 * 24 * 7
+        return cls(name="On the Defensive",
+                   internal="otd",
+                   value=0.1,
+                   expires=expiration)
+
+    # Ordinary class methods
+    @classmethod
+    def update_all(cls, sess):
+        expired = []
+        for buff in sess.query(cls).all():
+            if buff.expires and now() > buff.expires:
+                expired.append(buff)
+
+        for buff in expired:
+            sess.delete(buff)
+        sess.commit()

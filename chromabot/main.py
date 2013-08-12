@@ -9,6 +9,7 @@ from urllib import urlencode
 import praw
 from pyparsing import ParseException
 
+import db
 from config import Config
 from db import DB, Battle, Region, User, MarchingOrder, Processed
 from parser import parse
@@ -267,6 +268,14 @@ class Bot(object):
             report += done.report(self.config)
 
             report.append("")
+
+            if done.old_buffs:
+                report.append("Buffs in effect for Team %s\n" %
+                              num_to_team(done.old_owner, self.config))
+                for buff in done.old_buffs:
+                    report.append("  * %s" % buff.name)
+                report.append("")
+
             team0_name = num_to_team(0, self.config)
             team1_name = num_to_team(1, self.config)
             report.append(("## Final Score:  Team %s: %d "
@@ -294,6 +303,7 @@ class Bot(object):
 
             session.delete(done)
             session.commit()
+        db.Buff.update_all(session)
 
     @failable
     def login(self):
