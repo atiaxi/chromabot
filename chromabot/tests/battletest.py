@@ -91,6 +91,20 @@ class TestBattle(ChromaTest):
         n = (self.sess.query(db.Battle).count())
         self.assertEqual(n, 2)
 
+    def test_disallow_fortified_invasion(self):
+        """Can't invade a region with the 'fortified' buff"""
+        londo = self.get_region("Orange Londo")
+        londo.owner = None
+        londo.buff_with(db.Buff.fortified())
+
+        when = now() + 60 * 60 * 24
+
+        with self.assertRaises(db.TimingException):
+            londo.invade(self.alice, when)
+
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 1)
+
     def test_disallow_nonadjacent_invasion(self):
         """Invasion must come from somewhere you control"""
         pericap = self.get_region("Periopolis")
@@ -810,6 +824,22 @@ class TestBattle(ChromaTest):
         self.assertEqual(self.battle.score1, 30)
         # score0 should not include the buff
         self.assertEqual(self.battle.score0, 29)
+
+    def test_buff_fortified_gain(self):
+        battle = self.battle
+        region = battle.region
+        region.owner = self.alice.team
+
+        battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
+
+        # No buffs before battle ends
+        self.assertEqual(self.sess.query(db.Buff).count(), 0)
+
+        self.end_battle()
+        # Should have gotten a buff for our region
+        self.assertEqual(self.sess.query(db.Buff).count(), 1)
+        self.assertEqual(len(region.buffs), 1)
+        self.assertEqual(region.buffs[0].internal, "fortified")
 
     def test_buff_nostacking(self):
         """Same-named buffs shouldn't stack"""

@@ -198,6 +198,10 @@ class InvadeCommand(Command):
             except db.InProgressException as ipe:
                 context.reply("%s is %s being invaded!" % (dest.markdown(),
                               ipe.other.markdown("already")))
+            except db.TimingException as te:
+                context.reply(("%s is too fortified to be attacked.  "
+                              "These fortifications will break down by %s") %
+                              (dest.markdown(), timestr(te.expected)))
 
             if battle:
                 context.reply("**Confirmed**  Battle will begin at %s" %

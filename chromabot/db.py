@@ -58,8 +58,9 @@ class TeamException(Exception):
 
 class TimingException(Exception):
     """Someone did something normally valid, but at the wrong time"""
-    def __init__(self, soon_or_late="late"):
+    def __init__(self, soon_or_late="late", expected=None):
         self.side = soon_or_late
+        self.expected = expected
         Exception.__init__(self, "too %s" % soon_or_late)
 
 
@@ -369,6 +370,12 @@ class Region(Base):
         if not bad_neighbors:
             raise NonAdjacentException(self, "your territory")
 
+        try:
+            fort = next(b for b in self.buffs if b.internal == 'fortified')
+            raise TimingException('soon', fort.expires)
+        except StopIteration:
+            pass
+
         by_who.defectable = False
         return self.new_battle_here(when)
 
@@ -503,8 +510,11 @@ class Battle(Base):
         # The new owner of wherever this battle happened is the victor
         if self.victor is not None:
             self.region.owner = self.victor
-            if self.old_owner != self.victor:  # Invaders get the otd buff
+            if self.old_owner != self.victor:  # Invaders get the 'otd' buff
                 self.region.buff_with(Buff.otd())
+            else:
+                # Defenders get the 'fortified' buff
+                self.region.buff_with(Buff.fortified())
 
         # Un-commit all the loyalists for this fight, kick out the losers
         losercap = None
@@ -895,6 +905,15 @@ class Buff(Base):
                    value=0.25)
 
     @classmethod
+    def fortified(cls, expiration=None):
+        """Fortified - region can't be invaded"""
+        if expiration is None:
+            expiration = now() + 3600 * 24 * 7
+        return cls(name="Fortified",
+                   internal="fortified",
+                   expires=expiration)
+
+    @classmethod
     def otd(cls, expiration=None):
         """On the Defensive - 10% VP for a week on capturing"""
         # With no expiration, this expires in a week
@@ -916,3 +935,6 @@ class Buff(Base):
         for buff in expired:
             sess.delete(buff)
         sess.commit()
+
+    def __repr__(self):
+        return"<Buff(internal='%s')>" % self.internal
