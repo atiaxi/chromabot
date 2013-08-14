@@ -1,7 +1,5 @@
 
 * Pick up / drop off loyalists
-* Make sure that commands buried under 'more comments' are actually getting 
-  processed (they appear to be now, but make sure) 
 * Make us able to move multiple territories at once, but make the time
   equivilant to the number of moves
 * Add an auto assign flair system to reduce confusion (/u/chromabot mods all
@@ -9,12 +7,9 @@
   thread)
 * pm telling you your army has arrived
 * Proper capital invasion
-* Bot should listen to recruitment thread for commands(?)
 * Better parse error messages if at all possible
 * "committed your armies to the battle at" should link to said battle.
 * Link to battle thread in confirmation PM
 * Link to the commands reference in the text the bot posts up top
-* Battle cooldown
-* Battle troop rewards
 * "only spearhead one offensive" should link to preexisting offensive
 * People can't participate in battles created before they were
