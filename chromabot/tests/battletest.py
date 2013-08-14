@@ -284,6 +284,24 @@ class TestBattle(ChromaTest):
         self.assertNotEqual(self.bob.region, old_bob_region)
         self.assertEqual(self.alice.region, old_alice_region)
 
+    def test_reward_after_battle(self):
+        """Participants get 10% of their committed, winners 15%"""
+        self.assertEqual(self.alice.loyalists, 100)
+        self.assertEqual(self.bob.loyalists, 100)
+
+        s1 = self.battle.create_skirmish(self.alice, 50)
+        s1.react(self.bob, 51)
+
+        self.end_battle()
+
+        # Bob wins the fight and the war
+        self.assertEqual(self.battle.victor, self.bob.team)
+
+        # Alice should have gotten a 10% reward (5 troops)
+        self.assertEqual(self.alice.loyalists, 105)
+        # Bob gets 15% (7 troops)
+        self.assertEqual(self.bob.loyalists, 107)
+
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)

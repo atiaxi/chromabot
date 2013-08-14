@@ -521,6 +521,12 @@ class Battle(Base):
         # Make a copy so deletion won't screw things up
         people = list(self.region.people)
         for person in people:
+            # Battle rewards!
+            reward = 0.1
+            if person.team == self.victor:
+                reward = 0.15
+            person.loyalists += int(person.committed_loyalists * reward)
+
             person.committed_loyalists = 0
             if person.team != self.victor:
                 if not losercap:
