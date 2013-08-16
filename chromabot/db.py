@@ -109,6 +109,9 @@ class User(Base):
     leader = Column(Integer, default=0)
     defectable = Column(Boolean, default=True)
 
+    # This default is the now() time when I wrote this
+    recruited = Column(Integer, default=1376615874)
+
     def __repr__(self):
         return "<User(name='%s', team='%d', loyalists='%d')>" % (
             self.name, self.team, self.loyalists)
@@ -438,10 +441,12 @@ class Battle(Base):
     def ends_str(self):
         return self.timestr(self.ends)
 
-    def create_skirmish(self, who, howmany, troop_type='infantry'):
+    def create_skirmish(self, who, howmany, troop_type='infantry',
+                        enforce_noob_rule=True):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, battle=self,
-                                   troop_type=troop_type)
+                                   troop_type=troop_type,
+                                   enforce_noob_rule=enforce_noob_rule)
         sess.commit()
         return sa
 
@@ -606,7 +611,7 @@ class SkirmishAction(Base):
 
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
-               troop_type='infantry'):
+               troop_type='infantry', enforce_noob_rule=True):
 
         troop_type = who.translate_codeword(troop_type)
         if troop_type not in cls.TROOP_TYPES:
@@ -618,6 +623,8 @@ class SkirmishAction(Base):
                             parent=parent,
                             battle=battle,
                             troop_type=troop_type)
+        # Ephemeral, only want it to exist for long enough to pass validation
+        sa.enforce_noob_rule = enforce_noob_rule
         sa.commit_if_valid()
 
         return sa
@@ -677,10 +684,12 @@ class SkirmishAction(Base):
     def is_root(self):
         return not self.parent
 
-    def react(self, who, howmany, hinder=True, troop_type='infantry'):
+    def react(self, who, howmany, hinder=True, troop_type='infantry',
+              enforce_noob_rule=True):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self,
-                                   troop_type=troop_type, battle=self.battle)
+                                   troop_type=troop_type, battle=self.battle,
+                                   enforce_noob_rule=enforce_noob_rule)
 
         return sa
 
@@ -827,6 +836,13 @@ class SkirmishAction(Base):
         if need_to_be != actually_am:
             sess.rollback()
             raise NotPresentException(need_to_be, actually_am)
+
+        # You can't participate in a battle if you're younger than it is
+        # (Unless we're allowing that)
+        if (self.enforce_noob_rule and
+            self.participant.recruited > self.get_battle().begins):
+            sess.rollback()
+            raise TimingException("soon", self.get_battle())
 
         if self.parent:
             sameteam = self.parent.participant.team == self.participant.team

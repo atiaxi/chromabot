@@ -333,6 +333,39 @@ class TestBattle(ChromaTest):
         with self.assertRaises(db.TimingException):
             self.battle.create_skirmish(self.alice, 1)
 
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_no_rookies_toplevel(self):
+        """
+        Can't participate in a battle if you were created before it was
+        """
+        self.bob.recruited = now() + 6000
+
+        # Top level
+        with self.assertRaises(db.TimingException):
+            self.battle.create_skirmish(self.bob, 1)
+
+        self.assertEqual(self.sess.query(db.SkirmishAction).count(), 0)
+
+    def test_no_rookies_react(self):
+        self.bob.recruited = now() + 6000
+
+        # No responses, either
+        s1 = self.battle.create_skirmish(self.alice, 1)
+        with self.assertRaises(db.TimingException):
+            s1.react(self.bob, 1)
+
+        self.assertEqual(self.sess.query(db.SkirmishAction).count(), 1)
+
+    def test_enable_rookies(self):
+        self.bob.recruited = now() + 6000
+        s1 = self.battle.create_skirmish(self.bob, 1, enforce_noob_rule=False)
+        s1.react(self.bob, 1, hinder=False, enforce_noob_rule=False)
+
+        self.assertEqual(self.sess.query(db.SkirmishAction).count(), 2)
+
     def test_commit_at_least_one(self):
         """It isn't a skirmish without fighters"""
         with self.assertRaises(db.InsufficientException):

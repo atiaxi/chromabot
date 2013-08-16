@@ -411,9 +411,11 @@ class SkirmishCommand(Command):
             return
 
         try:
+            enforce = context.config["bot"].get("enforce_noob_rule", True)
             if not self.target and post_id == context.comment.parent_id:
                 skirmish = current.create_skirmish(context.player, self.amount,
-                                                   troop_type=self.troop_type)
+                                                   troop_type=self.troop_type,
+                                                   enforce_noob_rule=enforce)
             else:
                 if self.target:
                     parent = self.find_skirmish_by_id(self.target, context)
@@ -440,7 +442,8 @@ class SkirmishCommand(Command):
                 hinder = self.action == 'attack'
                 skirmish = parent.react(context.player, self.amount,
                                         hinder=hinder,
-                                        troop_type=self.troop_type)
+                                        troop_type=self.troop_type,
+                                        enforce_noob_rule=enforce)
             total = context.player.committed_loyalists
 
             if self.first_strike(context, skirmish):
@@ -517,7 +520,12 @@ class SkirmishCommand(Command):
                 context.reply(("Top-level attacks are disallowed in the last "
                                "%d seconds of a battle") % current.lockout)
             else:
-                context.reply("The battle has not yet begun!")
+                # If the battle's begun, it's the user that is too young
+                if current.has_started():
+                    context.reply("You cannot participate in a battle "
+                                  "created before you signed up.")
+                else:
+                    context.reply("The battle has not yet begun!")
 
     @failable
     def extract_subskirmish(self, context, battle):
