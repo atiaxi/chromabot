@@ -82,12 +82,14 @@ class Bot(object):
             context.reply(result)
 
     def find_player(self, comment, session):
-        player = session.query(User).filter_by(
-        name=comment.author.name).first()
-        if not player and getattr(comment, 'was_comment', None):
-            comment.reply(Command.FAIL_NOT_PLAYER %
-                              self.config.headquarters)
-        return player
+        if comment.author:  # Some messages (mod invites) don't have authors
+            player = session.query(User).filter_by(
+            name=comment.author.name).first()
+            if not player and getattr(comment, 'was_comment', None):
+                comment.reply(Command.FAIL_NOT_PLAYER %
+                                  self.config.headquarters)
+            return player
+        return None
 
     @failable
     def generate_markdown_report(self, loop_start):
