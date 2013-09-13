@@ -334,7 +334,7 @@ class StatusCommand(Command):
                   "%s")
         personal = result % (found.rank, context.team_name(),
                              found.loyalists, commit_str, forces)
-        return personal + "\n\n" + self.lands_status(context)
+        return personal
 
 
 class PromoteCommand(Command):

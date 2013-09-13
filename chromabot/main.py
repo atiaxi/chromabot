@@ -16,7 +16,7 @@ from parser import parse
 from commands import (Command, Context, failable, InvadeCommand,
                       SkirmishCommand, StatusCommand)
 from utils import (base36decode, extract_command, num_to_team, name_to_id, now,
-                   timestr)
+                   timestr, version)
 
 
 class Bot(object):
@@ -104,10 +104,12 @@ class Bot(object):
 
         cur = now()
         elapsed = (cur - loop_start) + self.config["bot"]["sleep"]
+        version_str = version(self.config)
 
         bot_report = ("Bot Status:\n\n"
                       "* Last run at %s\n\n"
-                      "* Seconds per Frame: %d") % (timestr(cur), elapsed)
+                      "* Seconds per Frame: %d\n\n"
+                      "* Version: %s") % (timestr(cur), elapsed, version_str)
 
         report = "%s\n\n%s" % (land_report, bot_report)
 

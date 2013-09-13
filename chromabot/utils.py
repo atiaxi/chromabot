@@ -1,3 +1,4 @@
+import os
 import re
 import time
 from urllib import quote_plus
@@ -54,3 +55,14 @@ def timestr(secs=None):
     url = ("http://www.wolframalpha.com/input/?i=%s+in+local+time" %
            quote_plus(timestresult))
     return "[%s](%s)" % (timestresult, url)
+
+
+def version(config):
+    result = "Unknown"
+    rdir = config["bot"].get("report_dir")
+    if rdir:
+        fullpath = os.path.join(rdir, "VERSION")
+        if os.path.exists(fullpath):
+            with file(fullpath, 'r') as f:
+                result = f.readline()
+    return result
