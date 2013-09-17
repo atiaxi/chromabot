@@ -257,7 +257,14 @@ class Bot(object):
         results = Battle.update_all(session, self.config)
 
         for ready in results['begin']:
-            ready.ends = ready.begins + self.config["game"]["battle_time"]
+            ready.display_ends = (ready.begins +
+                self.config["game"]["battle_time"])
+
+            # Actual ending is within battle_lockout of the end
+            chooserange = self.config["game"]["battle_lockout"]
+            chosen = random.randint(0, chooserange)
+            ready.ends = ready.display_ends - (chooserange / 2) + chosen
+
             text = ("War is now at your doorstep!  Mobilize your armies! "
                     "The battle has begun now, and will end at %s.\n\n"
                     "> Enter your commands in this thread, prefixed with "

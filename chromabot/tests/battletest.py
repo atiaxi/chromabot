@@ -31,6 +31,7 @@ class TestBattle(ChromaTest):
         now = time.mktime(time.localtime())
         self.battle = sapphire.invade(self.bob, now)
         self.battle.ends = now + 60 * 60 * 24
+        self.battle.display_ends = self.battle.ends
         self.battle.submission_id = "TEST"
         self.assert_(self.battle)
 

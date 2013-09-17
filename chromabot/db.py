@@ -406,6 +406,7 @@ class Battle(Base):
     id = Column(Integer, primary_key=True)
     begins = Column(Integer, default=0)
     ends = Column(Integer, default=0)
+    display_ends = Column(Integer, default=0)
     submission_id = Column(String)
 
     victor = Column(Integer)
@@ -439,7 +440,7 @@ class Battle(Base):
         return self.timestr(self.begins)
 
     def ends_str(self):
-        return self.timestr(self.ends)
+        return self.timestr(self.display_ends)
 
     def create_skirmish(self, who, howmany, troop_type='infantry',
                         enforce_noob_rule=True):
@@ -881,7 +882,7 @@ class SkirmishAction(Base):
             battle = self.get_battle()
             lockout = getattr(battle, 'lockout', 0)
             if lockout:
-                locktime = battle.ends - lockout
+                locktime = battle.display_ends - lockout
                 if now() >= locktime:
                     sess.rollback()
                     raise TimingException()

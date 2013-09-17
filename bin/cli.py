@@ -24,6 +24,7 @@ def all_as_dict(cls):
 
 def battle_adopt(battle, postid):
     battle.ends = battle.begins + 10800
+    battle.display_ends = battle.ends
     battle.submission_id="t3_%s" % postid
     sess.commit()
 
