@@ -254,7 +254,7 @@ class Bot(object):
             session.add_all(to_add)
             session.commit()
 
-        results = Battle.update_all(session)
+        results = Battle.update_all(session, self.config)
 
         for ready in results['begin']:
             ready.ends = ready.begins + self.config["game"]["battle_time"]

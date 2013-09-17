@@ -3,6 +3,7 @@ import time
 import unittest
 
 import db
+from collections import defaultdict
 from db import (DB, Battle, Region, MarchingOrder, User)
 from utils import now
 
@@ -38,20 +39,27 @@ TEST_LANDS = """
 
 class MockConf(object):
 
-    def __init__(self, dbstring):
+    def __init__(self, dbstring=None):
         self._dbstring = dbstring
+        self.confitems = defaultdict(dict)
 
     @property
     def dbstring(self):
         return self._dbstring
+
+    def __getitem__(self, key):
+        return self.confitems[key]
+
+    def __setitem__(self, key, value):
+        self.confitems[key] = value
 
 
 class ChromaTest(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
-        conf = MockConf(dbstring="sqlite://")
-        self.db = DB(conf)
+        self.conf = MockConf(dbstring="sqlite://")
+        self.db = DB(self.conf)
         self.db.create_all()
         self.sess = self.db.session()
         self.sess.add_all(Region.create_from_json(TEST_LANDS))

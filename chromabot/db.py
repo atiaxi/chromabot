@@ -418,7 +418,7 @@ class Battle(Base):
     lockout = Column(Integer, default=0)
 
     @classmethod
-    def update_all(cls, sess):
+    def update_all(cls, sess, conf=None):
         battles = sess.query(cls).all()
         begin = []
         ended = []
@@ -426,7 +426,7 @@ class Battle(Base):
             if not battle.has_started() and battle.is_ready():
                 begin.append(battle)
             elif battle.has_started() and battle.past_end_time():
-                battle.resolve()
+                battle.resolve(conf)
                 ended.append(battle)
 
         result = {
@@ -485,7 +485,7 @@ class Battle(Base):
                 result.append(skirmish.report(config=config))
         return result
 
-    def resolve(self):
+    def resolve(self, conf=None):
         score = [0, 0]
         for skirmish in self.toplevel_skirmishes():
             skirmish.resolve()
@@ -528,8 +528,13 @@ class Battle(Base):
         for person in people:
             # Battle rewards!
             reward = 0.1
+            if conf:
+                reward = conf["game"].get("losereward", 10) / 100.0
+
             if person.team == self.victor:
                 reward = 0.15
+                if conf:
+                    reward = conf["game"].get("winreward", 15) / 100.0
             person.loyalists += int(person.committed_loyalists * reward)
 
             person.committed_loyalists = 0

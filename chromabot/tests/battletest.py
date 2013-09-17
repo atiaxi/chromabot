@@ -6,7 +6,7 @@ import unittest
 
 import db
 from db import (Battle, Processed, SkirmishAction)
-from playtest import ChromaTest
+from playtest import ChromaTest, MockConf
 from utils import now
 
 
@@ -36,14 +36,14 @@ class TestBattle(ChromaTest):
 
         self.sess.commit()
 
-    def end_battle(self, battle=None):
+    def end_battle(self, battle=None, conf=None):
         if battle is None:
             battle = self.battle
         sess = self.sess
 
         battle.ends = battle.begins
         sess.commit()
-        updates = Battle.update_all(sess)
+        updates = Battle.update_all(sess, conf)
         sess.commit()
 
         self.assertNotEqual(len(updates['ended']), 0)
@@ -292,7 +292,7 @@ class TestBattle(ChromaTest):
         s1 = self.battle.create_skirmish(self.alice, 50)
         s1.react(self.bob, 51)
 
-        self.end_battle()
+        self.end_battle(self.battle, self.conf)
 
         # Bob wins the fight and the war
         self.assertEqual(self.battle.victor, self.bob.team)
@@ -301,6 +301,27 @@ class TestBattle(ChromaTest):
         self.assertEqual(self.alice.loyalists, 105)
         # Bob gets 15% (7 troops)
         self.assertEqual(self.bob.loyalists, 107)
+
+    def test_configurable_reward_after_battle(self):
+        """Participants get 5% of their committed, winners 7%"""
+        self.conf["game"]["winreward"] = 7
+        self.conf["game"]["losereward"] = 5
+
+        self.assertEqual(self.alice.loyalists, 100)
+        self.assertEqual(self.bob.loyalists, 100)
+
+        s1 = self.battle.create_skirmish(self.alice, 50)
+        s1.react(self.bob, 51)
+
+        self.end_battle(self.battle, self.conf)
+
+        # Bob wins the fight and the war
+        self.assertEqual(self.battle.victor, self.bob.team)
+
+        # Alice should have gotten a 5% reward (2 troops)
+        self.assertEqual(self.alice.loyalists, 102)
+        # Bob gets 7% (3 troops)
+        self.assertEqual(self.bob.loyalists, 103)
 
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
