@@ -536,6 +536,10 @@ class Battle(Base):
                 if conf:
                     reward = conf["game"].get("winreward", 15) / 100.0
             person.loyalists += int(person.committed_loyalists * reward)
+            if conf:
+                cap = conf["game"].get("troopcap", 0)
+                if cap:
+                    person.loyalists = min(person.loyalists, cap)
 
             person.committed_loyalists = 0
             if person.team != self.victor:

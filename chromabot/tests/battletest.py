@@ -323,6 +323,27 @@ class TestBattle(ChromaTest):
         # Bob gets 7% (3 troops)
         self.assertEqual(self.bob.loyalists, 103)
 
+    def test_troop_cap(self):
+        """Setting a troop cap should work"""
+        self.conf["game"]["troopcap"] = 106
+
+        self.assertEqual(self.alice.loyalists, 100)
+        self.assertEqual(self.bob.loyalists, 100)
+
+        s1 = self.battle.create_skirmish(self.alice, 50)
+        s1.react(self.bob, 51)
+
+        self.end_battle(self.battle, self.conf)
+
+        # Bob wins the fight and the war
+        self.assertEqual(self.battle.victor, self.bob.team)
+
+        # Alice's 10% reward puts her under cap
+        self.assertEqual(self.alice.loyalists, 105)
+        # Bob's 15% reward puts him over
+        self.assertEqual(self.bob.loyalists, 106)
+
+
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)
