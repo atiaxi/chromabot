@@ -577,6 +577,7 @@ class SkirmishCommand(Command):
             id=skid).first()
         return parent
 
+    @failable
     @staticmethod
     def update_summary(context, skirmish):
         root = skirmish.get_root()
