@@ -18,6 +18,7 @@
         "battle_delay": 3600,
         "battle_time": 10800,
         "battle_lockout": 1800,
+        "defense_buff_time": 604800,
         "leaders": ["YOU"],
         "sides": ["orangered", "periwinkle"],
         "assignment": "uid",

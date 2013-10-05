@@ -47,6 +47,10 @@ class MockConf(object):
     def dbstring(self):
         return self._dbstring
 
+    @property
+    def game(self):
+        return self['games']
+
     def __getitem__(self, key):
         return self.confitems[key]
 

@@ -515,12 +515,16 @@ class Battle(Base):
 
         # The new owner of wherever this battle happened is the victor
         if self.victor is not None:
+            buff_expiration = None  # Will default to a week
+            if conf:
+                buff_expiration = conf.game.get('defense_buff_time')
+
             self.region.owner = self.victor
             if self.old_owner != self.victor:  # Invaders get the 'otd' buff
-                self.region.buff_with(Buff.otd())
+                self.region.buff_with(Buff.otd(buff_expiration))
             else:
                 # Defenders get the 'fortified' buff
-                self.region.buff_with(Buff.fortified())
+                self.region.buff_with(Buff.fortified(buff_expiration))
 
         # Un-commit all the loyalists for this fight, kick out the losers
         losercap = None
@@ -940,21 +944,23 @@ class Buff(Base):
     def fortified(cls, expiration=None):
         """Fortified - region can't be invaded"""
         if expiration is None:
-            expiration = now() + 3600 * 24 * 7
+            expiration = 3600 * 24 * 7
+        expires = now() + expiration
         return cls(name="Fortified",
                    internal="fortified",
-                   expires=expiration)
+                   expires=expires)
 
     @classmethod
     def otd(cls, expiration=None):
         """On the Defensive - 10% VP for a week on capturing"""
         # With no expiration, this expires in a week
         if expiration is None:
-            expiration = now() + 3600 * 24 * 7
+            expiration = 3600 * 24 * 7
+        expires = now() + expiration
         return cls(name="On the Defensive",
                    internal="otd",
                    value=0.1,
-                   expires=expiration)
+                   expires=expires)
 
     # Ordinary class methods
     @classmethod

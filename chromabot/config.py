@@ -46,6 +46,10 @@ class Config(object):
         return self.data["db"]["connection"]
 
     @property
+    def game(self):
+        return self.data["game"]
+
+    @property
     def headquarters(self):
         return self.data["bot"]["hq_sub"]
 
@@ -56,3 +60,4 @@ class Config(object):
     @property
     def username(self):
         return self.data["bot"]["username"]
+

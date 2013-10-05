@@ -344,7 +344,6 @@ class TestBattle(ChromaTest):
         # Bob's 15% reward puts him over
         self.assertEqual(self.bob.loyalists, 106)
 
-
     def test_single_toplevel_skirmish_each(self):
         """Each participant can only make one toplevel skirmish"""
         self.battle.create_skirmish(self.alice, 1)
@@ -902,7 +901,8 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.vp, 29)
 
         # Bob's winning this, but wait!  A buff that expires immediately!
-        battle.region.buff_with(db.Buff.otd(expiration=now() - 30))
+        buff = db.Buff.otd(expiration=-30)
+        battle.region.buff_with(buff)
 
         # One buff should exist in DB
         self.assertEqual(sess.query(db.Buff).count(), 1)
@@ -933,7 +933,31 @@ class TestBattle(ChromaTest):
         # Should have gotten a buff for our region
         self.assertEqual(self.sess.query(db.Buff).count(), 1)
         self.assertEqual(len(region.buffs), 1)
-        self.assertEqual(region.buffs[0].internal, "fortified")
+        buff = region.buffs[0]
+        self.assertEqual(buff.internal, "fortified")
+        # Should expire in a week
+        self.assertLessEqual(buff.expires, now() + 3600 * 24 * 7)
+
+    def test_configurable_buff_time(self):
+        self.conf.game["defense_buff_time"] = 0
+
+        battle = self.battle
+        region = battle.region
+        region.owner = self.alice.team
+
+        battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
+
+        # No buffs before battle ends
+        self.assertEqual(self.sess.query(db.Buff).count(), 0)
+
+        self.end_battle(conf=self.conf)
+        # Should have gotten a buff for our region
+        self.assertEqual(self.sess.query(db.Buff).count(), 1)
+        self.assertEqual(len(region.buffs), 1)
+        buff = region.buffs[0]
+        self.assertEqual(buff.internal, "fortified")
+        # Should already be expired
+        self.assertLessEqual(buff.expires, now())
 
     def test_buff_nostacking(self):
         """Same-named buffs shouldn't stack"""
