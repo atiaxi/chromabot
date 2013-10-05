@@ -304,6 +304,7 @@ class StatusCommand(Command):
             result.append(fmt % (region.markdown(),
                                  num_to_team(region.owner, config),
                                  dispute))
+        result.sort()
         lands = "\n".join(result)
         return "State of the Lands:\n\n" + lands
 
