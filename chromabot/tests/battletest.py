@@ -928,6 +928,7 @@ class TestBattle(ChromaTest):
 
         # No buffs before battle ends
         self.assertEqual(self.sess.query(db.Buff).count(), 0)
+        self.assertFalse(region.has_buff('fortified'))
 
         self.end_battle()
         # Should have gotten a buff for our region
@@ -935,6 +936,10 @@ class TestBattle(ChromaTest):
         self.assertEqual(len(region.buffs), 1)
         buff = region.buffs[0]
         self.assertEqual(buff.internal, "fortified")
+        # Also test region.has_buff here too
+        buff = region.has_buff('fortified')
+        self.assert_(buff)
+        self.assertIsInstance(buff, db.Buff)
         # Should expire in a week
         self.assertLessEqual(buff.expires, now() + 3600 * 24 * 7)
 

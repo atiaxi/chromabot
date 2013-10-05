@@ -355,6 +355,10 @@ class Region(Base):
         self.session().add(buff)
         self.session().commit()
 
+    def has_buff(self, buffname):
+        s = self.session()
+        return s.query(Buff).filter_by(internal=buffname).first()
+
     def invade(self, by_who, when):
         if not by_who.leader:
             raise RankException()
@@ -973,6 +977,10 @@ class Buff(Base):
         for buff in expired:
             sess.delete(buff)
         sess.commit()
+
+    def markdown(self):
+        days = max((self.expires - now()) / (3600 * 24), 0)
+        return "%s for %d days" % (self.name, days)
 
     def __repr__(self):
         return"<Buff(internal='%s')>" % self.internal

@@ -301,6 +301,9 @@ class StatusCommand(Command):
             dispute = ""
             if region.battle:
                 dispute = " ( %s )" % region.battle.markdown()
+            if region.buffs:
+                bufflist = [buff.markdown() for buff in region.buffs]
+                dispute += " ( %s )" % ",".join(bufflist)
             result.append(fmt % (region.markdown(),
                                  num_to_team(region.owner, config),
                                  dispute))
