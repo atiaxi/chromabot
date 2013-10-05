@@ -1,5 +1,6 @@
 import logging
 import re
+import socket
 import time
 import traceback
 
@@ -22,7 +23,7 @@ def failable(f):
         except ConnectionError:
             full = traceback.format_exc()
             logging.warning("Connection error: %s", full)
-        except Timeout:
+        except (Timeout, socket.timeout):
             full = traceback.format_exc()
             logging.warning("Socket timeout! %s" % full)
             return None
