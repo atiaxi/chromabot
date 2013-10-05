@@ -208,11 +208,25 @@ class TestPromotion(unittest.TestCase):
         self.assertEqual(parsed.who, "hurfendurf")
         self.assertEqual(parsed.direction, 1)
 
+    def testMixedCasePromote(self):
+        src = 'promote HurfenDurf'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, PromoteCommand)
+        self.assertEqual(parsed.who, "HurfenDurf")
+        self.assertEqual(parsed.direction, 1)
+
     def testDemoteCommand(self):
         src = "demote hurfendurf"
         parsed = parse(src)
         self.assertIsInstance(parsed, PromoteCommand)
         self.assertEqual(parsed.who, "hurfendurf")
+        self.assertEqual(parsed.direction, 0)
+
+    def testMixedCaseDemote(self):
+        src = "demote HurfenDurf"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, PromoteCommand)
+        self.assertEqual(parsed.who, "HurfenDurf")
         self.assertEqual(parsed.direction, 0)
 
 

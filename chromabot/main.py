@@ -195,6 +195,9 @@ class Bot(object):
             if name == self.config.username:
                 continue
 
+            # Commands are case-insensitive, so let's downcase usernames
+            name = name.lower()
+
             # Is this author already one of us?
             found = session.query(User).filter_by(
                 name=name).first()
