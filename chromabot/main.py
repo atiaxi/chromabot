@@ -84,7 +84,7 @@ class Bot(object):
     def find_player(self, comment, session):
         if comment.author:  # Some messages (mod invites) don't have authors
             player = session.query(User).filter_by(
-            name=comment.author.name).first()
+            name=comment.author.name.lower()).first()
             if not player and getattr(comment, 'was_comment', None):
                 comment.reply(Command.FAIL_NOT_PLAYER %
                                   self.config.headquarters)
@@ -171,7 +171,7 @@ class Bot(object):
                 continue
             if not comment.author:  # Deleted comments don't have an author
                 continue
-            if comment.author.name == self.config.username:
+            if comment.author.name.lower() == self.config.username.lower():
                 continue
             cmd = extract_command(comment.body)
             if cmd:
@@ -191,12 +191,9 @@ class Bot(object):
         for comment in flat_comments:
             if not comment.author:  # Deleted comments don't have an author
                 continue
-            name = comment.author.name
-            if name == self.config.username:
+            name = comment.author.name.lower()
+            if name == self.config.username.lower():
                 continue
-
-            # Commands are case-insensitive, so let's downcase usernames
-            name = name.lower()
 
             # Is this author already one of us?
             found = session.query(User).filter_by(

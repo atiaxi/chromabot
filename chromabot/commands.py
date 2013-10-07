@@ -553,7 +553,7 @@ class SkirmishCommand(Command):
         if not parent.author:  # Parent was deleted!
             return None
 
-        if parent.author.name != context.config.username:
+        if parent.author.name.lower() != context.config.username.lower():
             # Record this in our processed list so we don't have to do this
             # again.
             context.session.add(Processed(id36=parent.name, battle=battle))
