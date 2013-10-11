@@ -74,67 +74,6 @@ class TestBattle(ChromaTest):
 
         self.assert_(battle.is_ready())
 
-    def test_disallow_invadeception(self):
-        """Can't invade if you're already invading!"""
-        londo = self.get_region("Orange Londo")
-        # For testing purposes, londo is now neutral
-        londo.owner = None
-
-        now = time.mktime(time.localtime())
-        when = now + 60 * 60 * 24
-        battle = londo.invade(self.alice, when)
-
-        self.assert_(battle)
-
-        with self.assertRaises(db.InProgressException):
-            londo.invade(self.alice, when)
-
-        n = (self.sess.query(db.Battle).count())
-        self.assertEqual(n, 2)
-
-    def test_disallow_fortified_invasion(self):
-        """Can't invade a region with the 'fortified' buff"""
-        londo = self.get_region("Orange Londo")
-        londo.owner = None
-        londo.buff_with(db.Buff.fortified())
-
-        when = now() + 60 * 60 * 24
-
-        with self.assertRaises(db.TimingException):
-            londo.invade(self.alice, when)
-
-        n = (self.sess.query(db.Battle).count())
-        self.assertEqual(n, 1)
-
-    def test_disallow_nonadjacent_invasion(self):
-        """Invasion must come from somewhere you control"""
-        pericap = self.get_region("Periopolis")
-
-        with self.assertRaises(db.NonAdjacentException):
-            pericap.invade(self.alice, 0)
-        n = (self.sess.query(db.Battle).count())
-        self.assertEqual(n, 1)
-
-    def test_disallow_friendly_invasion(self):
-        """Can't invade somewhere you already control"""
-        londo = self.get_region("Orange Londo")
-
-        with self.assertRaises(db.TeamException):
-            londo.invade(self.alice, 0)
-        n = (self.sess.query(db.Battle).count())
-        self.assertEqual(n, 1)
-
-    def test_disallow_peon_invasion(self):
-        """Must have .leader set to invade"""
-        londo = self.get_region("Orange Londo")
-        londo.owner = None
-        self.alice.leader = False
-
-        with self.assertRaises(db.RankException):
-            londo.invade(self.alice, 0)
-        n = (self.sess.query(db.Battle).count())
-        self.assertEqual(n, 1)
-
     def test_skirmish_parenting(self):
         """Make sure I set up relationships correctly w/ skirmishes"""
         root = SkirmishAction()

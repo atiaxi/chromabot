@@ -171,6 +171,63 @@ class TestPlaying(ChromaTest):
 
         self.assertEqual(self.alice.region, londo)
 
+    def test_situation_changes(self):
+        """Can't move somewhere that changes hands while you're moving"""
+        started = self.alice.region
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now alice's
+        londo.owner = self.alice.team
+
+        order = self.alice.move(100, londo, 60 * 60 * 24)
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 1)
+
+        # BUT WAIT!  Londo's government is overthrown!
+        londo.owner = self.bob.team
+
+        # Push back arrival time
+        order.arrival = now()
+        self.sess.commit()
+
+        # Invoke the update routine to set everyone's location
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Alice should be back where she started, as she can't be in londo
+        self.assertEqual(started, self.alice.region)
+
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 0)
+
+    def test_got_moved(self):
+        """Make sure you can't finish moving if you're warped"""
+        started = self.alice.region
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now alice's
+        londo.owner = self.alice.team
+
+        # But she's at the fight
+        self.alice.region = self.get_region('sapphire')
+
+        order = self.alice.move(100, londo, 60 * 60 * 24)
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 1)
+
+        # The sapphire battle ends poorly for alice's team, and she gets
+        # booted out
+        self.alice.region = self.get_region('oraistedarg')
+
+        # Invoke the update routine to set everyone's location
+        order.arrival = now()
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Alice should be back where she started, as the move isn't valid
+        self.assertEqual(started, self.alice.region)
+
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 0)
+
     def test_disallow_overdraw_movement(self):
         """Make sure you can't move more people than you have"""
         londo = self.get_region("Orange Londo")
@@ -253,6 +310,66 @@ class TestPlaying(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 1)
 
+    def test_disallow_invadeception(self):
+        """Can't invade if you're already invading!"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        now = time.mktime(time.localtime())
+        when = now + 60 * 60 * 24
+        battle = londo.invade(self.alice, when)
+
+        self.assert_(battle)
+
+        with self.assertRaises(db.InProgressException):
+            londo.invade(self.alice, when)
+
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 1)
+
+    def test_disallow_fortified_invasion(self):
+        """Can't invade a region with the 'fortified' buff"""
+        londo = self.get_region("Orange Londo")
+        londo.owner = None
+        londo.buff_with(db.Buff.fortified())
+
+        when = now() + 60 * 60 * 24
+
+        with self.assertRaises(db.TimingException):
+            londo.invade(self.alice, when)
+
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 0)
+
+    def test_disallow_nonadjacent_invasion(self):
+        """Invasion must come from somewhere you control"""
+        pericap = self.get_region("Periopolis")
+
+        with self.assertRaises(db.NonAdjacentException):
+            pericap.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 0)
+
+    def test_disallow_friendly_invasion(self):
+        """Can't invade somewhere you already control"""
+        londo = self.get_region("Orange Londo")
+
+        with self.assertRaises(db.TeamException):
+            londo.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 0)
+
+    def test_disallow_peon_invasion(self):
+        """Must have .leader set to invade"""
+        londo = self.get_region("Orange Londo")
+        londo.owner = None
+        self.alice.leader = False
+
+        with self.assertRaises(db.RankException):
+            londo.invade(self.alice, 0)
+        n = (self.sess.query(db.Battle).count())
+        self.assertEqual(n, 0)
 
 
 if __name__ == '__main__':

@@ -174,9 +174,8 @@ class User(Base):
         if not where in self.region.borders:
             raise NonAdjacentException(self.region, where)
 
-        if where.owner != self.team:
-            if not where.battle:
-                raise TeamException(where)
+        if not where.enterable_by(self.team):
+            raise TeamException(where)
 
         if(delay > 0):
             result = MarchingOrder(arrival=time.mktime(time.localtime())
@@ -228,6 +227,13 @@ class MarchingOrder(Base):
     dest_id = Column(Integer, ForeignKey("regions.id"))
 
     @classmethod
+    def cancel_all_for(cls, user, sess):
+        orders = sess.query(MarchingOrder).filter_by(leader=user).all()
+        for order in orders:
+            sess.delete(order)
+        sess.commit()
+
+    @classmethod
     def update_all(cls, sess):
         orders = sess.query(cls).all()
         result = []
@@ -249,9 +255,16 @@ class MarchingOrder(Base):
     def update(self):
         sess = Session.object_session(self)
         if self.has_arrived():
-            self.leader.region = self.dest
-            sess.delete(self)
-            sess.commit()
+            # Is this still a valid destination?
+            samesource = self.leader.region == self.source
+            enterable = self.dest.enterable_by(self.leader.team)
+            if samesource and enterable:
+                self.leader.region = self.dest
+                sess.delete(self)
+                sess.commit()
+            else:
+                # Full stop!
+                self.cancel_all_for(self.leader, sess)
             return True
         return False
 
@@ -358,6 +371,9 @@ class Region(Base):
     def has_buff(self, buffname):
         s = self.session()
         return s.query(Buff).filter_by(internal=buffname).first()
+
+    def enterable_by(self, team):
+        return self.owner == team or self.battle
 
     def invade(self, by_who, when):
         if not by_who.leader:
