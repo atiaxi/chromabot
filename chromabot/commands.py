@@ -507,10 +507,14 @@ class SkirmishCommand(Command):
             if isinstance(ipe.other, Battle):
                 context.reply("You can only spearhead one offensive per "
                               "battle (though you may still assist others)")
-            else:
+            elif isinstance(ipe.other, SkirmishAction):
                 context.reply("You may only respond to a specific "
                               "sub-skirmish once (though you may still "
                               "fight elsewhere)")
+            elif hasattr(ipe.other, 'arrival_str'):
+                mkdown = ipe.other.dest.markdown()
+                context.reply("Your troops are moving to %s - they are in "
+                              "no condition to fight!" % mkdown)
 
         except db.InsufficientException as ie:
             if ie.requested <= 0:

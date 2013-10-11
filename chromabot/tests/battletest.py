@@ -494,6 +494,14 @@ class TestBattle(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 0)
 
+    def test_disallow_fighting_retreat(self):
+        """Can't start moving away then start a fight"""
+        londo = self.get_region("Orange Londo")
+        self.alice.move(100, londo, 60 * 60 * 24)
+
+        with self.assertRaises(db.InProgressException):
+            self.battle.create_skirmish(self.alice, 1)
+
     def test_simple_resolve(self):
         """Easy battle resolution"""
         battle = self.battle

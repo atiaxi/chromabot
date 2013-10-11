@@ -855,6 +855,13 @@ class SkirmishAction(Base):
             sess.rollback()
             raise NotPresentException(need_to_be, actually_am)
 
+        # We're not running away, are we?
+        movement = (sess.query(MarchingOrder).
+            filter_by(leader=self.participant).first())
+        if movement:
+            sess.rollback()
+            raise InProgressException(movement)
+
         # You can't participate in a battle if you're younger than it is
         # (Unless we're allowing that)
         if (self.enforce_noob_rule and
