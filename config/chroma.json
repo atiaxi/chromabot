@@ -112,13 +112,13 @@
     {
         "name": "Tentorahogo",
         "srname": "Tentorahogo",
-        "connections": ["Areus Antris"],
+        "connections": ["Areus Antris", "Aegis"],
         "owner": 0
     },
     {
         "name": "Areus Antris",
         "srname": "AreusAntris",
-        "connections": ["Pasto Range"],
+        "connections": ["Pasto Range", "Aegis"],
         "owner": 0
     },
     {
