@@ -29,7 +29,7 @@ invadecmd.setParseAction(InvadeCommand)
 
 move = Keyword("lead")
 movecmd = (move + Optional(number("amount") | Keyword("all")) +
-           Suppress("to") + location("where"))
+           Suppress("to") + delimitedList(location)("where"))
 movecmd.setParseAction(MoveCommand)
 
 defect = Keyword("defect")

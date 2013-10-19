@@ -15,7 +15,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where, "hurfendurf")
+        self.assertEqual(parsed.where[0], "hurfendurf")
 
     def testMoveSubreddit(self):
         src = 'lead 10 to /r/hurfendurf'
@@ -23,7 +23,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where, "hurfendurf")
+        self.assertEqual(parsed.where[0], "hurfendurf")
 
     def testMovePlain(self):
         src = "lead 10 to hurfendurf"
@@ -31,7 +31,7 @@ class TestMovement(unittest.TestCase):
         parsed = parse(src)
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where, "hurfendurf")
+        self.assertEqual(parsed.where[0], "hurfendurf")
 
     def test_move_all(self):
         src = "lead all to hurfendurf"
@@ -39,7 +39,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(-1, parsed.amount)
-        self.assertEqual(parsed.where, "hurfendurf")
+        self.assertEqual(parsed.where[0], "hurfendurf")
 
     def test_move_implied_all(self):
         src = "lead to hurfendurf"
@@ -47,7 +47,16 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(-1, parsed.amount)
-        self.assertEqual(parsed.where, "hurfendurf")
+        self.assertEqual(parsed.where[0], "hurfendurf")
+
+    def test_multimove(self):
+        src = "lead all to wergland, /r/testplace, somewhereelse"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(-1, parsed.amount)
+        self.assertEqual(parsed.where,
+                         ["wergland", 'testplace', 'somewhereelse'])
 
 
 class TestBattle(unittest.TestCase):

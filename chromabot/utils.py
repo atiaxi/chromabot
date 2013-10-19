@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from itertools import izip, tee
 from urllib import quote_plus
 
 
@@ -15,6 +16,15 @@ def extract_command(text):
     if result:
         cmd = result.group(1).strip()
         return cmd
+
+
+def forcelist(item):
+    """Forces casting of a non-string iterable to a list or generates a
+    single element list (for anything else)"""
+    if hasattr(item, '__iter__') and not isinstance(item, basestring):
+        return list(item)
+    else:
+        return [item, ]
 
 
 def name_to_id(name):
@@ -39,6 +49,15 @@ def num_to_team(number, config=None):
     if number is not None:
         return config['game']['sides'][number]
     return "Neutral"
+
+
+# Courtesy python docs
+#   http://docs.python.org/2/library/itertools.html
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return izip(a, b)
 
 
 def team_to_num(team):

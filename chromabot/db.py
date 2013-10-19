@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
 import utils
-from utils import name_to_id, now, num_to_team
+from utils import forcelist, name_to_id, now, num_to_team, pairwise
 
 
 # Some helpful model exceptions
@@ -26,6 +26,8 @@ class InsufficientException(Exception):
 
 class NonAdjacentException(Exception):
     def __init__(self, src, dest):
+        self.src = src
+        self.dest = dest
         Exception.__init__(self,
                            "%s and %s are not adjacent!" % (src, dest))
 
@@ -150,7 +152,7 @@ class User(Base):
 
     def is_moving(self):
         if self.movement:
-            return self.movement[0]
+            return self.movement
         return None
 
     def move(self, how_many, where, delay):
@@ -171,26 +173,35 @@ class User(Base):
             raise InsufficientException(how_many, self.loyalists, "loyalists")
 
         # TODO: Drop off loyalists
-        if not where in self.region.borders:
-            raise NonAdjacentException(self.region, where)
+        where = forcelist(where)
+        locations = [self.region] + where
+        for src, dest in pairwise(locations):
+            if not dest in src.borders:
+                raise NonAdjacentException(src, dest)
 
-        if not where.enterable_by(self.team):
-            raise TeamException(where)
+            if not dest.enterable_by(self.team):
+                raise TeamException(dest)
 
+        orders = []
         if(delay > 0):
-            result = MarchingOrder(arrival=time.mktime(time.localtime())
-                                    + delay,
+            orders = []
+            step = 0
+            for src, dest in pairwise(locations):
+                step += 1
+                mo = MarchingOrder(arrival=time.mktime(time.localtime())
+                                    + delay * step,
                                    leader=self,
-                                   source=self.region,
-                                   dest=where)
-            sess.add(result)
+                                   source=src,
+                                   dest=dest)
+                orders.append(mo)
+                sess.add(mo)
         else:
-            self.region = where
+            self.region = where[-1]
         # TODO: Change number of loyalists
         self.defectable = False
         sess.commit()
 
-        return result
+        return orders
 
     def remove_codeword(self, code):
         s = self.session()
@@ -251,6 +262,12 @@ class MarchingOrder(Base):
 
     def set_complete(self):
         self.arrival = now()
+
+    def markdown(self):
+        return "*  From %s to %s (arriving at %s)" % (
+            self.source.markdown(),
+            self.dest.markdown(),
+            self.arrival_str())
 
     def update(self):
         sess = Session.object_session(self)

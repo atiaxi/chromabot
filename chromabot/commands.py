@@ -87,7 +87,7 @@ that, comment in the latest recruitment thread in /r/%s"""
         if require and not dest:
             context.reply(
                 "I don't know any region or subreddit named '%s'" %
-                self.where)
+                where)
         return dest
 
 
@@ -225,13 +225,11 @@ class MoveCommand(Command):
             self.amount = int(tokens["amount"])
         else:
             self.amount = -1
-        self.where = tokens["where"].lower()
+        self.where = [t.lower() for t in tokens["where"]]
 
     def execute(self, context):
-        dest = self.get_region(self.where, context)
-        if dest:
-            order = None
-
+        dests = [self.get_region(where, context) for where in self.where]
+        if dests and None not in dests:
             if self.amount == -1:  # -1 means 'everyone'
                 self.amount = context.player.loyalists
 
@@ -240,18 +238,18 @@ class MoveCommand(Command):
                 #hundred_followers = self.amount / 100
                 time_taken = speed  # * hundred_followers
 
-                order = context.player.move(self.amount, dest, time_taken)
+                orders = context.player.move(self.amount, dests, time_taken)
             except db.InsufficientException as ie:
                 context.reply(
                     "You cannot move %d of your people - you only have %d" %
                     (ie.requested, ie.available))
                 return
-            except db.NonAdjacentException:
-                text = ("Your current region, %s, is not adjacent to %s" %
-                    (context.player.region.markdown(), dest.markdown()))
-                if context.player.region == dest:
+            except db.NonAdjacentException as nae:
+                text = ("The region %s is not adjacent to %s" %
+                    (nae.src.markdown(), nae.dest.markdown()))
+                if context.player.region == nae.dest:
                     text = ("How can you go to %s when "
-                            "you are *already here*?") % dest.markdown()
+                            "you are *already here*?") % nae.dest.markdown()
                 context.reply(text)
 
                 return
@@ -269,20 +267,19 @@ class MoveCommand(Command):
                         "you must see this through to the bitter end."
                         ) % (ipe.other.get_battle().region.markdown()))
                 return
-            except db.TeamException:
+            except db.TeamException as te:
                 context.reply(("%s is not friendly territory - invade first "
-                               "if you want to go there") % self.where)
+                               "if you want to go there") % te.what.markdown())
                 return
             context.player.defectable = False
-            if order:
-                context.reply((
-                    "**Confirmed**: You are leading %d of your people to %s. "
-                    "You will arrive at %s."
-                    ) % (self.amount, dest.markdown(), order.arrival_str()))
+            if orders:
+                itinerary = [mo.markdown() for mo in orders]
+                context.reply("**Confirmed**:  Your troops are moving:\n\n" +
+                               ("\n\n".join(itinerary)))
             else:
                 context.reply((
                     "**Confirmed**: You have lead %d of your people to %s."
-                    ) % (self.amount, dest.markdown()))
+                    ) % (self.amount, dests[-1].markdown()))
             context.session.commit()
 
     def __repr__(self):
@@ -322,13 +319,13 @@ class StatusCommand(Command):
         found = context.player
 
         moving = context.player.is_moving()
-        if moving:
-            forces = ("Your forces are currently on the march to %s "
-                      "and will arrive at %s")
-            forces = forces % (moving.dest.markdown(), moving.arrival_str())
-        else:
-            forces = ("You are currently encamped at %s" %
+        encamp = ("You are currently encamped at %s" %
                       found.region.markdown())
+        forces = ""
+        if moving:
+            itinerary = [mo.markdown() for mo in moving]
+            forces = ("\n\nYour troops are currently on the march:\n\n" +
+                "\n\n".join(itinerary))
 
         commit_str = ""
         if found.committed_loyalists:
@@ -336,9 +333,9 @@ class StatusCommand(Command):
                           found.committed_loyalists)
         result = ("You are a %s in the %s army.\n\n"
                   "Your forces number %d loyalists%s.\n\n"
-                  "%s")
+                  "%s%s")
         personal = result % (found.rank, context.team_name(),
-                             found.loyalists, commit_str, forces)
+                             found.loyalists, commit_str, encamp, forces)
         return personal
 
 

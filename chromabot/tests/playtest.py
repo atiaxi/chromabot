@@ -178,7 +178,7 @@ class TestPlaying(ChromaTest):
         # For testing purposes, londo is now alice's
         londo.owner = self.alice.team
 
-        order = self.alice.move(100, londo, 60 * 60 * 24)
+        order = self.alice.move(100, londo, 60 * 60 * 24)[0]
         n = self.sess.query(db.MarchingOrder).count()
         self.assertEqual(n, 1)
 
@@ -209,7 +209,7 @@ class TestPlaying(ChromaTest):
         # But she's at the fight
         self.alice.region = self.get_region('sapphire')
 
-        order = self.alice.move(100, londo, 60 * 60 * 24)
+        order = self.alice.move(100, londo, 60 * 60 * 24)[0]
         n = self.sess.query(db.MarchingOrder).count()
         self.assertEqual(n, 1)
 
@@ -267,7 +267,7 @@ class TestPlaying(ChromaTest):
         self.assertFalse(self.alice.is_moving())
 
         # Ideally, this test will not take a day to complete
-        order = self.alice.move(100, londo, 60 * 60 * 24)
+        order = self.alice.move(100, londo, 60 * 60 * 24)[0]
         self.assert_(order)
 
         # Alice should be moving
@@ -299,7 +299,7 @@ class TestPlaying(ChromaTest):
     def test_no_move_while_moving(self):
         """Can only move if you're not already going somewhere"""
         londo = self.get_region("Orange Londo")
-        order = self.alice.move(100, londo, 60 * 60 * 24)
+        order = self.alice.move(100, londo, 60 * 60 * 24)[0]
         self.assert_(order)
 
         with self.assertRaises(db.InProgressException):
@@ -371,6 +371,159 @@ class TestPlaying(ChromaTest):
         n = (self.sess.query(db.Battle).count())
         self.assertEqual(n, 0)
 
+    def test_multimove(self):
+        """Should be able to more more than one hop.
+        (with corresponding increase in times)"""
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.alice.team
+        self.sess.commit()
+
+        DAY = 60 * 60 * 24
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        path = [self.get_region(name) for name in ('Orange Londo', 'Sapphire')]
+        then = now()  # We'll need this to check timing
+        self.alice.move(100, path, DAY)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 2)
+        # The first should be to londo
+        londomove = movements[0]
+        self.assertEqual(londomove.source, self.get_region('Oraistedarg'))
+        self.assertEqual(londomove.dest, self.get_region('Orange Londo'))
+        # Note, if self.alice.move takes longer than 10 minutes to run, this
+        # will fail.
+        self.assertAlmostEqual(londomove.arrival, then + DAY, delta=600)
+
+        # Next, sapphire
+        sappmove = movements[1]
+        self.assertEqual(sappmove.source, self.get_region('Orange Londo'))
+        self.assertEqual(sappmove.dest, self.get_region('Sapphire'))
+        # Should arrive 2 days from now, +/- 5 minutes
+        self.assertAlmostEqual(sappmove.arrival, then + DAY + DAY, delta=600)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 2)
+
+        # Tired of waiting
+        movements[0].arrival = now()
+        self.sess.commit()
+        self.assert_(movements[0].has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should be in londo
+        self.assertEqual(londomove.dest, self.alice.region)
+
+        # One order left
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 1)
+
+        movements[1].arrival = now()
+        self.sess.commit()
+        self.assert_(movements[1].has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # And now in sapphire
+        self.assertEqual(sappmove.dest, self.alice.region)
+
+        # Done moving
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_multimove_noentry(self):
+        """Can't use multimove to get into enemy territory"""
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.bob.team
+        self.sess.commit()
+
+        DAY = 60 * 60 * 24
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        path = [self.get_region(name) for name in ('Orange Londo', 'Sapphire')]
+        with self.assertRaises(db.TeamException):
+            self.alice.move(100, path, DAY)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
+
+    def test_multimove_situation_changes(self):
+        """Can't multimove somewhere that's changed hands"""
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.alice.team
+        self.sess.commit()
+
+        DAY = 60 * 60 * 24
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        path = [self.get_region(name) for name in ('Orange Londo', 'Sapphire')]
+        then = now()  # We'll need this to check timing
+        self.alice.move(100, path, DAY)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 2)
+        # The first should be to londo
+        londomove = movements[0]
+        self.assertEqual(londomove.source, self.get_region('Oraistedarg'))
+        self.assertEqual(londomove.dest, self.get_region('Orange Londo'))
+        # Note, if self.alice.move takes longer than 10 minutes to run, this
+        # will fail.
+        self.assertAlmostEqual(londomove.arrival, then + DAY, delta=600)
+
+        # Next, sapphire
+        sappmove = movements[1]
+        self.assertEqual(sappmove.source, self.get_region('Orange Londo'))
+        self.assertEqual(sappmove.dest, self.get_region('Sapphire'))
+        # Should arrive 2 days from now, +/- 5 minutes
+        self.assertAlmostEqual(sappmove.arrival, then + DAY + DAY, delta=600)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 2)
+
+        # Sapphire falls to the enemy!
+        sappmove.dest.owner = self.bob.team
+        self.sess.commit()
+
+        # Tired of waiting
+        movements[0].arrival = now()
+        self.sess.commit()
+        self.assert_(movements[0].has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should be in londo
+        self.assertEqual(londomove.dest, self.alice.region)
+
+        # One order left
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 1)
+
+        movements[1].arrival = now()
+        self.sess.commit()
+        self.assert_(movements[1].has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # But we fail to arrive because this movement's no longer valid.
+        self.assertEqual(londomove.dest, self.alice.region)
+
+        # Done moving
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
 
 if __name__ == '__main__':
     unittest.main()
