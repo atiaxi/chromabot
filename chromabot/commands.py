@@ -151,6 +151,21 @@ class DefectCommand(Command):
                                   "any actions.")
 
 
+class ExtractCommand(Command):
+    def __init__(self, tokens):
+        pass
+
+    @failable
+    def execute(self, context):
+        try:
+            context.player.extract()
+            context.reply("You have successfully evacuated your team to %s" %
+                          context.player.region.markdown())
+        except db.InProgressException:
+            context.reply("The zone is too hot for extraction!  You will have "
+                          "to wait until the battle finishes.")
+
+
 class InvadeCommand(Command):
     def __init__(self, tokens):
         self.where = tokens["where"].lower()

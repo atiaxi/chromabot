@@ -433,6 +433,20 @@ class TestBattle(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 0)
 
+    def test_disallow_extract(self):
+        """Can't even emergency evac in a warzone"""
+        self.battle.create_skirmish(self.alice, 1)
+        cap = self.get_region("Oraistedarg")
+        self.assertNotEqual(self.alice.region, cap)
+
+        with self.assertRaises(db.InProgressException):
+            self.alice.extract()
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 0)
+        self.assertNotEqual(self.alice.region, cap)
+
     def test_disallow_fighting_retreat(self):
         """Can't start moving away then start a fight"""
         londo = self.get_region("Orange Londo")

@@ -150,6 +150,21 @@ class User(Base):
         self.region = Region.capital_for(team, self.session())
         self.session().commit()
 
+    def cancel_movement(self):
+        MarchingOrder.cancel_all_for(self, self.session())
+
+    def extract(self):
+        """Emergency move back to capital"""
+        fighting = (self.session().query(SkirmishAction).
+                    filter_by(participant=self).first())
+        if fighting:
+            raise InProgressException(fighting)
+
+        self.cancel_movement()
+        cap = Region.capital_for(self.team, self.session())
+        self.region = cap
+        self.session().commit()
+
     def is_moving(self):
         if self.movement:
             return self.movement

@@ -144,6 +144,51 @@ class TestPlaying(ChromaTest):
         # Now she should be there
         self.assertEqual(self.alice.region.id, londo.id)
 
+    def test_extract(self):
+        """Emergency movement back to capital"""
+        sess = self.sess
+        cap = Region.capital_for(0, sess)
+        # Move Alice somewhere else
+        londo = self.get_region("Orange Londo")
+        self.alice.move(100, londo, 0)
+
+        # Should be in londo
+        self.assertEqual(self.alice.region, londo)
+        # Emergency move!
+        self.alice.extract()
+
+        # Should be back in capital
+        self.assertEqual(self.alice.region, cap)
+
+    def test_extract_cancels_movement(self):
+        """Emergency movement shouldn't rubberband"""
+        sess = self.sess
+        cap = Region.capital_for(0, sess)
+        # Move Alice somewhere else
+        londo = self.get_region("Orange Londo")
+        self.alice.move(100, londo, 0)
+
+        # Should be in londo
+        self.assertEqual(self.alice.region, londo)
+
+        # Bloodless coup of Sapphire
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.alice.team
+        sess.commit()
+
+        # Start wandering that way
+        order = self.alice.move(100, sapp, 60 * 60 * 24)
+        self.assert_(order)
+
+        orders = self.sess.query(MarchingOrder).count()
+        self.assertEqual(orders, 1)
+
+        self.alice.extract()
+        self.assertEqual(self.alice.region, cap)
+
+        orders = self.sess.query(MarchingOrder).count()
+        self.assertEqual(orders, 0)
+
     def test_disallow_unscheduled_invasion(self):
         """Can't move somewhere you don't own or aren't invading"""
         londo = self.get_region("Orange Londo")

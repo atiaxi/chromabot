@@ -58,6 +58,11 @@ class TestMovement(unittest.TestCase):
         self.assertEqual(parsed.where,
                          ["wergland", 'testplace', 'somewhereelse'])
 
+    def test_extract(self):
+        src = "extract"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, ExtractCommand)
+
 
 class TestBattle(unittest.TestCase):
 
