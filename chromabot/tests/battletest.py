@@ -588,11 +588,27 @@ class TestBattle(ChromaTest):
         s3.react(self.alice, 5)                      # ----Attack 5
 
         # s2react's support adds 1 to its parent
-        # Alice gets 20 from support for total of 21, bob gets 15
+        # Alice's 19 support is capped at 19 for a total of 20
+        # Bob gets 15
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 6)
+        self.assertEqual(result.margin, 5)
+
+    def test_no_exponential_support(self):
+        """Long chains of support used to provide exponentially larger
+        numbers.  Test that the fix (capping support at the stated amount)
+        works as intended."""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 1)  # Attack 1
+        s2 = s1.react(self.carol, 1, hinder=False)  # -- Support 1
+        s3 = s2.react(self.carol, 1, hinder=False)  # ---- Support 1
+        s4 = s3.react(self.carol, 1, hinder=False)  # ------ Support 1
+        s4.react(self.carol, 75, hinder=False)      # -------- Support 75
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.margin, 2)  # Original attack, 1 support
 
     def test_additive_attacks(self):
         battle = self.battle

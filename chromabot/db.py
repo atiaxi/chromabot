@@ -814,6 +814,9 @@ class SkirmishAction(Base):
                 self.victor = None
                 self.margin = 0
                 self.vp += max(raw_attack, raw_support)
+        # Support nodes can't supply more than their initial numbers
+        if not self.hinder:
+            self.margin = min(self.margin, self.amount)
         # Unopposed root nodes are worth 2x VP
         if not self.parent and self.unopposed:
             self.vp = max(self.vp * 2, self.amount * 2)
