@@ -806,6 +806,21 @@ class TestBattle(ChromaTest):
         self.assertEqual(result.margin, 1)
         self.assertEqual(result.vp, 24)
 
+    def test_buff_first_strike_support(self):
+        """See that first strike works correctly with support"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, 20)  # Attack 20 infantry
+        s2 = s1.react(self.bob, 10)                  # -- oppose 10 infantry
+        s3 = s2.react(self.dave, 9, hinder=False)    # ---- support 9
+
+        s3.buff_with(db.Buff.first_strike())
+
+        result = s1.resolve()
+        self.assert_(result)
+        self.assertEqual(result.victor, self.bob.team)
+        self.assertEqual(result.margin, 1)
+        self.assertEqual(result.vp, 20)
+
     def test_buff_otd(self):
         battle = self.battle
 

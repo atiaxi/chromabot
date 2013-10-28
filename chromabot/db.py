@@ -764,6 +764,7 @@ class SkirmishAction(Base):
         self.victor = self.participant.team
         self.vp = 0
         self.margin = self.adjusted_for_buffs()
+        cap = self.margin
         self.unopposed = True
 
         # Resolve our children, if any
@@ -816,7 +817,7 @@ class SkirmishAction(Base):
                 self.vp += max(raw_attack, raw_support)
         # Support nodes can't supply more than their initial numbers
         if not self.hinder:
-            self.margin = min(self.margin, self.amount)
+            self.margin = min(self.margin, cap)
         # Unopposed root nodes are worth 2x VP
         if not self.parent and self.unopposed:
             self.vp = max(self.vp * 2, self.amount * 2)
