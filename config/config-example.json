@@ -10,7 +10,8 @@
         "useragent": "chromabot by /u/YOU",
         "site": "chroma-test",
         "sleep": 60,
-        "report_dir": "/home/roger/workspace-aptana/ChromaBot"
+        "report_dir": "/home/roger/workspace-aptana/ChromaBot",
+        "verbose_logging": false
     },
     
     "game": {

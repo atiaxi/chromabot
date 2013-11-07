@@ -44,15 +44,20 @@ class Context(object):
 
     @failable
     def reply(self, reply, pm=True):
+        verbose = self.config.bot.get("verbose_logging")
         was_comment = getattr(self.comment, 'was_comment', True)
         header = ""
         if was_comment and pm:
             header = ("(In response to [this comment](%s))" %
                       self.comment.permalink)
         else:  # It wasn't a comment, or pm = False
+            if verbose:
+                logging.info("Replying: %s" % reply)
             return self.comment.reply(reply)
 
         full_reply = "%s\n\n%s" % (header, reply)
+        if verbose:
+            logging.info("PMing: %s" % full_reply)
         self.reddit.send_message(self.player.name, "Chromabot reply",
                                  full_reply)
 

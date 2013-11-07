@@ -23,6 +23,9 @@ class Config(object):
     def __getitem__(self, key):
         return self.data[key]
 
+    def __getattr__(self, key):
+        return self.data[key]
+
     def check_exist(self, proposed_paths):
         for fullpath in proposed_paths:
             if fullpath and os.path.exists(fullpath):
