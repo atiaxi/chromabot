@@ -513,7 +513,7 @@ class SkirmishCommand(Command):
             moving = context.player.is_moving()
             if moving:
                 marching = ("\n\n(Your forces will arrive in %s at %s )" %
-                            (moving.dest.markdown(), moving.arrival_str()))
+                            (moving[0].dest.markdown(), moving[0].arrival_str()))
             context.reply("%s%s" % (standard, marching))
         except db.TeamException as te:
             if te.friendly:
