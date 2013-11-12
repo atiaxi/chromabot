@@ -437,7 +437,8 @@ class SkirmishCommand(Command):
             if not self.target and post_id == context.comment.parent_id:
                 skirmish = current.create_skirmish(context.player, self.amount,
                                                    troop_type=self.troop_type,
-                                                   enforce_noob_rule=enforce)
+                                                   enforce_noob_rule=enforce,
+                                                   conf=context.config)
             else:
                 if self.target:
                     parent = self.find_skirmish_by_id(self.target, context)
@@ -542,9 +543,11 @@ class SkirmishCommand(Command):
                               (ie.requested,
                                context.player.committed_loyalists))
         except db.TimingException as te:
-            if te.side == 'late':
+            if te.side == 'late' and te.expected is None:
                 context.reply(("Top-level attacks are disallowed in the last "
                                "%d seconds of a battle") % current.lockout)
+            elif te.side == 'late':
+                context.reply("That skirmish has ended!")
             else:
                 # If the battle's begun, it's the user that is too young
                 if current.has_started():

@@ -51,6 +51,19 @@ class TestBattle(ChromaTest):
         self.assertEqual(updates["ended"][0], battle)
         return battle
 
+    def start_endable_skirmish(self, alice_forces=10, bob_forces=9):
+        self.conf["game"]["skirmish_time"] = 60 * 60 * 24
+        battle = self.battle
+        s1 = battle.create_skirmish(self.alice, alice_forces, conf=self.conf)
+        s2 = s1.react(self.bob, bob_forces)
+        return (s1, s2)
+
+    def end_skirmish(self, skirmish):
+        sess = self.sess
+        skirmish.ends = 1
+        Battle.update_all(sess)
+        return skirmish
+
     def test_battle_creation(self):
         """Typical battle announcement"""
         londo = self.get_region("Orange Londo")
@@ -460,11 +473,80 @@ class TestBattle(ChromaTest):
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
         s1.react(self.bob, 9)                        # --Attack 9
+        # Without a conf entry, skirmishes don't end
+        self.assertFalse(s1.ends)
 
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
         self.assertEqual(result.vp, 9)
+
+    def test_skirmish_end(self):
+        """Skirmishes should be allowed to expire!"""
+        s1, s2 = self.start_endable_skirmish()
+
+        self.assertTrue(s1.ends)
+        self.assertFalse(s1.is_resolved())
+
+        # Go through one round of battle updating to verify skirmish
+        # doesn't end early
+        sess = self.sess
+        print "About to check resolve"
+        db.Battle.update_all(sess)
+        print "Done"
+
+        self.assertTrue(s1.ends)
+        self.assertFalse(s1.is_resolved())
+        self.assertFalse(s2.is_resolved())
+
+        # Force skirmish end
+        self.end_skirmish(s1)
+
+        # Skirmish should have been resolved
+        self.assertTrue(s1.is_resolved())
+        self.assertTrue(s2.is_resolved())
+
+        # With alice as the victor
+        self.assertEqual(s1.victor, self.alice.team)
+
+    def test_ended_skirmishes_block(self):
+        """Still can't spearhead a skirmish even if your last skirmish is done
+        """
+        skirmish, _ = self.start_endable_skirmish()
+        self.end_skirmish(skirmish)
+
+        with self.assertRaises(db.InProgressException):
+            self.battle.create_skirmish(self.alice, 1)
+
+        n = (self.sess.query(db.SkirmishAction).filter_by(parent_id=None).
+            filter_by(participant=self.alice)).count()
+        self.assertEqual(n, 1)
+
+    def test_no_decommit_after_skirmishes(self):
+        """Expired skirmishes still count against your total"""
+        skirmish, _ = self.start_endable_skirmish(alice_forces=5)
+        self.end_skirmish(skirmish)
+
+        self.assertEqual(5, self.alice.committed_loyalists)
+
+    def test_no_reply_to_expired_skirmish(self):
+        """Can't fight in a skimrish that's over!"""
+        s1, s2 = self.start_endable_skirmish()
+        self.end_skirmish(s1)
+        with self.assertRaises(db.TimingException):
+            s1.react(self.dave, 1)
+
+        # Make sure the non-root nodes also don't allow it
+        with self.assertRaises(db.TimingException):
+            s2.react(self.carol, 1)
+
+    def test_ties_resolve_correctly(self):
+        """Ties still count as resolved"""
+        skirmish, _ = self.start_endable_skirmish(alice_forces=1, bob_forces=1)
+        self.assertFalse(skirmish.is_resolved())
+        self.end_skirmish(skirmish)
+
+        self.assertTrue(skirmish.is_resolved())
 
     def test_failed_attack(self):
         """Stopping an attack should award VP to the ambushers"""

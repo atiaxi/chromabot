@@ -481,6 +481,8 @@ class Battle(Base):
             elif battle.has_started() and battle.past_end_time():
                 battle.resolve(conf)
                 ended.append(battle)
+            elif battle.has_started():
+                battle.update()
 
         result = {
             "begin": begin,
@@ -495,11 +497,17 @@ class Battle(Base):
         return self.timestr(self.display_ends)
 
     def create_skirmish(self, who, howmany, troop_type='infantry',
-                        enforce_noob_rule=True):
+                        enforce_noob_rule=True, conf=None):
+        ends = None
+        if conf:
+            ends = conf["game"].get("skirmish_time", None)
+            if ends is not None:
+                ends = ends + now()
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, battle=self,
                                    troop_type=troop_type,
-                                   enforce_noob_rule=enforce_noob_rule)
+                                   enforce_noob_rule=enforce_noob_rule,
+                                   ends=ends)
         sess.commit()
         return sa
 
@@ -614,6 +622,11 @@ class Battle(Base):
     def toplevel_skirmishes(self):
         return [s for s in self.skirmishes if s.parent is None]
 
+    def update(self):
+        """Update the skirmishes in this battle"""
+        for s in self.toplevel_skirmishes():
+            s.update()
+
     def __repr__(self):
         return "<Battle(id='%s', region='%s'>" % (self.id, self.region)
 
@@ -655,7 +668,9 @@ class SkirmishAction(Base):
     summary_id = Column(String)
     amount = Column(Integer, default=0)
     hinder = Column(Boolean, default=True)
+    resolved = Column(Boolean, default=False)
     troop_type = Column(String, default='infantry')
+    ends = Column(Integer, default=0)
 
     victor = Column(Integer)
     vp = Column(Integer)
@@ -677,7 +692,7 @@ class SkirmishAction(Base):
 
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
-               troop_type='infantry', enforce_noob_rule=True):
+               troop_type='infantry', enforce_noob_rule=True, ends=None):
 
         troop_type = who.translate_codeword(troop_type)
         if troop_type not in cls.TROOP_TYPES:
@@ -688,7 +703,8 @@ class SkirmishAction(Base):
                             hinder=hinder,
                             parent=parent,
                             battle=battle,
-                            troop_type=troop_type)
+                            troop_type=troop_type,
+                            ends=ends)
         # Ephemeral, only want it to exist for long enough to pass validation
         sa.enforce_noob_rule = enforce_noob_rule
         sa.commit_if_valid()
@@ -822,8 +838,12 @@ class SkirmishAction(Base):
         if not self.parent and self.unopposed:
             self.vp = max(self.vp * 2, self.amount * 2)
 
+        self.resolved = True
         self.session().commit()
         return self
+
+    def is_resolved(self):
+        return self.resolved
 
     def report(self, config=None):
         preamble = "*  Skirmish #%d - the victor is " % self.id
@@ -891,6 +911,11 @@ class SkirmishAction(Base):
 
         self.participant.committed_loyalists += self.amount
 
+    def update(self):
+        """See if this skirmish is about to end"""
+        if not self.is_resolved() and self.ends and now() > self.ends:
+            self.resolve()
+
     def validate(self):
         """Raise exceptions if this is not a valid skirmish"""
         sess = self.session()
@@ -934,6 +959,12 @@ class SkirmishAction(Base):
             if s > 1:  # Off by one same as below
                 sess.rollback()
                 raise InProgressException(self.parent)
+            # If our root skirmish has ended, we can't fight
+            root = self.get_root()
+            if root.is_resolved():
+                sess.rollback()
+                raise TimingException(expected=root)
+
         else:
             # Make sure our participant doesn't have another toplevel
             s = (sess.query(SkirmishAction).
