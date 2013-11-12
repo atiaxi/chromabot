@@ -235,6 +235,16 @@ class Bot(object):
                 pass
 
     @failable
+    def update_skirmish_summaries(self, skirmishes):
+        c = Context(player=None,
+                    config=self.config,
+                    session=None,
+                    comment=None,
+                    reddit=self.reddit)
+        for s in skirmishes:
+            SkirmishCommand.update_summary(c, s)
+
+    @failable
     def update_game(self):
         session = self.session
         MarchingOrder.update_all(session)
@@ -274,6 +284,8 @@ class Bot(object):
             post.edit(text)
             session.commit()
 
+        self.update_skirmish_summaries(results['skirmish_ended'])
+
         for done in results['ended']:
             report = ["The battle is complete...\n"]
             report += done.report(self.config)
@@ -304,13 +316,7 @@ class Bot(object):
             post.edit(text)
 
             # Update all the skirmish summaries
-            for s in done.toplevel_skirmishes():
-                c = Context(player=None,
-                            config=self.config,
-                            session=None,
-                            comment=None,
-                            reddit=self.reddit)
-                SkirmishCommand.update_summary(c, s)
+            self.update_skirmish_summaries(done.toplevel_skirmishes())
 
             session.delete(done)
             session.commit()

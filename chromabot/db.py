@@ -475,6 +475,7 @@ class Battle(Base):
         battles = sess.query(cls).all()
         begin = []
         ended = []
+        skirmish_ended = []
         for battle in battles:
             if not battle.has_started() and battle.is_ready():
                 begin.append(battle)
@@ -482,11 +483,12 @@ class Battle(Base):
                 battle.resolve(conf)
                 ended.append(battle)
             elif battle.has_started():
-                battle.update()
+                skirmish_ended.extend(battle.update())
 
         result = {
             "begin": begin,
-            "ended": ended
+            "ended": ended,
+            "skirmish_ended": skirmish_ended
         }
         return result
 
@@ -624,8 +626,11 @@ class Battle(Base):
 
     def update(self):
         """Update the skirmishes in this battle"""
+        ended = []
         for s in self.toplevel_skirmishes():
-            s.update()
+            if s.update():
+                ended.append(s)
+        return ended
 
     def __repr__(self):
         return "<Battle(id='%s', region='%s'>" % (self.id, self.region)
@@ -882,7 +887,7 @@ class SkirmishAction(Base):
             buffs = " (Buffs: %s) " % buffs
 
         wins = ""
-        if self.victor is not None and self.children:
+        if self.is_resolved() and self.children:
             wins = "Victor: %s" % self.winner_str(config)
         data = (self.id, self.participant.name, team, verb, self.amount,
                 self.troop_type, buffs, amount, effective, wins)
@@ -890,9 +895,18 @@ class SkirmishAction(Base):
                    "(effective: %d, for above: %d) %s") % data
         return command
 
+    def ends_str(self):
+        return self.timestr(self.ends)
+
     def full_details(self, indent=0, config=None):
         result = []
         if indent == 0:  # Add some context for root level
+            if self.ends:
+                if now() < self.ends:
+                    result.append("This skirmish will end at or before %s" %
+                                  self.ends_str())
+                else:
+                    result.append("**This skirmish has ended!**")
             result.append("Confirmed actions for this skirmish:\n")
 
         spacing = ">" * indent
@@ -915,6 +929,7 @@ class SkirmishAction(Base):
         """See if this skirmish is about to end"""
         if not self.is_resolved() and self.ends and now() > self.ends:
             self.resolve()
+            return True
 
     def validate(self):
         """Raise exceptions if this is not a valid skirmish"""
