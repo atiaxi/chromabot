@@ -655,7 +655,7 @@ class Processed(Base):
     __tablename__ = "processed"
 
     id = Column(Integer, primary_key=True)
-    id36 = Column(String)
+    id36 = Column(String)  # Actually a fullname (can be a message or comment)
 
     battle_id = Column(Integer, ForeignKey('battles.id'))
     battle = relationship("Battle",

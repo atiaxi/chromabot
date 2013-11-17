@@ -54,6 +54,11 @@ class Bot(object):
         for comment in unread:
             # Only PMs, we deal with comment replies in process_post_for_battle
             if not comment.was_comment:
+                seen = (session.query(Processed).
+                    filter_by(id36=comment.name).
+                    count())
+                if seen:
+                    continue
                 player = self.find_player(comment, session)
                 if player:
                     cmd = extract_command(comment.body)
@@ -62,7 +67,8 @@ class Bot(object):
                     context = Context(player, self.config, session,
                                       comment, self.reddit)
                     self.command(cmd, context)
-
+                session.add(Processed(id36=comment.name))
+                session.commit()
             comment.mark_as_read()
 
     def command(self, text, context):
