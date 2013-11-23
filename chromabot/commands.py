@@ -419,18 +419,26 @@ class SkirmishCommand(Command):
         # getattr wackiness because real comments not gotten from inbox don't
         # have "was_comment" set on them
         if not getattr(context.comment, 'was_comment', True):
-            # PMing skirmish commands makes no sense
-            context.reply("You must enter your skirmish commands in the "
-                          "appropriate battle post")
-            return
-
-        post_id = context.comment.link_id  # Actually a 'name'
-        ongoing = context.session.query(Battle).filter_by(
-            submission_id=post_id)
-        current = ongoing.first()
-        if not current:
-            context.reply("There's no battle happening here!")
-            return
+            if context.config.game.get("battle_pm", False):
+                # Must be targeting something
+                if not self.target:
+                    context.reply("PMed skirmish commands must target an "
+                                  "ongoing skirmish!")
+                    return
+            else:
+                # PMing skirmish commands is disabled
+                context.reply("You must enter your skirmish commands in the "
+                              "appropriate battle post")
+                return
+            current = None
+        else:
+            post_id = context.comment.link_id  # Actually a 'name'
+            ongoing = context.session.query(Battle).filter_by(
+                submission_id=post_id)
+            current = ongoing.first()
+            if not current:
+                context.reply("There's no battle happening here!")
+                return
 
         try:
             enforce = context.config["bot"].get("enforce_noob_rule", True)
@@ -442,7 +450,7 @@ class SkirmishCommand(Command):
             else:
                 if self.target:
                     parent = self.find_skirmish_by_id(self.target, context)
-                    if parent and parent.battle != current:
+                    if parent and current and parent.battle != current:
                         context.reply("That skirmish belongs to "
                                       "another battle!")
                         return
@@ -450,6 +458,8 @@ class SkirmishCommand(Command):
                         context.reply("That does not appear to be a valid "
                                       "skirmish!")
                         return
+                    if not current:
+                        current = parent.battle  # For PMed skirmish commands
                 else:
                     parent = self.find_skirmish_named(
                         context.comment.parent_id, context)
