@@ -492,7 +492,6 @@ class TestBattle(ChromaTest):
         # doesn't end early
         sess = self.sess
         db.Battle.update_all(sess)
-        print "Done"
 
         self.assertTrue(s1.ends)
         self.assertFalse(s1.is_resolved())
@@ -507,6 +506,12 @@ class TestBattle(ChromaTest):
 
         # With alice as the victor
         self.assertEqual(s1.victor, self.alice.team)
+
+    def test_skirmish_random_end(self):
+        self.conf["game"]["skirmish_variability"] = 30
+        s1, _ = self.start_endable_skirmish()
+        self.assert_(s1.display_ends)
+        self.assertNotEqual(s1.ends, s1.display_ends)
 
     def test_ended_skirmishes_block(self):
         """Still can't spearhead a skirmish even if your last skirmish is done

@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import time
 
 from sqlalchemy import (
@@ -501,15 +502,21 @@ class Battle(Base):
     def create_skirmish(self, who, howmany, troop_type='infantry',
                         enforce_noob_rule=True, conf=None):
         ends = None
+        display_ends = None
         if conf:
             ends = conf["game"].get("skirmish_time", None)
             if ends is not None:
                 ends = ends + now()
+                display_ends = ends
+                var = conf["game"].get("skirmish_variability", None)
+                if var:
+                    chosen = random.randint(0, var * 2)
+                    ends = ends - (var) + chosen
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, battle=self,
                                    troop_type=troop_type,
                                    enforce_noob_rule=enforce_noob_rule,
-                                   ends=ends)
+                                   ends=ends, display_ends=display_ends)
         sess.commit()
         return sa
 
@@ -676,6 +683,7 @@ class SkirmishAction(Base):
     resolved = Column(Boolean, default=False)
     troop_type = Column(String, default='infantry')
     ends = Column(Integer, default=0)
+    display_ends = Column(Integer, default=0)
 
     victor = Column(Integer)
     vp = Column(Integer)
@@ -697,7 +705,8 @@ class SkirmishAction(Base):
 
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
-               troop_type='infantry', enforce_noob_rule=True, ends=None):
+               troop_type='infantry', enforce_noob_rule=True,
+               ends=None, display_ends=None):
 
         troop_type = who.translate_codeword(troop_type)
         if troop_type not in cls.TROOP_TYPES:
@@ -709,7 +718,8 @@ class SkirmishAction(Base):
                             parent=parent,
                             battle=battle,
                             troop_type=troop_type,
-                            ends=ends)
+                            ends=ends,
+                            display_ends=display_ends)
         # Ephemeral, only want it to exist for long enough to pass validation
         sa.enforce_noob_rule = enforce_noob_rule
         sa.commit_if_valid()
@@ -896,14 +906,14 @@ class SkirmishAction(Base):
         return command
 
     def ends_str(self):
-        return self.timestr(self.ends)
+        return self.timestr(self.display_ends)
 
     def full_details(self, indent=0, config=None):
         result = []
         if indent == 0:  # Add some context for root level
             if self.ends:
                 if now() < self.ends:
-                    result.append("This skirmish will end at or before %s" %
+                    result.append("This skirmish will end near %s" %
                                   self.ends_str())
                 else:
                     result.append("**This skirmish has ended!**")
