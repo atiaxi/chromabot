@@ -43,7 +43,7 @@ class Bot(object):
         hq = self.reddit.get_subreddit(self.config.headquarters)
         submissions = hq.get_new()
         for submission in submissions:
-            if "[Recruitment]" in submission.title:
+            if "[recruitment]" in submission.title.lower():
                 self.recruit_from_post(submission)
                 break  # Only recruit from the first one
 

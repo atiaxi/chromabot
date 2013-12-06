@@ -491,7 +491,6 @@ class TestBattle(ChromaTest):
         # Go through one round of battle updating to verify skirmish
         # doesn't end early
         sess = self.sess
-        print "About to check resolve"
         db.Battle.update_all(sess)
         print "Done"
 
