@@ -28,6 +28,15 @@ def battle_adopt(battle, postid):
     battle.submission_id="t3_%s" % postid
     sess.commit()
 
+def cancel_battle(battle):
+    global reddit
+
+    post = reddit.get_submission(
+        submission_id=name_to_id(battle.submission_id))
+    post.edit("*This battle has been canceled*")
+    sess.delete(battle)
+    sess.commit()
+
 def end_battle(battle):
     battle.ends = battle.begins + 1
     sess.commit()
