@@ -184,15 +184,17 @@ class TestBattle(ChromaTest):
 
     def test_canceled_unopposed(self):
         """Attacks that have counterattacks nullified are unopposed"""
-        s1 = self.battle.create_skirmish(self.alice, 1)   # Attack 1
-        s1a = s1.react(self.bob, 2)                       # --Attack 2
-        s1a.react(self.alice, 9)                          # ----Attack 9
+        s1 = self.battle.create_skirmish(self.alice, 10)   # Attack 10
+        s1a = s1.react(self.bob, 8,
+                       troop_type="cavalry")               # --Attack 8 (12)
+        s1a.react(self.alice, 6,
+                  troop_type="ranged")                     # ----Attack 6 (9)
         s1.resolve()
         self.assertEqual(s1.victor, self.alice.team)
         self.assert_(s1.unopposed)
 
-        # Should be 4 VP (double the 2 it'd ordinarily be worth)
-        self.assertEqual(s1.vp, 4)
+        # Should be 20 VP (double the 10 it'd ordinarily be worth)
+        self.assertEqual(s1.vp, 20)
 
     def test_not_unopposed(self):
         """If there's an attack, even if ineffective, it's opposed"""
@@ -200,6 +202,14 @@ class TestBattle(ChromaTest):
         s1.react(self.bob, 1)                             # --Attack 1
         s1.resolve()
         self.assertFalse(s1.unopposed)
+
+    def test_no_overkill(self):
+        """You can't use more loyalists than whoever started the fight"""
+        s1 = self.battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1.react(self.carol, 10, hinder=False)  # Right amount = ok
+
+        with self.assertRaises(db.TooManyException):
+            s1.react(self.bob, 11)
 
     def test_committed_loyalists(self):
         """We're actually committing to battle, right?"""
@@ -243,7 +253,7 @@ class TestBattle(ChromaTest):
         self.assertEqual(self.bob.loyalists, 100)
 
         s1 = self.battle.create_skirmish(self.alice, 50)
-        s1.react(self.bob, 51)
+        s1.react(self.bob, 50, troop_type="cavalry")
 
         self.end_battle(self.battle, self.conf)
 
@@ -264,7 +274,7 @@ class TestBattle(ChromaTest):
         self.assertEqual(self.bob.loyalists, 100)
 
         s1 = self.battle.create_skirmish(self.alice, 50)
-        s1.react(self.bob, 51)
+        s1.react(self.bob, 50, troop_type="cavalry")
 
         self.end_battle(self.battle, self.conf)
 
@@ -284,7 +294,7 @@ class TestBattle(ChromaTest):
         self.assertEqual(self.bob.loyalists, 100)
 
         s1 = self.battle.create_skirmish(self.alice, 50)
-        s1.react(self.bob, 51)
+        s1.react(self.bob, 50, troop_type='cavalry')
 
         self.end_battle(self.battle, self.conf)
 
@@ -508,7 +518,8 @@ class TestBattle(ChromaTest):
         self.assertEqual(s1.victor, self.alice.team)
 
     def test_skirmish_random_end(self):
-        self.conf["game"]["skirmish_variability"] = 30
+        # 1 in 1800 chance this test fails, I can live with that.
+        self.conf["game"]["skirmish_variability"] = 1800
         s1, _ = self.start_endable_skirmish()
         self.assert_(s1.display_ends)
         self.assertNotEqual(s1.ends, s1.display_ends)
@@ -528,7 +539,7 @@ class TestBattle(ChromaTest):
 
     def test_no_decommit_after_skirmishes(self):
         """Expired skirmishes still count against your total"""
-        skirmish, _ = self.start_endable_skirmish(alice_forces=5)
+        skirmish, _ = self.start_endable_skirmish(alice_forces=5, bob_forces=5)
         self.end_skirmish(skirmish)
 
         self.assertEqual(5, self.alice.committed_loyalists)
@@ -556,7 +567,8 @@ class TestBattle(ChromaTest):
         """Stopping an attack should award VP to the ambushers"""
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
-        s1.react(self.bob, 19)                       # --Attack 19
+        s1.react(self.bob, 10)                       # --Attack 10
+        s1.react(self.dave, 9)                       # --Attack 9
 
         result = s1.resolve()
         self.assert_(result)
@@ -566,11 +578,11 @@ class TestBattle(ChromaTest):
     def test_supply_ambush(self):
         """Taking out a 'support' should not escalate further"""
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)
-        s2 = s1.react(self.alice, 1, hinder=False)
-        s2.react(self.bob, 100)  # OVERKILL!
+        s1 = battle.create_skirmish(self.alice, 2)
+        s2 = s1.react(self.alice, 2, hinder=False)
+        s2.react(self.bob, 2, troop_type="cavalry")
 
-        # Alice still wins, though - the giant 99 margin attack is just to stop
+        # Alice still wins, though - the margin attack is just to stop
         # reinforcements
         result = s1.resolve()
         self.assert_(result)
@@ -625,7 +637,7 @@ class TestBattle(ChromaTest):
         """Use of codewords in response skirmishes"""
         self.bob.add_codeword('muppet', 'ranged')
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)
+        s1 = battle.create_skirmish(self.alice, 100)
         s2 = s1.react(self.bob, 100, troop_type='muppet')
         self.assertEqual(s2.troop_type, 'ranged')
 
@@ -640,11 +652,11 @@ class TestBattle(ChromaTest):
     def test_complex_resolve_cancel(self):
         """Multilayer battle resolution that cancels itself out"""
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)  # Attack 1
-        s2 = s1.react(self.alice, 1, hinder=False)  # --Support 1
-        s2.react(self.bob, 10)                      # ----Attack 10
-        s3 = s1.react(self.bob, 10)                 # --Attack 10
-        s3.react(self.alice, 10)                    # ----Attack 10
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s2 = s1.react(self.alice, 1, hinder=False)   # --Support 1
+        s2.react(self.bob, 10)                       # ----Attack 10
+        s3 = s1.react(self.bob, 10)                  # --Attack 10
+        s3.react(self.alice, 10)                     # ----Attack 10
 
         # Make sure the leaves cancel correctly
         s2result = s2.resolve()
@@ -660,48 +672,49 @@ class TestBattle(ChromaTest):
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 1)
+        self.assertEqual(result.margin, 10)
         # s2 has 1 die, s2react has 1 die, s3 has 10 die, s3react has 10 die
         # total = 11 each; 22 because alice ends up unopposed
         self.assertEqual(result.vp, 22)
 
     def test_additive_support(self):
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
-        s2 = s1.react(self.alice, 19, hinder=False)  # --Support 19
-        s2.react(self.alice, 1, hinder=False)        # ----Support 1
-        s3 = s1.react(self.bob, 20)                  # --Attack 20
-        s3.react(self.alice, 5)                      # ----Attack 5
+        s1 = battle.create_skirmish(self.alice, 20)   # Attack 20
+        s2 = s1.react(self.alice, 19, hinder=False)   # --Support 19
+        s2.react(self.alice, 1, hinder=False)         # ----Support 1
+        s3 = s1.react(self.bob, 20)                   # --Attack 20
+        s3.react(self.alice, 5)                       # ----Attack 5
 
         # s2react's support adds 1 to its parent
-        # Alice's 19 support is capped at 19 for a total of 20
+        # Alice's 19 support is capped at 19 for a total of 39
         # Bob gets 15
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 5)
+        self.assertEqual(result.margin, 24)
 
     def test_no_exponential_support(self):
         """Long chains of support used to provide exponentially larger
         numbers.  Test that the fix (capping support at the stated amount)
         works as intended."""
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)  # Attack 1
-        s2 = s1.react(self.carol, 1, hinder=False)  # -- Support 1
-        s3 = s2.react(self.carol, 1, hinder=False)  # ---- Support 1
-        s4 = s3.react(self.carol, 1, hinder=False)  # ------ Support 1
-        s4.react(self.carol, 75, hinder=False)      # -------- Support 75
+        s1 = battle.create_skirmish(self.alice, 75)  # Attack 1
+        s2 = s1.react(self.carol, 1, hinder=False)   # -- Support 1
+        s3 = s2.react(self.carol, 1, hinder=False)   # ---- Support 1
+        s4 = s3.react(self.carol, 1, hinder=False)   # ------ Support 1
+        s4.react(self.carol, 75, hinder=False)       # -------- Support 75
 
         result = s1.resolve()
         self.assert_(result)
-        self.assertEqual(result.margin, 2)  # Original attack, 1 support
+        self.assertEqual(result.margin, 76)  # Original attack, 1 support
 
     def test_additive_attacks(self):
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
-        s1.react(self.alice, 19, hinder=False)       # --Support 19
-        s3 = s1.react(self.bob, 20)                  # --Attack 20
-        s3.react(self.bob, 5, hinder=False)          # ----Support 5
+        s1 = battle.create_skirmish(self.alice, 20)   # Attack 20
+        s1.react(self.alice, 19, hinder=False)        # --Support 19
+        s3 = s1.react(self.bob, 20)                   # --Attack 20
+        s3.react(self.bob, 5, hinder=False)           # ----Support 5
+        s1.react(self.dave, 19)
 
         # s3react's support adds 5 to its parent
         # Alice gets 20 support total, bob gets 25 attack
@@ -713,25 +726,19 @@ class TestBattle(ChromaTest):
     def test_complex_resolve_bob(self):
         """Multilayer battle resolution that ends with bob winning"""
         battle = self.battle
-        s1 = battle.create_skirmish(self.alice, 1)   # Attack 1
-        s2 = s1.react(self.alice, 10, hinder=False)  # --Support 10
-        s2.react(self.bob, 1)                        # ----Attack 1
-        s3 = s1.react(self.bob, 20)                  # --Attack 20
-        s3.react(self.alice, 5)                      # ----Attack 5
+        s1 = battle.create_skirmish(self.alice, 10)   # Attack 10
+        s2 = s1.react(self.alice, 10, hinder=False)   # --Support 10
+        s2.react(self.bob, 1)                         # ----Attack 1
+        s1.react(self.dave, 9)                        # --Attack 9
+        s3 = s1.react(self.bob, 10,
+                      troop_type="cavalry")           # --Attack 10
+        s3.react(self.alice, 1)                       # ----Attack 1
 
-        # Alice will win 9 support from her support,
-        # but bob will gain 15 attack from his attack
-        # Final score: alice 10 vs bob 15
-        # Winner:  Bob by 5
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.bob.team)
         self.assertEqual(result.margin, 5)
-
-        # s2 has 1 die, s2react has 1 die, s3 has 5 die, s3react has 5 die
-        # final battle has 10 die on each side
-        # alice: 5 + 1 + 10, bob: 5 + 1 + 10
-        self.assertEqual(result.vp, 16)
+        self.assertEqual(result.vp, 21)
 
     def test_attack_types(self):
         """Using the right type of attack can boost its effectiveness"""
@@ -769,53 +776,56 @@ class TestBattle(ChromaTest):
         """Using the wrong type of attack can hinder its effectiveness"""
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
-        s1.react(self.bob, 12, troop_type='ranged')  # --Attack 12 ranged
+        s1.react(self.bob, 10, troop_type='ranged')  # --Attack 10 ranged
 
-        # Ranged should get a 50% penalty here, for a total of 12/2 = 6
-        # So Alice should win by 4 despite lesser numbers
+        # Ranged should get a 50% penalty here, for a total of 10/2 = 5
+        # So Alice should win by 5 despite lesser numbers
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 4)
-        self.assertEqual(result.vp, 12)
+        self.assertEqual(result.margin, 5)
+        self.assertEqual(result.vp, 10)
 
         s2 = battle.create_skirmish(self.bob, 10,        # attack 10 ranged
                                     troop_type='ranged')
-        s2.react(self.alice, 12, troop_type='cavalry')   # -- oppose 12 cavalry
+        s2.react(self.alice, 10, troop_type='cavalry')   # -- oppose 10 cavalry
         result = s2.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.bob.team)
-        self.assertEqual(result.margin, 4)
-        self.assertEqual(result.vp, 12)
+        self.assertEqual(result.margin, 5)
+        self.assertEqual(result.vp, 10)
 
         s3 = battle.create_skirmish(self.carol, 10,     # Attack 10 cavalry
                                     troop_type='cavalry')
-        s3.react(self.bob, 12)                          # -- oppose 12 infantry
+        s3.react(self.bob, 10)                          # -- oppose 10 infantry
         result = s3.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.carol.team)
-        self.assertEqual(result.margin, 4)
-        self.assertEqual(result.vp, 12)
+        self.assertEqual(result.margin, 5)
+        self.assertEqual(result.vp, 10)
 
     def test_support_types(self):
         battle = self.battle
 
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
-        s1.react(self.bob, 19)                       # -- oppose 19 infantry
+        s1.react(self.bob, 9)                        # -- oppose 9 infantry
+        s1.react(self.dave, 9)                       # -- oppose 9 infantry
         s1.react(self.alice, 8,                      # -- support 8 ranged
                  troop_type="ranged", hinder=False)
         # Ranged should get a 50% support bonus here, for a total of
-        # 10 + 8 + 4 = 22 - alice should win by 3
+        # 10 + 8 + 4 = 22 - alice should win by 4
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 3)
-        self.assertEqual(result.vp, 19)
+        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.vp, 18)
 
         s2 = battle.create_skirmish(self.bob, 10,
                 troop_type="ranged")                 # Attack 10 ranged
-        s2.react(self.alice, 19,
-                 troop_type="ranged")                # -- oppose 19 ranged
+        s2.react(self.alice, 10,
+                 troop_type="ranged")                # -- oppose 10 ranged
+        s2.react(self.carol, 9,
+                 troop_type="ranged")                # -- oppose 9 ranged
         s2.react(self.bob, 8,                        # -- support 8 cavalry
                  troop_type="cavalry", hinder=False)
 
@@ -827,8 +837,10 @@ class TestBattle(ChromaTest):
 
         s3 = battle.create_skirmish(self.carol, 10,
                 troop_type="cavalry")                 # Attack 10 cavalry
-        s3.react(self.bob, 19,
-                 troop_type="cavalry")                # -- oppose 19 cavalry
+        s3.react(self.bob, 10,
+                 troop_type="cavalry")                # -- oppose 10 cavalry
+        s3.react(self.dave, 9,
+                 troop_type="cavalry")                # -- oppose 9 cavalry
         s3.react(self.carol, 8, hinder=False)           # -- support 8 infantry
 
         result = s3.resolve()
@@ -841,7 +853,8 @@ class TestBattle(ChromaTest):
         battle = self.battle
 
         s1 = battle.create_skirmish(self.alice, 10)  # Attack 10 infantry
-        s1.react(self.bob, 19)                       # -- oppose 19 infantry
+        s1.react(self.bob, 10)                       # -- oppose 19 infantry
+        s1.react(self.dave, 9)
         s1.react(self.alice, 10,                     # -- support 10 cavalry
                  troop_type="cavalry", hinder=False)
         # Cavalry should get a 50% support penalty here, for a total of
@@ -854,8 +867,10 @@ class TestBattle(ChromaTest):
 
         s2 = battle.create_skirmish(self.bob, 10,
                 troop_type="ranged")                 # Attack 10 ranged
-        s2.react(self.alice, 19,
+        s2.react(self.alice, 10,
                  troop_type="ranged")                # -- oppose 19 ranged
+        s2.react(self.carol, 9,
+                 troop_type="ranged")
         s2.react(self.bob, 10, hinder=False)         # -- support 10 infantry
 
         result = s2.resolve()
@@ -866,8 +881,10 @@ class TestBattle(ChromaTest):
 
         s3 = battle.create_skirmish(self.carol, 10,
                 troop_type="cavalry")                 # Attack 10 cavalry
-        s3.react(self.bob, 19,
+        s3.react(self.bob, 10,
                  troop_type="cavalry")                # -- oppose 19 cavalry
+        s3.react(self.dave, 9,
+                 troop_type="cavalry")
         s3.react(self.carol, 10,
                  troop_type="ranged",
                  hinder=False)                        # -- support 10 ranged
@@ -882,7 +899,8 @@ class TestBattle(ChromaTest):
         """See that first strike works correctly"""
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 20)  # Attack 20 infantry
-        s1.react(self.bob, 24)                       # -- oppose 24 infantry
+        s1.react(self.bob, 20)                       # -- oppose 20 infantry
+        s1.react(self.dave, 4)                       # -- oppose 4 infantry
 
         s1.buff_with(db.Buff.first_strike())
 
@@ -915,17 +933,19 @@ class TestBattle(ChromaTest):
         self.sess.commit()
 
         s1 = battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
-        s1.react(self.bob, 34)                       # -- oppose 34 infantry
+        s1.react(self.bob, 30,
+                 troop_type="cavalry")               # -- oppose 30 cavalry
         result = s1.resolve()
         self.assertEqual(result.victor, self.bob.team)
-        self.assertEqual(result.margin, 4)
+        self.assertEqual(result.margin, 15)
         self.assertEqual(result.vp, 30)
 
         s2 = battle.create_skirmish(self.bob, 29)  # Attack with 29 infantry
-        s2.react(self.alice, 31)                   # -- oppose with 31 infantry
+        s2.react(self.alice, 29,
+                 troop_type="cavalry")             # -- oppose with 29 cavalry
         result = s2.resolve()
         self.assertEqual(result.victor, self.alice.team)
-        self.assertEqual(result.margin, 2)
+        self.assertEqual(result.margin, 14)
         self.assertEqual(result.vp, 29)
 
         # Bob's winning this, but wait!  A buff!
@@ -965,14 +985,16 @@ class TestBattle(ChromaTest):
         sess.commit()
 
         s1 = battle.create_skirmish(self.alice, 30)  # Attack 30 infantry
-        s1.react(self.bob, 34)                       # -- oppose 34 infantry
+        s1.react(self.bob, 30)                       # -- oppose 30 infantry
+        s1.react(self.dave, 4)                       # -- oppose  4 infantry
         result = s1.resolve()
         self.assertEqual(result.victor, self.bob.team)
         self.assertEqual(result.margin, 4)
         self.assertEqual(result.vp, 30)
 
         s2 = battle.create_skirmish(self.bob, 29)  # Attack with 29 infantry
-        s2.react(self.alice, 31)                   # -- oppose with 31 infantry
+        s2.react(self.alice, 29)                   # -- oppose with 29 infantry
+        s2.react(self.carol, 2)                    # -- oppose with 2
         result = s2.resolve()
         self.assertEqual(result.victor, self.alice.team)
         self.assertEqual(result.margin, 2)
@@ -1046,7 +1068,8 @@ class TestBattle(ChromaTest):
         """Same-named buffs shouldn't stack"""
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 20)  # Attack 20 infantry
-        s1.react(self.bob, 26)                       # -- oppose 26 infantry
+        s1.react(self.bob, 20)                       # -- oppose 20 infantry
+        s1.react(self.dave, 6)                       # -- oppose 6 infantry
 
         s1.buff_with(db.Buff.first_strike())
         s1.buff_with(db.Buff.first_strike())

@@ -14,6 +14,15 @@ from utils import forcelist, name_to_id, now, num_to_team, pairwise
 
 
 # Some helpful model exceptions
+class TooManyException(Exception):
+    def __init__(self, requested, maximum, ofwhat):
+        Exception.__init__(self,
+                           "Too many %s - wanted %d but %d in play" %
+                           (ofwhat, requested, maximum))
+        self.requested = requested
+        self.max = maximum
+        self.ofwhat = ofwhat
+
 
 class InsufficientException(Exception):
     def __init__(self, requested, available, ofwhat):
@@ -989,6 +998,11 @@ class SkirmishAction(Base):
             if root.is_resolved():
                 sess.rollback()
                 raise TimingException(expected=root)
+
+            # Make sure we're not using more people than the root
+            if self.amount > root.amount:
+                sess.rollback()
+                raise TooManyException(self.amount, root.amount, "loyalists")
 
         else:
             # Make sure our participant doesn't have another toplevel

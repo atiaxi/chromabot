@@ -552,6 +552,9 @@ class SkirmishCommand(Command):
                                "(you have committed %d total)") %
                               (ie.requested,
                                context.player.committed_loyalists))
+        except db.TooManyException as tme:
+            context.reply("You may commit at most %d troops to that skirmish" %
+                          tme.max)
         except db.TimingException as te:
             if te.side == 'late' and te.expected is None:
                 context.reply(("Top-level attacks are disallowed in the last "
