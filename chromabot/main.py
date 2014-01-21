@@ -244,7 +244,7 @@ class Bot(object):
     def update_skirmish_summaries(self, skirmishes):
         c = Context(player=None,
                     config=self.config,
-                    session=None,
+                    session=self.session,
                     comment=None,
                     reddit=self.reddit)
         for s in skirmishes:

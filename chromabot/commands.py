@@ -1,8 +1,10 @@
 import logging
+import os
 import re
 import socket
 import time
 import traceback
+from cStringIO import StringIO
 
 import praw
 from requests.exceptions import ConnectionError, HTTPError, Timeout
@@ -624,10 +626,46 @@ class SkirmishCommand(Command):
     def update_summary(context, skirmish):
         root = skirmish.get_root()
         if root.summary_id:
-            tls = context.reddit.get_info(
-                thing_id=root.summary_id)
-            text = "\n\n".join(root.full_details(config=context.config))
-            tls.edit(text)
+            summary_ids = root.summary_id.split(",")
+            initial_id = summary_ids[0]
+            full_details = root.full_details(config=context.config)
+            summaries = []
+            partial_summary = StringIO()
+            for detail in full_details:
+                partial_summary.write(detail + "\n\n")
+                partial_summary.seek(0, os.SEEK_END)
+                if partial_summary.tell() > 9800:
+                    summaries.append(partial_summary)
+                    partial_summary = StringIO()
+            summaries.append(partial_summary)
+
+            tries = 0
+            while len(summaries) > len(summary_ids):
+                initial_post = context.reddit.get_info(thing_id=initial_id)
+                curr = summaries[len(summary_ids)]
+                summary = initial_post.reply(curr.getvalue())
+                if summary:
+                    summary_ids.append(summary.name)
+                    root.summary_id = ",".join(summary_ids)
+                else:
+                    tries = tries + 1
+                    if tries > 5:
+                        # Something seriously wrong, bail!
+                        context.session.rollback()
+                        context.reply("I'm sorry - an error occurred and "
+                            "I coudn't commit your skirmish.  Disregard "
+                            "the previous confirmation")
+                        return
+
+            for index, partial in enumerate(summaries):
+                this_id = summary_ids[index]
+                if index < len(summaries) - 1:
+                    next_id = summary_ids[index + 1]
+                    tls = context.reddit.get_info(thing_id=next_id)
+                    partial.write("[Next](%s)" % tls.permalink)
+                tls = context.reddit.get_info(thing_id=this_id)
+                tls.edit(partial.getvalue())
+            context.session.commit()
 
 
 class TimeCommand(Command):
