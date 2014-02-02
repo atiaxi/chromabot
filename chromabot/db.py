@@ -181,7 +181,6 @@ class User(Base):
         return None
 
     def move(self, how_many, where, delay):
-        result = None
         sess = Session.object_session(self)
 
         already = sess.query(MarchingOrder).filter_by(leader=self).first()
@@ -336,6 +335,20 @@ class Region(Base):
     inbound_armies = relationship("MarchingOrder",
                                   foreign_keys=MarchingOrder.dest_id,
                                   backref="dest")
+
+    @classmethod
+    def get_region(cls, where, context, require=True):
+        sess = context.session
+        dest = sess.query(cls).filter_by(name=where).first()
+        if not dest:
+            dest = sess.query(cls).filter_by(
+                srname=where).first()
+        if require and not dest:
+            context.reply(
+                "I don't know any region or subreddit named '%s'" %
+                where)
+        return dest
+
 
     @classmethod
     def capital_for(cls, team, session):

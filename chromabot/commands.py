@@ -12,6 +12,7 @@ from requests.exceptions import ConnectionError, HTTPError, Timeout
 import db
 from db import Battle, Buff, Region, Processed, SkirmishAction, User
 from utils import now, num_to_team, team_to_num, timestr
+from pathfinder import find_path
 
 
 def failable(f):
@@ -83,19 +84,6 @@ that, comment in the latest recruitment thread in /r/%s"""
 
     def execute(self, context):
         raise NotImplementedError()
-
-    # Helper functions for subclasses
-    def get_region(self, where, context, require=True):
-        sess = context.session
-        dest = sess.query(Region).filter_by(name=where).first()
-        if not dest:
-            dest = sess.query(Region).filter_by(
-                srname=where).first()
-        if require and not dest:
-            context.reply(
-                "I don't know any region or subreddit named '%s'" %
-                where)
-        return dest
 
 
 class CodewordCommand(Command):
@@ -192,7 +180,7 @@ class InvadeCommand(Command):
         return submitted
 
     def execute(self, context):
-        dest = self.get_region(self.where, context)
+        dest = Region.get_region(self.where, context)
         if dest:
             now = time.mktime(time.localtime())
             begins = now + context.config["game"]["battle_delay"]
@@ -250,7 +238,7 @@ class MoveCommand(Command):
         self.where = [t.lower() for t in tokens["where"]]
 
     def execute(self, context):
-        dests = [self.get_region(where, context) for where in self.where]
+        dests = MoveCommand.expand_path(self.where, context)
         if dests and None not in dests:
             if self.amount == -1:  # -1 means 'everyone'
                 self.amount = context.player.loyalists
@@ -303,6 +291,46 @@ class MoveCommand(Command):
                     "**Confirmed**: You have lead %d of your people to %s."
                     ) % (self.amount, dests[-1].markdown()))
             context.session.commit()
+
+    @classmethod
+    def expand_path(cls, regions, context):
+        if "*" not in regions:
+            return [Region.get_region(where, context) for where in regions]
+        if regions[-1] == '*':
+            context.reply("You can't end a movement command with a "
+                          "pathfinding instruction; I have no idea where you "
+                          "want to end up!")
+            return
+        result = []
+        curr = context.player.region
+        for index, region_name in enumerate(regions):
+            if region_name == '*':
+                if not curr:
+                    continue  # Don't bother if we don't know prev location
+                if regions[index + 1] == '*':
+                    continue  # Ignore consecutive pathfinding instructions
+                dest = Region.get_region(regions[index + 1], context)
+                if not dest:
+                    return None
+                path = find_path(curr, dest, context.player.team)
+                if path:
+                    path = path[1:-1]  # We already have the first and the last
+                    if not path:
+                        continue  # They were already adjacent!
+                    result.extend(path)
+                else:
+                    context.reply("I couldn't find a friendly-territory path "
+                                  "between %s and %s "
+                                  % (curr.name, dest.name))
+                    return None
+                curr = dest
+            else:
+                dest = Region.get_region(region_name, context)
+                if not dest:
+                    return None
+                result.append(dest)
+                curr = dest
+        return result
 
     def __repr__(self):
         return "<MoveCommand(amount='%s', where='%s')>" % (
