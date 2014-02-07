@@ -598,7 +598,7 @@ class Battle(Base):
             percents = [int(amount) / 100.0 for amount in
                         conf["game"]["homeland_defense"].split("/")]
             # Ephemeral, for reporting
-            for team in range(0, 1):
+            for team in range(0, 2):
                 self.homeland_buffs.append(0)
                 cap = Region.capital_for(0, self.session())
                 path = find_path(cap, self.region)
