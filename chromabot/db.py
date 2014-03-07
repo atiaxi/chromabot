@@ -10,6 +10,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
 
 import utils
+from pathfinder import find_path
 from utils import forcelist, name_to_id, now, num_to_team, pairwise
 
 
@@ -181,7 +182,6 @@ class User(Base):
         return None
 
     def move(self, how_many, where, delay):
-        result = None
         sess = Session.object_session(self)
 
         already = sess.query(MarchingOrder).filter_by(leader=self).first()
@@ -336,6 +336,20 @@ class Region(Base):
     inbound_armies = relationship("MarchingOrder",
                                   foreign_keys=MarchingOrder.dest_id,
                                   backref="dest")
+
+    @classmethod
+    def get_region(cls, where, context, require=True):
+        sess = context.session
+        dest = sess.query(cls).filter_by(name=where).first()
+        if not dest:
+            dest = sess.query(cls).filter_by(
+                srname=where).first()
+        if require and not dest:
+            context.reply(
+                "I don't know any region or subreddit named '%s'" %
+                where)
+        return dest
+
 
     @classmethod
     def capital_for(cls, team, session):
@@ -577,6 +591,22 @@ class Battle(Base):
             if self.region.owner is not None:
                 team = self.region.owner
                 score[team] += int(score[team] * buff.value)
+
+        # Apply homeland defense
+        self.homeland_buffs = []
+        if conf and conf["game"].get("homeland_defense"):
+            percents = [int(amount) / 100.0 for amount in
+                        conf["game"]["homeland_defense"].split("/")]
+            # Ephemeral, for reporting
+            for team in range(0, 2):
+                self.homeland_buffs.append(0)
+                cap = Region.capital_for(0, self.session())
+                path = find_path(cap, self.region)
+                if path:
+                    dist = len(path) - 1
+                    if dist < len(percents):
+                        self.homeland_buffs[team] = percents[dist] * 100
+                        score[team] += int(score[team] * percents[dist])
 
         self.score0, self.score1 = score
 

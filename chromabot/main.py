@@ -307,6 +307,15 @@ class Bot(object):
 
             team0_name = num_to_team(0, self.config)
             team1_name = num_to_team(1, self.config)
+
+            # Homeland buffs?
+            if done.homeland_buffs:
+                report.append("Homeland buffs in effect:")
+                for team in range(0, 2):
+                    name = num_to_team(team, self.config)
+                    report.append("%s: %d%%" %
+                                  (name, done.homeland_buffs[team]))
+
             report.append(("## Final Score:  Team %s: %d "
                            "Team %s: %d") % (team0_name, done.score0,
                                              team1_name, done.score1))

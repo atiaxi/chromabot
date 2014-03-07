@@ -23,6 +23,7 @@
         "leaders": ["YOU"],
         "sides": ["orangered", "periwinkle"],
         "assignment": "uid",
-        "capital_invasion": "none"
+        "capital_invasion": "none",
+        "homeland_defense": "100/50/25"
     }
 }

@@ -11,7 +11,7 @@ sys.path.append("./chromabot")
 from config import Config
 from db import *
 from utils import *
-from chromabot.commands import InvadeCommand
+from chromabot.commands import Context, InvadeCommand
 
 def all(cls, **kw):
     return query(cls, **kw).all()
@@ -36,6 +36,11 @@ def cancel_battle(battle):
     post.edit("*This battle has been canceled*")
     sess.delete(battle)
     sess.commit()
+
+def context(player=None, comment=None):
+    if not player:
+        player = by_id(User, 1)
+    return Context(player, config, sess, comment, reddit)
 
 def end_battle(battle):
     battle.ends = battle.begins + 1
@@ -82,6 +87,7 @@ def timestr(self, secs=None):
 def main():
     global reddit
     global sess
+    global config
     logging.basicConfig(level=logging.DEBUG)
     
     # Some handy locals

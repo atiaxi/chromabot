@@ -35,7 +35,7 @@ invadecmd.setParseAction(InvadeCommand)
 
 move = Keyword("lead")
 movecmd = (move + Optional(number("amount") | Keyword("all")) +
-           Suppress("to") + delimitedList(location)("where"))
+           Suppress("to") + delimitedList(location | Keyword("*"))("where"))
 movecmd.setParseAction(MoveCommand)
 
 extractcmd = Keyword("extract")
