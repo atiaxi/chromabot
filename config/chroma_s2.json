@@ -80,19 +80,19 @@
     {
         "name": "Snooland",
         "srname": "snooland",
-        "connections": ["Pasto Range", "Vermillion Union", "Midnight Marsh"],
+        "connections": ["Pasto Range", "Great Aurantiaco", "Midnight Marsh"],
         "owner": 0
     },
     {
         "name": "Midnight Marsh",
         "srname": "MidnightMarsh",
-        "connections": ["Vermillion Union", "Viper's Peak", "Pasto Range"],
+        "connections": ["Great Aurantiaco", "Viper's Peak", "Pasto Range"],
         "owner": 0
     },
     {
         "name": "Viper's Peak",
         "srname": "MidnightMarsh",
-        "connections": ["Vermillion Union", "Metropolis Daja",
+        "connections": ["Great Aurantiaco", "Metropolis Daja",
         	"Republic of Bezold"],
         "owner": 1
     },
