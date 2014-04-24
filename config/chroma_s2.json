@@ -64,13 +64,11 @@
         "name": "Raider's Pinnacle",
         "srname": "raiderspinnacle",
         "connections": ["Nordwalder", "Tentorahogo", "Areus Antris"],
-        "owner": 1
     },
     {
         "name": "Nordwalder",
         "srname": "nordwalder",
         "connections": ["Areus Antris", "Chromehenge", "Tentorahogo"],
-        "owner": 0
     },
     {
         "name": "Chromehenge",
@@ -81,32 +79,27 @@
         "name": "Snooland",
         "srname": "snooland",
         "connections": ["Pasto Range", "Great Aurantiaco", "Midnight Marsh"],
-        "owner": 0
     },
     {
         "name": "Midnight Marsh",
         "srname": "MidnightMarsh",
         "connections": ["Great Aurantiaco", "Viper's Peak", "Pasto Range"],
-        "owner": 0
     },
     {
         "name": "Viper's Peak",
         "srname": "MidnightMarsh",
         "connections": ["Great Aurantiaco", "Metropolis Daja",
         	"Republic of Bezold"],
-        "owner": 1
     },
     {
         "name": "Republic of Bezold",
         "srname": "RepublicofBezold",
         "connections": ["Metropolis Daja"],
-        "owner": 1
     },
     {
         "name": "Island of Warriors",
         "srname": "IslandOfWarriors",
         "connections": ["Republic of Bezold", "Metropolis Daja"],
-        "owner": 1
     },
     
     {
