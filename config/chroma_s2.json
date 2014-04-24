@@ -1,0 +1,169 @@
+[
+    {
+        "name": "Periopolis",
+        "srname": "Periopolis",
+        "connections": ["Sapphire District"],
+        "capital": 1
+    },
+    
+    {
+        "name": "Sapphire District",
+        "srname": "SapphireDistrict",
+        "connections": ["Amethyst Cove", "Turquoise Moors"],
+        "owner": 1
+    },
+    
+    {
+        "name": "Amethyst Cove",
+        "srname": "AmethystCove",
+        "connections": ["Turquoise Moors", "Kyanite Cove", "Periwin Grove"],
+        "owner": 1
+    },
+    {
+        "name": "Turquoise Moors",
+        "srname": "TurquoiseMoors",
+        "connections": ["New Cerulean", "Fort Iris"],
+        "owner": 1
+    },
+    
+    {
+        "name": "Kyanite Cove",
+        "srname": "kyanitecove",
+        "connections": ["Raider's Pinnacle", "Nordwalder"],
+        "owner": 1
+    },
+    {
+        "name": "Periwin Grove",
+        "srname": "Periwin_Grove",
+        "connections": ["Nordwalder", "Chromehenge",
+        	"Snooland"],
+        "owner": 1
+    },
+    
+    {
+        "name": "New Cerulean",
+        "srname": "NewCerulean",
+        "connections": ["Snooland", "Midnight Marsh", "Viper's Peak"],
+        "owner": 1
+    },
+    {
+        "name": "Fort Iris",
+        "srname": "FortIris",
+        "connections": ["Midnight Marsh", "Viper's Peak",
+        	"Republic of Bezold"],
+        "owner": 1
+    },
+    {
+        "name": "Pervinca",
+        "srname": "Pervinca",
+        "connections": ["Republic of Bezold", "Island of Warriors"],
+        "owner": 1
+    },
+
+    {
+        "name": "Raider's Pinnacle",
+        "srname": "raiderspinnacle",
+        "connections": ["Nordwalder", "Tentorahogo", "Areus Antris"],
+        "owner": 1
+    },
+    {
+        "name": "Nordwalder",
+        "srname": "nordwalder",
+        "connections": ["Areus Antris", "Chromehenge", "Tentorahogo"],
+        "owner": 0
+    },
+    {
+        "name": "Chromehenge",
+        "srname": "chromehenge",
+        "connections": ["Areus Antris", "Pasto Range", "Snooland"]
+    },
+    {
+        "name": "Snooland",
+        "srname": "snooland",
+        "connections": ["Pasto Range", "Vermillion Union", "Midnight Marsh"],
+        "owner": 0
+    },
+    {
+        "name": "Midnight Marsh",
+        "srname": "MidnightMarsh",
+        "connections": ["Vermillion Union", "Viper's Peak", "Pasto Range"],
+        "owner": 0
+    },
+    {
+        "name": "Viper's Peak",
+        "srname": "MidnightMarsh",
+        "connections": ["Vermillion Union", "Metropolis Daja",
+        	"Republic of Bezold"],
+        "owner": 1
+    },
+    {
+        "name": "Republic of Bezold",
+        "srname": "RepublicofBezold",
+        "connections": ["Metropolis Daja"],
+        "owner": 1
+    },
+    {
+        "name": "Island of Warriors",
+        "srname": "IslandOfWarriors",
+        "connections": ["Republic of Bezold", "Metropolis Daja"],
+        "owner": 1
+    },
+    
+    {
+        "name": "Tentorahogo",
+        "srname": "Tentorahogo",
+        "connections": [],
+        "owner": 0
+    },
+    {
+        "name": "Areus Antris",
+        "srname": "AreusAntris",
+        "connections": [],
+        "owner": 0
+    },
+    {
+        "name": "Pasto Range",
+        "srname": "Pasto_Range",
+        "connections": [],
+        "owner": 0
+    },
+    {
+        "name": "Great Aurantiaco",
+        "srname": "GreatAurantiaco",
+        "connections": [],
+        "owner": 0
+    },
+    {
+        "name": "Metropolis Daja",
+        "srname": "MetropolisDaja",
+        "connections": [],
+        "owner": 0
+    },
+    
+    {
+        "name": "Aegis",
+        "srname": "Aegis_Imperial",
+        "connections": ["Orange Londo"],
+        "owner": 0
+    },
+    {
+        "name": "Novum Persarum",
+        "srname": "NovumPersarum",
+        "connections": ["Orange Londo"],
+        "owner": 0
+    },
+    
+    {
+        "name": "Orange Londo",
+        "srname": "OrangeLondo",
+        "connections": ["Oraistedearg"],
+        "owner": 0
+    },
+    
+    {
+        "name": "Oraistedearg",
+        "srname": "Oraistedearg",
+        "connections": [],
+        "capital": 0
+    }
+]
