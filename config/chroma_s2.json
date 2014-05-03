@@ -1,18 +1,18 @@
 [
     {
-        "name": "Periopolis",
-        "srname": "Periopolis",
+        "name": "Cote d'azur",
+        "srname": "cote_dazur",
         "connections": ["Sapphire District"],
         "capital": 1
     },
-    
+
     {
         "name": "Sapphire District",
         "srname": "SapphireDistrict",
         "connections": ["Amethyst Cove", "Turquoise Moors"],
         "owner": 1
     },
-    
+
     {
         "name": "Amethyst Cove",
         "srname": "AmethystCove",
@@ -25,7 +25,7 @@
         "connections": ["New Cerulean", "Fort Iris"],
         "owner": 1
     },
-    
+
     {
         "name": "Kyanite Cove",
         "srname": "kyanitecove",
@@ -36,10 +36,10 @@
         "name": "Periwin Grove",
         "srname": "Periwin_Grove",
         "connections": ["Nordwalder", "Chromehenge",
-        	"Snooland"],
+            "Snooland"],
         "owner": 1
     },
-    
+
     {
         "name": "New Cerulean",
         "srname": "NewCerulean",
@@ -50,7 +50,7 @@
         "name": "Fort Iris",
         "srname": "FortIris",
         "connections": ["Midnight Marsh", "Viper's Peak",
-        	"Republic of Bezold"],
+            "Republic of Bezold"],
         "owner": 1
     },
     {
@@ -59,16 +59,15 @@
         "connections": ["Republic of Bezold", "Island of Warriors"],
         "owner": 1
     },
-
     {
         "name": "Raider's Pinnacle",
         "srname": "raiderspinnacle",
-        "connections": ["Nordwalder", "Tentorahogo", "Areus Antris"],
+        "connections": ["Nordwalder", "Tentorahogo", "Areus Antris"]
     },
     {
         "name": "Nordwalder",
         "srname": "nordwalder",
-        "connections": ["Areus Antris", "Chromehenge", "Tentorahogo"],
+        "connections": ["Areus Antris", "Chromehenge", "Tentorahogo"]
     },
     {
         "name": "Chromehenge",
@@ -78,52 +77,52 @@
     {
         "name": "Snooland",
         "srname": "snooland",
-        "connections": ["Pasto Range", "Great Aurantiaco", "Midnight Marsh"],
+        "connections": ["Pasto Range", "Great Aurantiaco", "Midnight Marsh"]
     },
     {
         "name": "Midnight Marsh",
         "srname": "MidnightMarsh",
-        "connections": ["Great Aurantiaco", "Viper's Peak", "Pasto Range"],
+        "connections": ["Great Aurantiaco", "Viper's Peak", "Pasto Range"]
     },
     {
         "name": "Viper's Peak",
         "srname": "MidnightMarsh",
         "connections": ["Great Aurantiaco", "Metropolis Daja",
-        	"Republic of Bezold"],
+            "Republic of Bezold"]
     },
     {
         "name": "Republic of Bezold",
         "srname": "RepublicofBezold",
-        "connections": ["Metropolis Daja"],
+        "connections": ["Metropolis Daja"]
     },
     {
         "name": "Island of Warriors",
         "srname": "IslandOfWarriors",
-        "connections": ["Republic of Bezold", "Metropolis Daja"],
+        "connections": ["Republic of Bezold", "Metropolis Daja"]
     },
-    
+
     {
         "name": "Tentorahogo",
         "srname": "Tentorahogo",
-        "connections": [],
+        "connections": ["Areus Antris", "Aegis"],
         "owner": 0
     },
     {
         "name": "Areus Antris",
         "srname": "AreusAntris",
-        "connections": [],
+        "connections": ["Pasto Range", "Aegis"],
         "owner": 0
     },
     {
         "name": "Pasto Range",
         "srname": "Pasto_Range",
-        "connections": [],
+        "connections": ["Aegis", "Great Aurantiaco", "Novum Persarum"],
         "owner": 0
     },
     {
         "name": "Great Aurantiaco",
-        "srname": "GreatAurantiaco",
-        "connections": [],
+        "srname": "VermillionUnion",
+        "connections": ["Metropolis Daja", "Novum Persarum"],
         "owner": 0
     },
     {
@@ -132,11 +131,11 @@
         "connections": [],
         "owner": 0
     },
-    
+
     {
         "name": "Aegis",
         "srname": "Aegis_Imperial",
-        "connections": ["Orange Londo"],
+        "connections": ["Novum Persarum", "Orange Londo"],
         "owner": 0
     },
     {
@@ -145,14 +144,14 @@
         "connections": ["Orange Londo"],
         "owner": 0
     },
-    
+
     {
         "name": "Orange Londo",
         "srname": "OrangeLondo",
         "connections": ["Oraistedearg"],
         "owner": 0
     },
-    
+
     {
         "name": "Oraistedearg",
         "srname": "Oraistedearg",
