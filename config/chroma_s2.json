@@ -86,7 +86,7 @@
     },
     {
         "name": "Viper's Peak",
-        "srname": "MidnightMarsh",
+        "srname": "viperspeak",
         "connections": ["Great Aurantiaco", "Metropolis Daja",
             "Republic of Bezold"]
     },
@@ -121,7 +121,7 @@
     },
     {
         "name": "Great Aurantiaco",
-        "srname": "VermillionUnion",
+        "srname": "GreatAurantiaco",
         "connections": ["Metropolis Daja", "Novum Persarum"],
         "owner": 0
     },
