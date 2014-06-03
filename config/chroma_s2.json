@@ -22,20 +22,20 @@
     {
         "name": "Turquoise Moors",
         "srname": "TurquoiseMoors",
-        "connections": ["New Cerulean", "Fort Iris"],
+        "connections": ["New Cerulean", "Fort Iris", "Periwin Grove"],
         "owner": 1
     },
 
     {
         "name": "Kyanite Cove",
         "srname": "kyanitecove",
-        "connections": ["Raider's Pinnacle", "Nordwalder"],
+        "connections": ["Raider's Pinnacle", "Nordwalder", "Periwin Grove"],
         "owner": 1
     },
     {
         "name": "Periwin Grove",
         "srname": "Periwin_Grove",
-        "connections": ["Nordwalder", "Chromehenge",
+        "connections": ["Nordwalder", "Chromehenge", "New Cerulean",
             "Snooland"],
         "owner": 1
     },
@@ -43,14 +43,15 @@
     {
         "name": "New Cerulean",
         "srname": "NewCerulean",
-        "connections": ["Snooland", "Midnight Marsh", "Viper's Peak"],
+        "connections": ["Snooland", "Midnight Marsh", "Viper's Peak",
+            "Fort Iris"],
         "owner": 1
     },
     {
         "name": "Fort Iris",
         "srname": "FortIris",
         "connections": ["Midnight Marsh", "Viper's Peak",
-            "Republic of Bezold"],
+            "Republic of Bezold", "Pervinca"],
         "owner": 1
     },
     {

@@ -87,6 +87,70 @@ class ChromaTest(unittest.TestCase):
         return region
 
 
+class TestPatch(ChromaTest):
+    def test_patch_add(self):
+        """Should be able to patch in a new region"""
+        NEW_LANDS = """
+[
+    {
+        "name": "Periopolis",
+        "srname": "ct_periopolis",
+            "connections": ["Sapphire"],
+        "capital": 1
+    },
+    {
+        "name": "Sapphire",
+        "srname": "ct_sapphire",
+        "connections": ["Orange Londo"]
+    },
+    {
+        "name": "Orange Londo",
+        "srname": "ct_orangelondo",
+        "connections": ["Oraistedarg", "flooland"],
+        "owner": 0
+    },
+    {
+        "name": "Oraistedarg",
+        "srname": "ct_oraistedarg",
+        "connections": [],
+        "capital": 0
+    },
+    {
+        "name": "flooland",
+        "srname": "ct_flooland",
+        "connections": []
+    }
+]
+"""
+        self.assert_(self.get_region("sapphire"))
+
+        # doesn't already exist
+        region = self.get_region('flooland')
+        self.assertFalse(region)
+
+        londo = self.get_region("Orange Londo")
+        self.assertEqual(len(londo.borders), 2)  # ora and sapph
+
+        Region.patch_from_json(self.sess, NEW_LANDS)
+
+        # Should exist now
+        region = self.get_region('flooland')
+        self.assert_(region)
+        self.assertEqual(len(region.borders), 1)
+
+        # Should connect to londo
+        self.assertEqual(region.borders[0], londo)
+        self.assertEqual(len(londo.borders), 3)
+
+        # Now there are 5 regions
+        regnum = self.sess.query(Region).count()
+        self.assertEqual(regnum, 5)
+
+        # Meanwhile, periopolis is unchanged
+        peri = self.get_region('Periopolis')
+        self.assertEqual(len(peri.borders), 1)
+
+
 class TestRegions(ChromaTest):
 
     def test_region_autocapital(self):

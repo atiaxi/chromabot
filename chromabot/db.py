@@ -366,21 +366,7 @@ class Region(Base):
         atlas = {}
         result = []
         for region in unconverted:
-            capital = None
-            owner = None
-            eternal = False
-            if 'capital' in region:
-                capital = region['capital']
-                owner = capital
-            if 'owner' in region:
-                owner = region['owner']
-            if 'eternal' in region:
-                eternal = bool(region['eternal'])
-            created = cls(name=region['name'].lower(),
-                          srname=region['srname'].lower(),
-                          capital=capital,
-                          eternal=eternal,
-                          owner=owner)
+            created = cls.from_dict(region)
             result.append(created)
             atlas[created.name] = created
 
@@ -390,6 +376,68 @@ class Region(Base):
             for adjacent in region['connections']:
                 created.add_border(atlas[adjacent.lower()])
         return result
+
+    @classmethod
+    def from_dict(cls, region):
+        """Create one region from the given json-like dict"""
+        capital = None
+        owner = None
+        eternal = False
+        if 'capital' in region:
+            capital = region['capital']
+            owner = capital
+        if 'owner' in region:
+            owner = region['owner']
+        if 'eternal' in region:
+            eternal = bool(region['eternal'])
+        created = cls(name=region['name'].lower(),
+                      srname=region['srname'].lower(),
+                      capital=capital,
+                      eternal=eternal,
+                      owner=owner)
+        return created
+
+    @classmethod
+    def patch_from_json(cls, session, json_str=None, json_file=None,
+                        verbose=False):
+        """Add missing regions and connections
+
+        This brings the world up to date with the given JSON file - note
+        that this is limited to creating previously nonexistent regions
+        and connecting previously disconnected regions.  It cannot remove
+        either regions or connections, nor can it change properties.
+        """
+        if json_file is not None:
+            with open(json_file) as srcfile:
+                unconverted = json.load(srcfile)
+        else:
+            unconverted = json.loads(json_str)
+
+        from commands import Context
+        ctx = Context(None, None, session, None, None)
+
+        # Do two passes here
+        # One: Create any new regions:
+        for region in unconverted:
+            r = cls.get_region(region["name"].lower(), ctx, require=False)
+            if not r:
+                if verbose:
+                    print "Creating region %s" % region["name"]
+                r = cls.from_dict(region)
+                session.add(r)
+
+        # Two: Add new connections
+        for region in unconverted:
+            lowcase_connections = [x.lower() for x in region["connections"]]
+            r = cls.get_region(region["name"].lower(), ctx, require=False)
+            for adjacent in lowcase_connections:
+                adj = cls.get_region(adjacent, ctx, require=False)
+                if adj not in r.borders:
+                    # It's a new connection
+                    if verbose:
+                        print "Connected %s to %s" % (adj.name, r.name)
+                    r.add_border(adj)
+        session.commit()
 
     @classmethod
     def update_all(cls, sess, config):
@@ -413,6 +461,10 @@ class Region(Base):
         # just going to do it manually
         self.borders.append(other_region)
         other_region.borders.append(self)
+
+    def remove_border(self, other_region):
+        self.borders.remove(other_region)
+        other_region.borders.remove(self)
 
     def buff_with(self, buff):
         # Comitted the cardinal sin of copy-pasting this from SkirmishAction
