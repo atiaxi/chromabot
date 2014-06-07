@@ -26,7 +26,7 @@ def failable(f):
         except ConnectionError:
             full = traceback.format_exc()
             logging.warning("Connection error: %s", full)
-        except (Timeout, socket.timeout):
+        except (Timeout, socket.timeout, socket.error):
             full = traceback.format_exc()
             logging.warning("Socket timeout! %s" % full)
             return None
