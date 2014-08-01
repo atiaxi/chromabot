@@ -10,11 +10,15 @@ from commands import (CodewordCommand,
                       StatusCommand,
                       TimeCommand)
 
+# http://stackoverflow.com/questions/2339386/python-pyparsing-unicode-characters
+unicodePrintables = u''.join(unichr(c) for c in xrange(65536)
+                             if not unichr(c).isspace())
+
 number = Word(nums)
 string = QuotedString('"', '\\')
 subreddit = Suppress("/r/") + Word(alphanums + "_-")
 location = string | subreddit | Word(alphanums + "_-")
-eolstring = Word(printables + " ")
+eolstring = Word(unicodePrintables + " ")
 
 attack = Keyword("attack")
 oppose = Keyword("oppose")
@@ -57,7 +61,7 @@ timecmd.setParseAction(TimeCommand)
 removecode = Keyword("remove")('remove') + (Keyword("all")('all')
                                             | string("code"))
 assigncode = string("code") + Keyword("is") + alltroops("troop_type")
-statuscode = Keyword("status")('status')
+statuscode = Keyword("status")('status') + Optional(string("code"))
 codewordcmd = Keyword("codeword") + (removecode | statuscode | assigncode)
 codewordcmd.setParseAction(CodewordCommand)
 

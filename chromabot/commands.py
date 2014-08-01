@@ -93,6 +93,8 @@ class CodewordCommand(Command):
         self.status = 'status' in tokens
         if 'code' in tokens:
             self.code = tokens['code']
+        else:
+            self.code = None
         self.word = tokens.get('troop_type', 'infantry')
         # Correct spelling
         self.word = SkirmishCommand.ALIASES.get(self.word, self.word)
@@ -110,8 +112,17 @@ class CodewordCommand(Command):
                 context.reply("**Confirmed**:  %s is no longer a codeword" %
                               self.code)
         elif self.status:
-            context.reply("Your codewords are as follows:\n\n%s" %
-                          "\n\n".join(self.status_list(context)))
+            if self.code:
+                troop_type = context.player.translate_codeword(self.code)
+                if troop_type:
+                    context.reply("The codeword `%s` translates to: `%s`" %
+                                  (self.code, troop_type))
+                else:
+                    context.reply("`%s` does not appear to be "
+                                  "a valid codeword" % self.code)
+            else:
+                context.reply("Your codewords are as follows:\n\n%s" %
+                              "\n\n".join(self.status_list(context)))
         else:
             context.player.add_codeword(self.code, self.word)
             context.reply(("**Confirmed**:  `%s` will now refer to %s") %
