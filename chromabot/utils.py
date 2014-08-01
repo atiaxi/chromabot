@@ -12,10 +12,8 @@ def base36decode(number):
 def extract_command(text):
     text = text.strip()
     regex = re.compile(r"(?:\n|^)&gt;(.*)")
-    result = regex.search(text)
-    if result:
-        cmd = result.group(1).strip()
-        return cmd
+    result = regex.findall(text)
+    return result
 
 
 def forcelist(item):

@@ -61,16 +61,18 @@ class Bot(object):
                     continue
                 player = self.find_player(comment, session)
                 if player:
-                    cmd = extract_command(comment.body)
-                    if not cmd:
-                        cmd = comment.body
+                    cmds = extract_command(comment.body)
+                    if not cmds:
+                        cmds = [comment.body]
                     context = Context(player, self.config, session,
                                       comment, self.reddit)
-                    self.command(cmd, context)
+                    for cmd in cmds:
+                        self.command(cmd, context)
                 session.add(Processed(id36=comment.name))
                 session.commit()
             comment.mark_as_read()
 
+    @failable
     def command(self, text, context):
         text = text.lower()
         logging.info("Processing command: '%s' by %s" %
@@ -179,13 +181,14 @@ class Bot(object):
                 continue
             if comment.author.name.lower() == self.config.username.lower():
                 continue
-            cmd = extract_command(comment.body)
-            if cmd:
+            cmds = extract_command(comment.body)
+            if cmds:
                 player = self.find_player(comment, sess)
                 if player:
                     context = Context(player, self.config, sess,
                                           comment, self.reddit)
-                    self.command(cmd, context)
+                    for cmd in cmds:
+                        self.command(cmd, context)
             sess.add(Processed(id36=comment.name, battle=battle))
             sess.commit()
 
