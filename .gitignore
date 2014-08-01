@@ -11,6 +11,7 @@ report.txt
 bin/award.py
 bin/enlower.py
 bin/extract.py
+.idea
 .project
 .pydevproject
 .settings
