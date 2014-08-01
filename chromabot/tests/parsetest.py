@@ -2,9 +2,9 @@
 
 import unittest
 
-import utils
-from commands import *
-from parser import parse
+from chromabot import utils
+from chromabot.commands import *
+from chromabot.parser import parse
 
 
 class TestMovement(unittest.TestCase):

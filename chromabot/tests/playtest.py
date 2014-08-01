@@ -1,11 +1,11 @@
 import logging
 import time
 import unittest
-
-import db
 from collections import defaultdict
-from db import (DB, Battle, Region, MarchingOrder, User)
-from utils import now
+
+from chromabot import db
+from chromabot.db import (DB, Battle, Region, MarchingOrder, User)
+from chromabot.utils import now
 
 
 TEST_LANDS = """

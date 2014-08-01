@@ -4,10 +4,10 @@ import logging
 import time
 import unittest
 
-import db
-from db import (Battle, Processed, SkirmishAction)
+from chromabot import db
+from chromabot.db import (Battle, Processed, SkirmishAction)
 from playtest import ChromaTest, MockConf
-from utils import now
+from chromabot.utils import now
 
 
 class TestBattle(ChromaTest):
