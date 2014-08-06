@@ -117,13 +117,13 @@
     {
         "name": "Pasto Range",
         "srname": "Pasto_Range",
-        "connections": ["Aegis", "Great Aurantiaco", "Novum Persarum"],
+        "connections": ["Aegis", "Great Aurantiaco"],
         "owner": 0
     },
     {
         "name": "Great Aurantiaco",
         "srname": "GreatAurantiaco",
-        "connections": ["Metropolis Daja", "Novum Persarum"],
+        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis"],
         "owner": 0
     },
     {
