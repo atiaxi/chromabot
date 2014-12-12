@@ -7,6 +7,12 @@ from chromabot.commands import *
 from chromabot.parser import parse
 
 
+def extract_single_command(text):
+    cmd = utils.extract_command(text)
+    assert(len(cmd) > 0)
+    return cmd[0].strip()
+
+
 class TestMovement(unittest.TestCase):
 
     def testMoveCommand(self):
@@ -247,12 +253,12 @@ class TestPromotion(unittest.TestCase):
 class TestCommandExtraction(unittest.TestCase):
 
     def goodparse(self, text):
-        cmd = utils.extract_command(text)
+        cmd = extract_single_command(text)
         self.assertEqual("status", cmd)
 
     def badparse(self, text):
         cmd = utils.extract_command(text)
-        self.assertEqual(None, cmd)
+        self.assertEqual([], cmd)
 
     def test_full_embed(self):
         text = ("Hello, world!  Today I intend to\n\n"

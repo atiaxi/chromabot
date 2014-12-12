@@ -1143,6 +1143,39 @@ class TestBattle(ChromaTest):
         self.assertNotEqual(oldowner, battle.region.owner)
         self.assertEqual(battle.region.owner, 1)
 
+    def test_homeland_defense(self):
+        """Make sure homeland defense buffs work properly"""
+        self.conf["game"]["homeland_defense"] = "100/50/25"
+        self.assertEqual(None, self.sapphire.owner)
+        battle = self.battle
+        sess = self.sess
+
+        # Skirmish 1
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1a = s1.react(self.carol, 4, hinder=False)  # --Support 4
+        s1a.react(self.bob, 3)                       # ----Attack 3
+        s1.react(self.dave, 8)                       # --Attack 8
+        # Winner will be team orangered, 11 VP
+
+        # Skirmish 2
+        battle.create_skirmish(self.bob, 5)         # Attack 5
+        # Winner will be team periwinkle, 10 VP for unopposed
+
+        # End fight
+        self.battle.ends = self.battle.begins
+        sess.commit()
+        self.assert_(battle.past_end_time())
+
+        updates = Battle.update_all(sess, conf=self.conf)
+        sess.commit()
+
+        # Overall winner would ordinarily be orangered, but this should get
+        # modified by the homeland defense buffs - Sapphire is right next to
+        # the test capital, and so will get an extra 50%
+        self.assertEqual(battle.victor, 1)
+        self.assertEqual(battle.score1, 15)
+        # OR should get 25% bonus
+        self.assertEqual(battle.score0, 13)
 
 if __name__ == '__main__':
     unittest.main()

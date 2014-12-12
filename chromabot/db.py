@@ -652,7 +652,7 @@ class Battle(Base):
             # Ephemeral, for reporting
             for team in range(0, 2):
                 self.homeland_buffs.append(0)
-                cap = Region.capital_for(0, self.session())
+                cap = Region.capital_for(team, self.session())
                 path = find_path(cap, self.region)
                 if path:
                     dist = len(path) - 1
