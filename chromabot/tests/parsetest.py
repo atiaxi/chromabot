@@ -191,6 +191,13 @@ class TestCodeword(unittest.TestCase):
         self.assertEqual(parsed.code, 'werg')
         self.assertEqual(parsed.word, "cavalry")
 
+    def test_region_codeword(self):
+        src = 'codeword "Best Londo" is "Orange Londo"'
+        parsed = parse(src)
+        self.assertIsInstance(parsed, CodewordCommand)
+        self.assertEqual(parsed.code, 'Best Londo')
+        self.assertEqual(parsed.word, "Orange Londo")
+
     def testRemoveCodeword(self):
         src = 'codeword remove "werg"'
         parsed = parse(src)

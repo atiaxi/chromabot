@@ -339,7 +339,10 @@ class Region(Base):
 
     @classmethod
     def get_region(cls, where, context, require=True):
+        where = where.lower()
         sess = context.session
+        if context.player:
+            where = context.player.translate_codeword(where).lower()
         dest = sess.query(cls).filter_by(name=where).first()
         if not dest:
             dest = sess.query(cls).filter_by(

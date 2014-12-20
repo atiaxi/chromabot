@@ -4,6 +4,7 @@ import unittest
 from collections import defaultdict
 
 from chromabot import db
+from chromabot.commands import Context
 from chromabot.db import (DB, Battle, Region, MarchingOrder, User)
 from chromabot.utils import now
 
@@ -58,6 +59,15 @@ class MockConf(object):
         self.confitems[key] = value
 
 
+class MockContext(Context):
+
+    def __init__(self, player, config, session, comment):
+        Context.__init__(self, player, config, session, comment, None)
+
+    def reply(self, reply, pm=True):
+        pass
+
+
 class ChromaTest(unittest.TestCase):
 
     def setUp(self):
@@ -81,10 +91,18 @@ class ChromaTest(unittest.TestCase):
         self.sess.commit()
         return newbie
 
-    def get_region(self, name):
-        name = name.lower()
-        region = self.sess.query(Region).filter_by(name=name).first()
-        return region
+    def context(self, player=None, comment=None, config=None):
+        if not player:
+            player = self.alice
+        if not config:
+            config = self.conf
+        return MockContext(player, config, self.sess, comment)
+
+    def get_region(self, name, as_who=None):
+        if not as_who:
+            as_who = self.alice
+
+        return Region.get_region(name, self.context(player=as_who))
 
 
 class TestPatch(ChromaTest):
@@ -207,6 +225,19 @@ class TestPlaying(ChromaTest):
 
         # Now she should be there
         self.assertEqual(self.alice.region.id, londo.id)
+
+    def test_movement_codeword(self):
+        """Move Alice to a funny-named adjacent region"""
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+        blondo = self.get_region("Best Londo")
+        self.assertIsNone(blondo)
+
+        self.alice.add_codeword('Best Londo', 'Orange Londo')
+
+        # Now it should be there!
+        blondo = self.get_region("Best Londo")
+        self.assertEqual(blondo, londo)
 
     def test_extract(self):
         """Emergency movement back to capital"""
