@@ -2,23 +2,28 @@
     {
         "name": "Valhalla",
         "srname": "ct_valhalla",
+        "aliases": ["ct_valhalla", "va"],
         "connections": ["Eternal Battleground"],
         "capital": 0
     },
     {
         "name": "Eternal Battleground",
         "srname": "eternalbattleground",
+        "aliases": ["eternalbattleground", "eb"],
         "connections": ["Folkvangr"],
         "eternal": 1
     },
     {
         "name": "Folkvangr",
         "srname": "folkvangr",
-        "connections": ['Jotunheim'],
+        "aliases": ["folkvangr", "fo"],
+        "connections": ["Jotunheim"],
         "capital": 1
     },
     {
         "name": "Jotunheim",
         "srname": "jotunheim",
+        "aliases": ["jotunheim", "jo"],
+        "connections": []
     }
 ]

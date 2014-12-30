@@ -23,9 +23,7 @@ def main():
     sess = dbconn.session()
     
     source = sys.argv[1]
-    regions = Region.create_from_json(json_file=source)
-    sess.add_all(regions)
-    sess.commit()
+    regions = Region.create_from_json(sess, json_file=source)
     
     stamp()
     

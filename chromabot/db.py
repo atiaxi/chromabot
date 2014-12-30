@@ -345,11 +345,14 @@ class Region(Base):
             where = context.player.translate_codeword(where).lower()
         dest = sess.query(cls).filter_by(name=where).first()
         if not dest:
-            dest = sess.query(cls).filter_by(
-                srname=where).first()
+            alias = sess.query(Alias).filter_by(
+                name=where
+            ).first()
+            if alias:
+                dest = alias.region
         if require and not dest:
             context.reply(
-                "I don't know any region or subreddit named '%s'" %
+                "I don't know any region named '%s'" %
                 where)
         return dest
 
@@ -359,7 +362,7 @@ class Region(Base):
         return session.query(cls).filter_by(capital=team).first()
 
     @classmethod
-    def create_from_json(cls, json_str=None, json_file=None):
+    def create_from_json(cls, session, json_str=None, json_file=None):
         if json_file is not None:
             with open(json_file) as srcfile:
                 unconverted = json.load(srcfile)
@@ -371,6 +374,8 @@ class Region(Base):
         for region in unconverted:
             created = cls.from_dict(region)
             result.append(created)
+            session.add(created)
+            created.alias_from_dict(region)
             atlas[created.name] = created
 
         # Hook up the regions
@@ -378,6 +383,7 @@ class Region(Base):
             created = atlas[region['name'].lower()]
             for adjacent in region['connections']:
                 created.add_border(atlas[adjacent.lower()])
+        session.commit()
         return result
 
     @classmethod
@@ -406,9 +412,10 @@ class Region(Base):
         """Add missing regions and connections
 
         This brings the world up to date with the given JSON file - note
-        that this is limited to creating previously nonexistent regions
-        and connecting previously disconnected regions.  It cannot remove
-        either regions or connections, nor can it change properties.
+        that this is limited to creating previously nonexistent regions,
+        connecting previously disconnected regions, and adding aliases.
+        It cannot remove regions, connections, or aliases, nor can it
+        change properties.
         """
         if json_file is not None:
             with open(json_file) as srcfile:
@@ -428,6 +435,8 @@ class Region(Base):
                     print "Creating region %s" % region["name"]
                 r = cls.from_dict(region)
                 session.add(r)
+            # Also aliases
+            r.alias_from_dict(region)
 
         # Two: Add new connections
         for region in unconverted:
@@ -526,6 +535,23 @@ class Region(Base):
 
     def markdown(self):
         return "[%s](/r/%s)" % (self.name, self.srname)
+
+    def create_alias(self, name):
+        name = name.lower()
+        s = self.session()
+
+        prev = s.query(Alias).filter_by(name=name).first()
+        if prev:
+            return prev
+
+        a = Alias(name=name, region=self)
+        s.add(a)
+        s.commit()
+        return a
+
+    def alias_from_dict(self, region_dict):
+        aliases = region_dict.get("aliases", [])
+        return [self.create_alias(alias) for alias in aliases]
 
     def __repr__(self):
         return "<Region(id='%s', name='%s')>" % (self.id, self.name)
@@ -750,6 +776,16 @@ class CodeWord(Base):
     def __repr__(self):
         return "<CodeWord(code='%s', word='%s')>" % (self.code.encode('utf-8'),
                                                      self.word.encode('utf-8'))
+
+
+class Alias(Base):
+    __tablename__ = 'aliases'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+
+    region_id = Column(Integer, ForeignKey("regions.id"))
+    region = relationship("Region", backref="aliases")
 
 
 class Processed(Base):

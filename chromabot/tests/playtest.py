@@ -14,7 +14,7 @@ TEST_LANDS = """
     {
         "name": "Periopolis",
         "srname": "ct_periopolis",
-            "connections": ["Sapphire"],
+        "connections": ["Sapphire"],
         "capital": 1
     },
     {
@@ -25,6 +25,7 @@ TEST_LANDS = """
     {
         "name": "Orange Londo",
         "srname": "ct_orangelondo",
+        "aliases": ["ct_orangelondo"],
         "connections": ["Oraistedarg"],
         "owner": 0
     },
@@ -76,9 +77,8 @@ class ChromaTest(unittest.TestCase):
         self.db = DB(self.conf)
         self.db.create_all()
         self.sess = self.db.session()
-        self.sess.add_all(Region.create_from_json(TEST_LANDS))
+        Region.create_from_json(self.sess, TEST_LANDS)
 
-        self.sess.commit()
         # Create some users
         self.alice = self.create_user("alice", 0)
         self.bob = self.create_user("bob", 1)
@@ -168,6 +168,28 @@ class TestPatch(ChromaTest):
         peri = self.get_region('Periopolis')
         self.assertEqual(len(peri.borders), 1)
 
+    def test_patch_alias(self):
+        """Should be able to patch in a new alias"""
+        NEW_LANDS = """
+[
+    {
+        "name": "Periopolis",
+        "aliases": ["periperi"],
+        "connections": []
+    }
+]
+"""
+        peri = self.sess.query(Region).filter_by(name="periopolis").first()
+        self.assertIsNotNone(peri)
+        periperi = self.get_region("periperi")
+        self.assertIsNone(periperi)
+
+        Region.patch_from_json(self.sess, NEW_LANDS)
+        periperi = self.get_region("periperi")
+        self.assertIsNotNone(periperi)
+
+        self.assertEqual(peri, periperi)
+
 
 class TestRegions(ChromaTest):
 
@@ -178,6 +200,34 @@ class TestRegions(ChromaTest):
 
         cap = Region.capital_for(1, self.sess)
         self.assertEqual(cap.capital, cap.owner)
+
+    def test_alias(self):
+        """Move Alice to a globally funny-named region"""
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+        ol = self.get_region("OL")
+        self.assertIsNone(ol)
+
+        a = londo.create_alias("OL")
+        self.assertIsNotNone(a)
+
+        ol = self.get_region("OL")
+        self.assertEqual(londo, ol)
+
+    def test_unique_alias(self):
+        """Aliased regions should be unique"""
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+        ol = self.get_region("OL")
+        self.assertIsNone(ol)
+
+        a = londo.create_alias("OL")
+        self.assertIsNotNone(a)
+
+        b = londo.create_alias("ol")
+        self.assertIsNotNone(b)
+
+        self.assertEqual(a, b)
 
 
 class TestPlaying(ChromaTest):
@@ -238,6 +288,15 @@ class TestPlaying(ChromaTest):
         # Now it should be there!
         blondo = self.get_region("Best Londo")
         self.assertEqual(blondo, londo)
+
+    def test_srname(self):
+        """Should be able to look up by srname"""
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+
+        ct = self.get_region("ct_orangelondo")
+        self.assertIsNotNone(ct)
+        self.assertEqual(londo, ct)
 
     def test_extract(self):
         """Emergency movement back to capital"""
