@@ -937,7 +937,6 @@ class SkirmishAction(Base):
             attack = 0
             raw_attack = attack
             for supporter in supporters:
-                self.vp += supporter.vp
                 if supporter.victor == self.participant.team:
                     # Support only counts if it didn't get ambushed on the way
                     amount = supporter.margin
@@ -951,7 +950,6 @@ class SkirmishAction(Base):
             attackers = [child.resolve() for child in self.children
                          if child.hinder == True]
             for attacker in attackers:
-                self.vp += attacker.vp
                 if attacker.victor != self.participant.team:
                     # Attackers only count if they weren't beaten by our team
                     amount = attacker.margin
@@ -961,12 +959,12 @@ class SkirmishAction(Base):
 
             self.unopposed = attack == 0
 
-            if(attack > support):
+            if attack > support:
                 # This skirmish loses!
                 self.margin = attack - support
                 self.victor = [1, 0][self.participant.team]
                 self.vp += raw_support
-            elif(support > attack):
+            elif support > attack:
                 # This skirmish wins!
                 self.margin = support - attack
                 self.victor = self.participant.team
@@ -979,13 +977,31 @@ class SkirmishAction(Base):
         # Support nodes can't supply more than their initial numbers
         if not self.hinder:
             self.margin = min(self.margin, cap)
-        # Unopposed root nodes are worth 2x VP
-        if not self.parent and self.unopposed:
-            self.vp = max(self.vp * 2, self.amount * 2)
+        if not self.parent:
+            # The VP of a root node is the sum of all the children's VP
+            # for the team that won
+            # Note that because `vp_for_team` includes self.vp, this is
+            # effectively a +=
+            self.vp = self.vp_for_team(self.victor)
+            # Unopposed root nodes are worth 2x VP
+            if self.unopposed:
+                self.vp = max(self.vp * 2, self.amount * 2)
 
         self.resolved = True
         self.session().commit()
         return self
+
+    def vp_for_team(self, team):
+        """The VP that this skirmish provides for the given team"""
+        # Unfortunately not an idempotent operation, as root VPs include this
+        # number
+        if team is None:
+            return 0
+        childvp = sum(c.vp_for_team(team) for c in self.children)
+        if self.victor == team:
+            return childvp + self.vp
+        else:
+            return childvp
 
     def is_resolved(self):
         return self.resolved

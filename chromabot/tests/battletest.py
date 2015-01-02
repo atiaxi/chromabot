@@ -668,14 +668,13 @@ class TestBattle(ChromaTest):
         self.assertEqual(s3result.victor, None)
 
         # All the supports and attacks cancel each other out, winner should
-        # be alice by 1
+        # be alice by 10 (from original attack)
         result = s1.resolve()
         self.assert_(result)
         self.assertEqual(result.victor, self.alice.team)
         self.assertEqual(result.margin, 10)
-        # s2 has 1 die, s2react has 1 die, s3 has 10 die, s3react has 10 die
-        # total = 11 each; 22 because alice ends up unopposed
-        self.assertEqual(result.vp, 22)
+        # 20 vp because she's unopposed
+        self.assertEqual(result.vp, 20)
 
     def test_additive_support(self):
         battle = self.battle
@@ -738,7 +737,49 @@ class TestBattle(ChromaTest):
         self.assert_(result)
         self.assertEqual(result.victor, self.bob.team)
         self.assertEqual(result.margin, 5)
-        self.assertEqual(result.vp, 21)
+        self.assertEqual(result.vp, 20)
+
+    def test_vp_mark2(self):
+        """Make sure VP2.0 is working as intended"""
+        # Test of the VP system as outlined at http://redd.it/2k96il
+        battle = self.battle
+        s1 = battle.create_skirmish(self.bob, 30)  # Attack with 30 -> 8vp
+        s2 = s1.react(self.alice, 15,
+                      troop_type="cavalry")        # Oppose with 30 -> 7vp
+        s2.react(self.bob, 14)                     # Oppose with 14
+
+        result = s1.resolve()
+        self.assertEqual(result.victor, self.bob.team)
+        # Old way adds up VP, make sure that's not happening
+        self.assertNotEqual(result.vp, 22)
+
+        # New way only adds up VP for winning side
+        # (8vp because the 15 in s2 was reduced to 8)
+        self.assertEqual(result.vp, 8)
+        self.assertEqual(result.vp, result.vp_for_team(self.bob.team))
+
+        #  What if the other side had won?
+        self.assertEqual(result.vp_for_team(self.alice.team), 14)
+
+    def test_vp_mark2_complex(self):
+        """Make sure VP2.0 is working even in more complex skirmishes"""
+        battle = self.battle
+        s1 = battle.create_skirmish(self.bob, 30)  # Attack with 30 -> 8vp
+        s2 = s1.react(self.alice, 15,
+                      troop_type="cavalry")        # Oppose with 30 -> 7vp
+        s3 = s2.react(self.bob, 14)                # Oppose with 14 -> 1vp
+        s3.react(self.alice, 1)                    # Oppose with 1
+
+        s4 = s1.react(self.dave, 10, hinder=False)  # Support with 10 -> 10vp
+        s4.react(self.carol, 15)                    # Oppose with 15
+
+        result = s1.resolve()
+        self.assertEqual(result.victor, self.bob.team)
+
+        # 10 because the 1 VP for s3 counts now, and the 1 extra lowers the
+        # number of troops bob opposes with, which increases the number of
+        # troops in s2, which increases the VP it's worth.
+        self.assertEqual(result.vp, 10)
 
     def test_attack_types(self):
         """Using the right type of attack can boost its effectiveness"""
