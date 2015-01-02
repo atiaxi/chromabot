@@ -32,7 +32,7 @@ def failable(f):
             return None
         except HTTPError:
             full = traceback.format_exc()
-            logging.warning("HTTP error timeout! %s" % full)
+            logging.warning("HTTP error %s" % full)
             return None
     return wrapped
 

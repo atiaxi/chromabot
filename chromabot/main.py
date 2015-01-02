@@ -8,6 +8,7 @@ from urllib import urlencode
 
 import praw
 from pyparsing import ParseException
+from requests.exceptions import HTTPError
 
 import db
 from config import Config
@@ -196,52 +197,67 @@ class Bot(object):
     def recruit_from_post(self, post):
         post.replace_more_comments(threshold=0)
         flat_comments = praw.helpers.flatten_tree(post.comments)
-        session = self.session
         for comment in flat_comments:
-            if not comment.author:  # Deleted comments don't have an author
-                continue
-            name = comment.author.name.lower()
-            if name == self.config.username.lower():
-                continue
+            self.recruit_from_comment(comment)
 
-            # Is this author already one of us?
-            found = session.query(User).filter_by(
-                name=name).first()
-            if not found:
-                team = 0
-                assignment = self.config['game']['assignment']
-                if assignment == 'uid':
-                    base10_id = base36decode(comment.author.id)
-                    team = base10_id % 2
-                elif assignment == "random":
-                    team = random.randint(0, 1)
-                is_leader = name in self.config["game"]["leaders"]
-                newbie = User(name=name,
-                              team=team,
-                              loyalists=100,
-                              leader=is_leader)
-                session.add(newbie)
+    @failable
+    def recruit_from_comment(self, comment):
+        session = self.session
+        if not comment.author:  # Deleted comments don't have an author
+            return
+        name = comment.author.name.lower()
+        if name == self.config.username.lower():
+            return
 
-                cap = Region.capital_for(newbie.team, session)
-                if not cap:
-                    logging.fatal("Could not find capital for %d" %
-                                  newbie.team)
-                newbie.region = cap
+        # Is this author already one of us?
+        found = session.query(User).filter_by(
+            name=name).first()
+        if not found:
+            # Getting the author ID triggers a lookup on the userpage.  In the
+            # case of banned users, this will 404.  @failable would normally
+            # catch that just fine, but I want to check it here so that in the
+            # future, I can do things like e.g. add to an 'ignored' list and
+            # save myself the lookup
+            try:
+                author_id = comment.author.id
+            except HTTPError as e:
+                logging.warn("Ignored banned user %s" % name)
+                return
 
-                session.commit()
-                logging.info("Created combatant %s", newbie)
+            team = 0
+            assignment = self.config['game']['assignment']
+            if assignment == 'uid':
+                base10_id = base36decode(author_id)
+                team = base10_id % 2
+            elif assignment == "random":
+                team = random.randint(0, 1)
+            is_leader = name in self.config["game"]["leaders"]
+            newbie = User(name=name,
+                          team=team,
+                          loyalists=100,
+                          leader=is_leader)
+            session.add(newbie)
 
-                reply = ("Welcome to Chroma!  You are now a %s "
-                         "in the %s army, commanding a force of loyalists "
-                         "%d people strong. You are currently encamped at %s"
-                ) % (newbie.rank,
-                     num_to_team(newbie.team, self.config),
-                     newbie.loyalists,
-                     cap.markdown())
-                comment.reply(reply)
-            else:
-                #logging.info("Already registered %s", comment.author.name)
-                pass
+            cap = Region.capital_for(newbie.team, session)
+            if not cap:
+                logging.fatal("Could not find capital for %d" %
+                              newbie.team)
+            newbie.region = cap
+
+            session.commit()
+            logging.info("Created combatant %s", newbie)
+
+            reply = ("Welcome to Chroma!  You are now a %s "
+                     "in the %s army, commanding a force of loyalists "
+                     "%d people strong. You are currently encamped at %s"
+            ) % (newbie.rank,
+                 num_to_team(newbie.team, self.config),
+                 newbie.loyalists,
+                 cap.markdown())
+            comment.reply(reply)
+        else:
+            #logging.info("Already registered %s", comment.author.name)
+            pass
 
     @failable
     def update_skirmish_summaries(self, skirmishes):
