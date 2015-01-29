@@ -720,16 +720,8 @@ class Battle(Base):
         # Make a copy so deletion won't screw things up
         people = list(self.region.people)
         for person in people:
-            # Battle rewards!
-            reward = 0.1
-            if conf:
-                reward = conf["game"].get("losereward", 10) / 100.0
-
-            if person.team == self.victor:
-                reward = 0.15
-                if conf:
-                    reward = conf["game"].get("winreward", 15) / 100.0
-            person.loyalists += int(person.committed_loyalists * reward)
+            reward = self.troop_reward_for(person, self.victor, conf=conf)
+            person.loyalists += reward
             if conf:
                 cap = conf["game"].get("troopcap", 0)
                 if cap:
@@ -744,6 +736,36 @@ class Battle(Base):
             self.session().commit()
 
         self.session().commit()
+
+    def troop_reward_for(self, person, victor,
+                         committed=None, total=None, conf=None):
+        if committed is None:
+            committed = person.committed_loyalists
+        if total is None:
+            total = person.loyalists
+
+        win_pct = 0.1
+        loss_pct = 0.1
+
+        # Establish the 'default' tier
+        if conf:
+            win_pct = conf["game"].get("winreward", 15) / 100.0
+            loss_pct = conf["game"].get("losereward", 10) / 100.0
+
+        # Find this player's tier if any
+        if conf and "rewardtiers" in conf["game"]:
+            for tier in conf["game"]["rewardtiers"].values():
+                if tier['begin'] <= total <= tier['end']:
+                    if "reward" in tier:
+                        # The stated reward is the number of troops given if
+                        # the person used all their troops
+                        scale = committed / float(total)
+                        return int(scale * tier["reward"])
+        if person.team == victor:
+            reward = win_pct
+        else:
+            reward = loss_pct
+        return int(committed * reward)
 
     def set_complete(self):
         self.ends = now()

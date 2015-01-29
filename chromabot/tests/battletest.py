@@ -286,6 +286,35 @@ class TestBattle(ChromaTest):
         # Bob gets 7% (3 troops)
         self.assertEqual(self.bob.loyalists, 103)
 
+    def test_reward_tiers_after_battle(self):
+        """Participants get troops based on the number they already have"""
+        self.alice.loyalists = 350
+        self.conf["game"]["rewardtiers"] = {
+            "newcomer": {
+                "begin": 0,
+                "end": 300,
+                "reward": 25,
+            }
+        }
+        self.assertEqual(self.alice.loyalists, 350)
+        self.assertEqual(self.bob.loyalists, 100)
+
+        s1 = self.battle.create_skirmish(self.alice, 50)
+        s1.react(self.bob, 50, troop_type="cavalry")
+
+        self.end_battle(self.battle, self.conf)
+
+        # Bob wins the fight and the war
+        self.assertEqual(self.battle.victor, self.bob.team)
+
+        # Alice doesn't match a tier, gets the default 10%/15% settings
+        # which mean 10% for her -> 5 troops
+        self.assertEqual(self.alice.loyalists, 355)
+        # Bob matches the 0-300 tier.  Because he used 50% of his troops, he
+        # gets 50% of the flat gain -> 12 troops
+        self.assertEqual(self.bob.loyalists, 112)
+
+
     def test_troop_cap(self):
         """Setting a troop cap should work"""
         self.conf["game"]["troopcap"] = 106

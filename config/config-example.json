@@ -24,6 +24,13 @@
         "sides": ["orangered", "periwinkle"],
         "assignment": "uid",
         "capital_invasion": "none",
-        "homeland_defense": "100/50/25"
+        "homeland_defense": "100/50/25",
+        "rewardtiers": {
+            "newcomer": {
+                "begin": 0,
+                "end": 300,
+                "reward": 25
+            }
+        },
     }
 }
