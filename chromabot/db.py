@@ -444,6 +444,9 @@ class Region(Base):
             r = cls.get_region(region["name"].lower(), ctx, require=False)
             for adjacent in lowcase_connections:
                 adj = cls.get_region(adjacent, ctx, require=False)
+                if not adj:
+                    print "Could not locate region %s" % adjacent
+                    return
                 if adj not in r.borders:
                     # It's a new connection
                     if verbose:

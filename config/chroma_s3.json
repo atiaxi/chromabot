@@ -182,7 +182,386 @@
         "name": "Oraistedearg",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Oraistedearg", "od"],
+        "connections": [
+            "arch-or-north-1",
+            "arch-neutral-1-1",
+            "arch-neutral-1-2"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "arch-or-north-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": ["arch-neutral-1-1", "arch-or-north-2"],
+        "owner": 0
+    },
+
+    {
+        "name": "arch-neutral-1-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": ["arch-neutral-1-2"]
+    },
+
+    {
+        "name": "arch-neutral-1-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": ["arch-neutral-2-1", "arch-neutral-2-2"]
+    },
+
+    {
+        "name": "arch-or-north-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-or-north-3",
+            "arch-neutral-2-1",
+            "arch-neutral-3-1"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "arch-neutral-2-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-3-1",
+            "arch-neutral-3-2",
+            "arch-neutral-3-3",
+            "arch-neutral-2-2"
+        ]
+    },
+
+    {
+        "name": "arch-neutral-2-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-3-3",
+            "arch-neutral-3-4"
+        ]
+    },
+
+    {
+        "name": "arch-or-north-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-or-north-4",
+            "arch-neutral-3-1"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "arch-neutral-3-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-4-1",
+            "arch-neutral-3-2"
+        ]
+    },
+
+    {
+        "name": "arch-neutral-3-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-4-1",
+            "arch-neutral-4-2",
+            "arch-neutral-3-3"
+        ]
+    },
+
+    {
+        "name": "arch-neutral-3-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-4-2",
+            "arch-neutral-3-4"
+        ]
+    },
+
+    {
+        "name": "arch-neutral-3-4",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "arch-neutral-4-2",
+            "arch-or-south"
+        ]
+    },
+
+    {
+        "name": "arch-or-north-4",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-1-1",
+            "arch-neutral-4-1"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "arch-neutral-4-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-1-2",
+            "arch-neutral-4-2"
+        ]
+    },
+
+    {
+        "name": "arch-neutral-4-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-1-3",
+            "arch-or-south"
+        ]
+    },
+
+    {
+        "name": "arch-or-south",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-1-3",
+            "moz-2-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-1-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-2-1",
+            "moz-3-1",
+            "moz-2-2"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-1-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-2-2",
+            "moz-1-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-1-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-3-4",
+            "moz-2-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-2-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-3-1"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-2-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-3-1",
+            "moz-3-2",
+            "moz-3-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-2-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-3-4",
+            "moz-3-5"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-3-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-wtf",
+            "moz-3-2"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-3-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-4-2",
+            "moz-4-3",
+            "moz-3-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-3-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-4-3",
+            "moz-4-4",
+            "moz-3-4"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-3-4",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-4-4"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-3-5",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-4-5"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-wtf",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-4-1"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-4-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-1",
+            "moz-4-2"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-4-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-1",
+            "moz-4-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-4-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-2",
+            "moz-4-4"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-4-4",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-2",
+            "moz-5-3",
+            "moz-4-5"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-4-5",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-5-1",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
         "connections": [],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-5-2",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-3"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-5-3",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [
+            "moz-5-4"
+        ],
+        "owner": 0
+    },
+
+    {
+        "name": "moz-5-4",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": [],
+        "connections": [],
+        "owner": 0,
         "capital": 0
     }
+
 ]
