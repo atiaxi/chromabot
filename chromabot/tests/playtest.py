@@ -724,5 +724,80 @@ class TestPlaying(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 0)
 
+    def test_movement_multiplier(self):
+        """Some lands are harder to enter/leave"""
+        home = self.alice.region
+        londo = self.get_region("Orange Londo")
+        londo.travel_multiplier = 2
+        self.sess.commit()
+
+        DAY = 60 * 60 * 24
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        then = now()
+        order = self.alice.move(100, londo, DAY)[0]
+        self.assert_(order)
+
+        # But because the travel multiplier's 2, that should take twice
+        # as long
+        self.assertAlmostEqual(order.arrival, then + DAY + DAY, delta=600)
+
+        # Tired of waiting
+        order.arrival = now()
+        self.sess.commit()
+        self.assert_(order.has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should be in londo
+        self.assertEqual(order.dest, londo)
+        self.assertEqual(order.dest, self.alice.region)
+
+        # We're bored and want to go home
+        then = now()
+        order = self.alice.move(100, home, DAY)[0]
+
+        self.assert_(order)
+
+        # But because the travel multiplier's 2, that should ALSO take twice
+        # as long
+        self.assertAlmostEqual(order.arrival, then + DAY + DAY, delta=600)
+
+    def test_mutimove_multiplier(self):
+        """Can move more than one hop through harder territory and it takes
+        correspondingly longer"""
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.alice.team
+        londo = self.get_region("Orange Londo")
+        londo.travel_multiplier = 2
+        self.sess.commit()
+
+        DAY = 60 * 60 * 24
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        path = [self.get_region(name) for name in ('Orange Londo', 'Sapphire')]
+        then = now()  # We'll need this to check timing
+        self.alice.move(100, path, DAY)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 2)
+        # The first should be to londo
+        londomove = movements[0]
+        self.assertEqual(londomove.source, self.get_region('Oraistedarg'))
+        self.assertEqual(londomove.dest, self.get_region('Orange Londo'))
+        # Travel multiplier to londo is double
+        self.assertAlmostEqual(londomove.arrival, then + DAY + DAY, delta=600)
+
+        # Next, sapphire
+        sappmove = movements[1]
+        self.assertEqual(sappmove.source, self.get_region('Orange Londo'))
+        self.assertEqual(sappmove.dest, self.get_region('Sapphire'))
+        # Should arrive 4(!) days from now, thanks to freaking londo
+        self.assertAlmostEqual(sappmove.arrival, then + (DAY * 4), delta=600)
+
 if __name__ == '__main__':
     unittest.main()

@@ -24,6 +24,13 @@
         "name": "Jotunheim",
         "srname": "jotunheim",
         "aliases": ["jotunheim", "jo"],
+        "connections": ["Bifrost"]
+    },
+    {
+        "name": "Bifrost",
+        "srname": "eternalbattleground",
+        "aliases": ["bifrost", "bi"],
+        "travel_multiplier": 2.0,
         "connections": []
     }
 ]

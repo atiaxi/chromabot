@@ -8,6 +8,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql.expression import text
 
 import utils
 from pathfinder import find_path
@@ -208,13 +209,14 @@ class User(Base):
                 raise TeamException(dest)
 
         orders = []
-        if(delay > 0):
+        if delay > 0:
             orders = []
-            step = 0
+            total_delay = 0
             for src, dest in pairwise(locations):
-                step += 1
+                travel_mult = max(src.travel_multiplier, dest.travel_multiplier)
+                total_delay += (delay * travel_mult)
                 mo = MarchingOrder(arrival=time.mktime(time.localtime())
-                                    + delay * step,
+                                   + total_delay,
                                    leader=self,
                                    source=src,
                                    dest=dest)
@@ -320,6 +322,8 @@ class Region(Base):
     capital = Column(Integer)
     owner = Column(Integer)
     eternal = Column(Boolean)
+    travel_multiplier = Column(Float, server_default=text('1.0'),
+                               nullable=False)
 
     people = relationship("User", backref="region")
 
@@ -392,6 +396,7 @@ class Region(Base):
         capital = None
         owner = None
         eternal = False
+        travel_multiplier = region.get('travel_multiplier', 1.0)
         if 'capital' in region:
             capital = region['capital']
             owner = capital
@@ -403,6 +408,7 @@ class Region(Base):
                       srname=region['srname'].lower(),
                       capital=capital,
                       eternal=eternal,
+                      travel_multiplier=travel_multiplier,
                       owner=owner)
         return created
 
