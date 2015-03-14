@@ -228,8 +228,8 @@ class InvadeCommand(Command):
             if battle:
                 context.reply("**Confirmed**  Battle will begin at %s" %
                               battle.begins_str())
-                title = ("[Invasion] The %s armies march!" %
-                 context.team_name())
+                title = ("[Invasion] The %s armies march on %s!" %
+                         (context.team_name(), dest.name))
                 submitted = InvadeCommand.post_invasion(title, battle,
                                                         context.reddit)
                 if submitted:
