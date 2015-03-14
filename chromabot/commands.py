@@ -144,7 +144,7 @@ class DefectCommand(Command):
         if self.team is None:
             self.team = [0, 1][context.player.team - 1]
         try:
-            context.player.defect(self.team)
+            context.player.defect(self.team, context.config)
             context.reply(("Done - you are now on team %s and encamped"
                                   " in their capital of %s") %
                                   (context.team_name(),

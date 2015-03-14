@@ -261,6 +261,32 @@ class TestPlaying(ChromaTest):
 
         self.assertEqual(self.alice.team, old_team)
 
+    def test_unlimited_defect(self):
+        """For periwinkle, then orangered, then periwinkle!"""
+        self.conf["game"]["unlimited_defect"] = True
+        old_team = self.alice.team
+        old_cap = self.alice.region
+
+        self.alice.defect(1, self.conf)
+
+        self.assertEqual(self.alice.team, 1)
+        self.assertNotEqual(self.alice.team, old_team)
+        self.assertNotEqual(self.alice.region, old_cap)
+
+        self.alice.defect(0, self.conf)
+        self.assertEqual(self.alice.team, 0)
+        self.assertEqual(self.alice.team, old_team)
+        self.assertEqual(self.alice.region, old_cap)
+
+        # Even after we do stuff!
+        londo = self.get_region("Orange Londo")
+        self.alice.move(100, londo, 0)
+
+        self.alice.defect(1, self.conf)
+        self.assertEqual(self.alice.team, 1)
+        self.assertNotEqual(self.alice.team, old_team)
+        self.assertNotEqual(self.alice.region, old_cap)
+
     def test_movement(self):
         """Move Alice from the Orangered capital to an adjacent region"""
         sess = self.sess

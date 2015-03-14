@@ -151,11 +151,18 @@ class User(Base):
             s.add(cw)
         s.commit()
 
-    def defect(self, team):
+    def defect(self, team, conf=None):
         if team == self.team or team > 1:
             raise TeamException("The team you are attempting to defect to",
                                 True)
-        if not self.defectable:
+
+        defectable = self.defectable
+        if conf:
+            unlimited = conf["game"].get("unlimited_defect", False)
+            if unlimited:
+                defectable = True
+
+        if not defectable:
             raise TimingException()
 
         self.team = team
