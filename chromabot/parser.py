@@ -10,6 +10,22 @@ from commands import (CodewordCommand,
                       StatusCommand,
                       TimeCommand)
 
+
+class Destination(object):
+    def __init__(self, tokens):
+        tok = tokens[:]  # Modifying tokens in place is bad
+        self.destination = None
+        self.destination_sector = 0
+        if tok[0] == "*":
+            self.destination = "*"
+            tok.pop()
+        elif tok[0] != "#":
+            self.destination = tok.pop(0)
+        if tok:  # Leftovers mean sectors
+            tok.pop(0)  # Pop off the "#"
+            self.destination_sector = int(tok.pop(0))
+
+
 # http://stackoverflow.com/questions/2339386/python-pyparsing-unicode-characters
 unicodePrintables = u''.join(unichr(c) for c in xrange(65536)
                              if not unichr(c).isspace())
@@ -38,8 +54,11 @@ invadecmd = invade + location("where")
 invadecmd.setParseAction(InvadeCommand)
 
 move = Keyword("lead")
+sector ="#" + number
+destination = location + sector | location | sector | Keyword("*")
+destination.setParseAction(Destination)
 movecmd = (move + Optional(number("amount") | Keyword("all")) +
-           Suppress("to") + delimitedList(location | Keyword("*"))("where"))
+           Suppress("to") + delimitedList(destination)("where"))
 movecmd.setParseAction(MoveCommand)
 
 extractcmd = Keyword("extract")

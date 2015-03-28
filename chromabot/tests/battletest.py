@@ -20,10 +20,14 @@ class TestBattle(ChromaTest):
 
         self.alice.region = sapphire
         self.bob.region = sapphire
+        self.alice.sector = 1
+        self.bob.sector = 1
 
         self.carol = self.create_user("carol", 0)
         self.carol.region = sapphire
+        self.carol.sector = 1
         self.dave = self.create_user("dave", 1)
+        self.dave.sector = 1
         self.dave.region = sapphire
 
         self.sess.commit()
@@ -485,6 +489,19 @@ class TestBattle(ChromaTest):
             filter_by(leader=self.alice)).count()
         self.assertEqual(n, 0)
 
+    def test_allow_sector_movement_in_battle(self):
+        """But you can move away if it's to another sector in the same region"""
+        self.conf["game"]["num_sectors"] = 7
+        self.conf["game"]["allow_sector_retreat"] = True
+        self.battle.create_skirmish(self.alice, 1)
+        curr = self.alice.region
+
+        self.alice.move(100, curr, 15, sector=3, conf=self.conf)
+
+        n = (self.sess.query(db.MarchingOrder).
+            filter_by(leader=self.alice)).count()
+        self.assertEqual(n, 1)
+
     def test_disallow_extract(self):
         """Can't even emergency evac in a warzone"""
         self.battle.create_skirmish(self.alice, 1)
@@ -677,6 +694,31 @@ class TestBattle(ChromaTest):
         battle = self.battle
         s1 = battle.create_skirmish(self.alice, 1, troop_type='muppet')
         self.assertEqual(s1.troop_type, "infantry")
+
+    def test_no_oppose_different_sectors(self):
+        """Can't oppose a fight in a sector you're not in"""
+        battle = self.battle
+        self.bob.sector = 7
+        s1 = battle.create_skirmish(self.alice, 2)
+        with self.assertRaises(db.WrongSectorException):
+            s1.react(self.bob, 2)
+
+    def test_no_support_different_sectors(self):
+        """Can't support a fight in a sector you're not in"""
+        battle = self.battle
+        self.carol.sector = 7
+
+        s1 = battle.create_skirmish(self.alice, 2)
+        with self.assertRaises(db.WrongSectorException):
+            s1.react(self.carol, 2, hinder=False)
+
+    def test_cant_start_fight_in_sector_zero(self):
+        """Sector zero isn't a valid place to fight"""
+        battle = self.battle
+        self.alice.sector = 0
+
+        with self.assertRaises(db.NoSuchSectorException):
+            battle.create_skirmish(self.alice, 2)
 
     def test_complex_resolve_cancel(self):
         """Multilayer battle resolution that cancels itself out"""
@@ -1212,6 +1254,59 @@ class TestBattle(ChromaTest):
 
         self.assertNotEqual(oldowner, battle.region.owner)
         self.assertEqual(battle.region.owner, 1)
+
+    def test_majority_sectors_win(self):
+        """
+        Optional: The victor of the battle is the one who won the most sectors
+        """
+        self.conf["game"]["num_sectors"] = 7
+        self.conf["game"]["sector_victory"] = True
+
+        battle = self.battle
+        sess = self.sess
+
+        # Battle should be ready and started
+        self.assert_(battle.is_ready())
+        self.assert_(battle.has_started())
+
+        # Still going, right?
+        self.assertFalse(battle.past_end_time())
+
+        # Skirmish 1
+        s1 = battle.create_skirmish(self.alice, 10)  # Attack 10
+        s1a = s1.react(self.carol, 4, hinder=False)  # --Support 4
+        s1a.react(self.bob, 3)                       # ----Attack 3
+        s1.react(self.dave, 8)                       # --Attack 8
+        # Winner will be team orangered, 11 VP
+
+        # Move bob
+        self.bob.sector = 2
+        battle.create_skirmish(self.bob, 15)  # Attack 15
+        # Winner will be team periwinkle, 30VP for unopposed
+
+        # Move carol
+        self.carol.sector = 3
+        self.bob.sector = 3
+        s3 = battle.create_skirmish(self.carol, 10)  # Attack 10
+        s3.react(self.bob, 5)
+        # Winner will be team orangered, 5VP
+
+        # Ordinarily, winner would be team periwinke (30VP vs 16VP) but in this
+        # case, Orangered won more sectors so it wins.
+
+        # End this bad boy
+        self.battle.ends = self.battle.begins
+        sess.commit()
+        self.assert_(battle.past_end_time())
+
+        updates = Battle.update_all(sess, conf=self.conf)
+        sess.commit()
+
+        self.assertNotEqual(len(updates['ended']), 0)
+        self.assertEqual(updates["ended"][0], battle)
+        self.assertEqual(battle.victor, 0)
+
+        self.assertEqual(battle.region.owner, 0)
 
     def test_homeland_defense(self):
         """Make sure homeland defense buffs work properly"""

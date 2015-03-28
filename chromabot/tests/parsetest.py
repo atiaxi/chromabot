@@ -21,7 +21,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where[0], "hurfendurf")
+        self.assertEqual(parsed.where[0].destination, "hurfendurf")
 
     def testMoveSubreddit(self):
         src = 'lead 10 to /r/hurfendurf'
@@ -29,7 +29,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where[0], "hurfendurf")
+        self.assertEqual(parsed.where[0].destination, "hurfendurf")
 
     def testMovePlain(self):
         src = "lead 10 to hurfendurf"
@@ -37,7 +37,7 @@ class TestMovement(unittest.TestCase):
         parsed = parse(src)
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(10, parsed.amount)
-        self.assertEqual(parsed.where[0], "hurfendurf")
+        self.assertEqual(parsed.where[0].destination, "hurfendurf")
 
     def test_move_all(self):
         src = "lead all to hurfendurf"
@@ -45,7 +45,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(-1, parsed.amount)
-        self.assertEqual(parsed.where[0], "hurfendurf")
+        self.assertEqual(parsed.where[0].destination, "hurfendurf")
 
     def test_move_implied_all(self):
         src = "lead to hurfendurf"
@@ -53,7 +53,7 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(-1, parsed.amount)
-        self.assertEqual(parsed.where[0], "hurfendurf")
+        self.assertEqual(parsed.where[0].destination, "hurfendurf")
 
     def test_multimove(self):
         src = "lead all to wergland, /r/testplace, somewhereelse"
@@ -61,8 +61,28 @@ class TestMovement(unittest.TestCase):
 
         self.assertIsInstance(parsed, MoveCommand)
         self.assertEqual(-1, parsed.amount)
-        self.assertEqual(parsed.where,
+        self.assertEqual(parsed.names,
                          ["wergland", 'testplace', 'somewhereelse'])
+
+    def test_sector_move(self):
+        src = "lead all to wergland#1"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(-1, parsed.amount)
+        dest = parsed.where[0]
+        self.assertEqual(dest.destination, "wergland")
+        self.assertEqual(dest.destination_sector, 1)
+
+    def test_sector_only_move(self):
+        src = "lead all to #5"
+        parsed = parse(src)
+
+        self.assertIsInstance(parsed, MoveCommand)
+        self.assertEqual(-1, parsed.amount)
+        dest = parsed.where[0]
+        self.assertIsNone(dest.destination)
+        self.assertEqual(dest.destination_sector, 5)
 
     def test_extract(self):
         src = "extract"

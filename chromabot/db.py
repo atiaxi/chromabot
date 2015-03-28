@@ -37,11 +37,14 @@ class InsufficientException(Exception):
 
 
 class NonAdjacentException(Exception):
-    def __init__(self, src, dest):
+    def __init__(self, src, dest, src_sector=0, dest_sector=0):
         self.src = src
         self.dest = dest
+        self.src_sector = src_sector
+        self.dest_sector = dest_sector
+        data = (src, src_sector, dest, dest_sector)
         Exception.__init__(self,
-                           "%s and %s are not adjacent!" % (src, dest))
+                           "%s#%d and %s#%d are not adjacent!" % data)
 
 
 class NotPresentException(Exception):
@@ -84,6 +87,25 @@ class RankException(Exception):
                            "You do not have the rank required to do that!")
 
 
+class NoSuchSectorException(Exception):
+    def __init__(self, specified, highest=7):
+        self.specified = specified
+        self.highest = highest
+        data = (specified, highest)
+        err = "You cannot go to sector %d, it must be between 1 and %d" % data
+
+        Exception.__init__(self, err)
+
+
+class WrongSectorException(Exception):
+    def __init__(self, specified, needed):
+        self.specified = specified
+        self.needed = needed
+        data = (needed, specified)
+        err = "You must be in sector #%d to do that!  (You are in sector #%d)"
+
+        Exception.__init__(self, err % data)
+
 # Models
 class Model(object):
 
@@ -122,6 +144,7 @@ class User(Base):
     region_id = Column(Integer, ForeignKey('regions.id'))
     leader = Column(Integer, default=0)
     defectable = Column(Boolean, default=True)
+    sector = Column(Integer, default=0)
 
     # This default is the now() time when I wrote this
     recruited = Column(Integer, default=1376615874)
@@ -182,6 +205,7 @@ class User(Base):
         self.cancel_movement()
         cap = Region.capital_for(self.team, self.session())
         self.region = cap
+        self.sector = 1
         self.session().commit()
 
     def is_moving(self):
@@ -189,8 +213,9 @@ class User(Base):
             return self.movement
         return None
 
-    def move(self, how_many, where, delay):
+    def move(self, how_many, where, delay, sector=0, conf=None):
         sess = Session.object_session(self)
+        where = forcelist(where)
 
         already = sess.query(MarchingOrder).filter_by(leader=self).first()
         if already:
@@ -199,17 +224,32 @@ class User(Base):
         fighting = (sess.query(SkirmishAction).
                     filter_by(participant=self).first())
         if fighting:
-            raise InProgressException(fighting)
+            allow = False
+            if conf:
+                if len(where) == 1 and where[0] == self.region:
+                    allow = conf["game"].get("allow_sector_retreat", False)
+
+            if not allow:
+                raise InProgressException(fighting)
 
         if how_many > self.loyalists:
             # TODO: Attempt to pick up loyalists
             raise InsufficientException(how_many, self.loyalists, "loyalists")
 
+        # Is that sector even real?
+        if conf:
+            num_sectors = conf["game"].get("num_sectors", 1)
+            if sector < 0 or sector > num_sectors:
+                raise NoSuchSectorException(sector, num_sectors)
+            elif sector == 0:  # Assign a random sector
+                sector = random.randint(1, num_sectors)
+
         # TODO: Drop off loyalists
-        where = forcelist(where)
         locations = [self.region] + where
         for src, dest in pairwise(locations):
-            if not dest in src.borders:
+            if src == dest:
+                continue
+            if dest not in src.borders:
                 raise NonAdjacentException(src, dest)
 
             if not dest.enterable_by(self.team):
@@ -221,16 +261,24 @@ class User(Base):
             total_delay = 0
             for src, dest in pairwise(locations):
                 travel_mult = max(src.travel_multiplier, dest.travel_multiplier)
-                total_delay += (delay * travel_mult)
+                if src != dest:
+                    total_delay += (delay * travel_mult)
+                else:
+                    if conf:
+                        intrasector = conf["game"].get("intrasector_travel",
+                                                       900)
+                        total_delay += (intrasector * travel_mult)
                 mo = MarchingOrder(arrival=time.mktime(time.localtime())
                                    + total_delay,
                                    leader=self,
                                    source=src,
-                                   dest=dest)
+                                   dest=dest,
+                                   dest_sector=sector)
                 orders.append(mo)
                 sess.add(mo)
         else:
             self.region = where[-1]
+            self.sector = sector
         # TODO: Change number of loyalists
         self.defectable = False
         sess.commit()
@@ -263,6 +311,7 @@ class MarchingOrder(Base):
 
     id = Column(Integer, primary_key=True)
     arrival = Column(Integer, default=0)
+    dest_sector = Column(Integer, default=0)
 
     leader_id = Column(Integer, ForeignKey('users.id'))
     leader = relationship("User", backref="movement")
@@ -270,6 +319,7 @@ class MarchingOrder(Base):
     # Relationships for these defined in the Region class
     source_id = Column(Integer, ForeignKey("regions.id"))
     dest_id = Column(Integer, ForeignKey("regions.id"))
+
 
     @classmethod
     def cancel_all_for(cls, user, sess):
@@ -298,9 +348,12 @@ class MarchingOrder(Base):
         self.arrival = now()
 
     def markdown(self):
+        dest_markdown = self.dest.markdown()
+        if self.dest_sector:
+            dest_markdown = "%s (sector %d)" % (dest_markdown, self.dest_sector)
         return "*  From %s to %s (arriving at %s)" % (
             self.source.markdown(),
-            self.dest.markdown(),
+            dest_markdown,
             self.arrival_str())
 
     def update(self):
@@ -311,6 +364,7 @@ class MarchingOrder(Base):
             enterable = self.dest.enterable_by(self.leader.team)
             if samesource and enterable:
                 self.leader.region = self.dest
+                self.leader.sector = self.dest_sector
                 sess.delete(self)
                 sess.commit()
             else:
@@ -350,7 +404,10 @@ class Region(Base):
 
     @classmethod
     def get_region(cls, where, context, require=True):
-        where = where.lower()
+        if where:
+            where = where.lower()
+        else:  # Unspecified means 'current region'
+            where = context.player.region.name
         sess = context.session
         if context.player:
             where = context.player.translate_codeword(where).lower()
@@ -676,36 +733,58 @@ class Battle(Base):
         return result
 
     def resolve(self, conf=None):
-        score = [0, 0]
+        num_sectors = 1
+        if conf:
+            num_sectors = conf["game"].get("num_sectors", 1)
+
+        score = [[0, 0] for _ in xrange(num_sectors + 1)]
+
         for skirmish in self.toplevel_skirmishes():
             skirmish.resolve()
             if skirmish.victor is not None:
-                score[skirmish.victor] += skirmish.vp
+                score[skirmish.sector][skirmish.victor] += skirmish.vp
 
         # Apply buffs
         for buff in self.region.buffs:
             # For now:  Buffs apply to whoever owns the region
             if self.region.owner is not None:
                 team = self.region.owner
-                score[team] += int(score[team] * buff.value)
+                for score_per_sector in score:
+                    score_per_sector[team] += int(
+                        score_per_sector[team] * buff.value)
 
         # Apply homeland defense
         self.homeland_buffs = []
         if conf and conf["game"].get("homeland_defense"):
             percents = [int(amount) / 100.0 for amount in
                         conf["game"]["homeland_defense"].split("/")]
-            # Ephemeral, for reporting
-            for team in range(0, 2):
-                self.homeland_buffs.append(0)
-                cap = Region.capital_for(team, self.session())
-                path = find_path(cap, self.region)
-                if path:
-                    dist = len(path) - 1
-                    if dist < len(percents):
-                        self.homeland_buffs[team] = percents[dist] * 100
-                        score[team] += int(score[team] * percents[dist])
+            for score_per_sector in score:
+                # Ephemeral, for reporting
+                for team in range(0, 2):
+                    self.homeland_buffs.append(0)
+                    cap = Region.capital_for(team, self.session())
+                    path = find_path(cap, self.region)
+                    if path:
+                        dist = len(path) - 1
+                        if dist < len(percents):
+                            self.homeland_buffs[team] = percents[dist] * 100
+                            score_per_sector[team] += int(
+                                score_per_sector[team] * percents[dist])
 
-        self.score0, self.score1 = score
+        final_score = [0, 0]
+        sector_wins = [0, 0]
+        for score0, score1 in score:
+            final_score[0] += score0
+            final_score[1] += score1
+            if score0 > score1:
+                sector_wins[0] += 1
+            elif score1 > score0:
+                sector_wins[1] += 1
+
+        if conf and conf["game"].get("sector_victory", False):
+            self.score0, self.score1 = sector_wins
+        else:
+            self.score0, self.score1 = final_score
 
         if self.score0 > self.score1:
             self.victor = 0
@@ -852,6 +931,7 @@ class SkirmishAction(Base):
     troop_type = Column(String, default='infantry')
     ends = Column(Integer, default=0)
     display_ends = Column(Integer, default=0)
+    sector = Column(Integer, default=0)
 
     victor = Column(Integer)
     vp = Column(Integer)
@@ -874,7 +954,10 @@ class SkirmishAction(Base):
     @classmethod
     def create(cls, sess, who, howmany, hinder=True, parent=None, battle=None,
                troop_type='infantry', enforce_noob_rule=True,
-               ends=None, display_ends=None):
+               ends=None, display_ends=None, sector=None):
+
+        if sector is None:
+            sector = who.sector
 
         troop_type = who.translate_codeword(troop_type)
         if troop_type not in cls.TROOP_TYPES:
@@ -887,7 +970,8 @@ class SkirmishAction(Base):
                             battle=battle,
                             troop_type=troop_type,
                             ends=ends,
-                            display_ends=display_ends)
+                            display_ends=display_ends,
+                            sector=sector)
         # Ephemeral, only want it to exist for long enough to pass validation
         sa.enforce_noob_rule = enforce_noob_rule
         sa.commit_if_valid()
@@ -954,7 +1038,8 @@ class SkirmishAction(Base):
         sess = self.session()
         sa = SkirmishAction.create(sess, who, howmany, hinder, parent=self,
                                    troop_type=troop_type, battle=self.battle,
-                                   enforce_noob_rule=enforce_noob_rule)
+                                   enforce_noob_rule=enforce_noob_rule,
+                                   sector=who.sector)
 
         return sa
 
@@ -1045,7 +1130,8 @@ class SkirmishAction(Base):
         return self.resolved
 
     def report(self, config=None):
-        preamble = "*  Skirmish #%d - the victor is " % self.id
+        preamble = "*  Skirmish #%d - [Sector %d] the victor is " % (
+            self.id, self.sector)
         postamble = self.winner_str(config)
         result = (("%s %s") %
                   (preamble, postamble))
@@ -1095,6 +1181,8 @@ class SkirmishAction(Base):
     def full_details(self, indent=0, config=None):
         result = []
         if indent == 0:  # Add some context for root level
+            result.append("This skirmish is taking place in **Sector %d**" %
+                          self.sector)
             if self.ends:
                 if now() < self.ends:
                     result.append("This skirmish will end near %s" %
@@ -1179,6 +1267,10 @@ class SkirmishAction(Base):
                 sess.rollback()
                 raise TooManyException(self.amount, root.amount, "loyalists")
 
+            # Make sure we're in the same sector as the parent
+            if self.sector != self.parent.sector:
+                raise WrongSectorException(self.sector, self.parent.sector)
+
         else:
             # Make sure our participant doesn't have another toplevel
             s = (sess.query(SkirmishAction).
@@ -1208,6 +1300,10 @@ class SkirmishAction(Base):
         if self.amount <= 0:
             sess.rollback()
             raise InsufficientException(self.amount, 1, "argument")
+
+        # Can't be in sector zero
+        if self.sector == 0:
+            raise NoSuchSectorException(0)
 
         return self
 

@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 import unittest
 from collections import defaultdict
@@ -315,6 +316,130 @@ class TestPlaying(ChromaTest):
         blondo = self.get_region("Best Londo")
         self.assertEqual(blondo, londo)
 
+    def test_sector_movement(self):
+        self.conf["game"]["num_sectors"] = 7
+        sess = self.sess
+        cap = Region.capital_for(0, sess)
+        self.assertEqual(self.alice.region.id, cap.id)
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+
+        self.alice.move(100, londo, 0, sector=3, conf=self.conf)
+
+    def test_default_sector_movement(self):
+        self.conf["game"]["num_sectors"] = 7
+
+        # Alice should be in sector 0 by default
+        self.assertEqual(self.alice.sector, 0)
+
+        sess = self.sess
+        cap = Region.capital_for(0, sess)
+        self.assertEqual(self.alice.region.id, cap.id)
+        londo = self.get_region("Orange Londo")
+        self.assertIsNotNone(londo)
+
+        # This seed means that it'll pick 5.  I deliberately chose a seed that
+        # would result in itself.
+        random.seed(5)
+        self.alice.move(100, londo, 0, conf=self.conf)
+
+        self.assertEqual(self.alice.sector, 5)
+
+    def test_intraregion_sector_movement(self):
+        self.conf["game"]["num_sectors"] = 7
+        home = self.alice.region
+        # Put alice somewhere
+        self.alice.sector = 1
+        self.sess.commit()
+
+        self.alice.move(100, home, 0, sector=3, conf=self.conf)
+
+        self.assertEqual(self.alice.sector, 3)
+
+    def test_out_of_bounds_sector_movement(self):
+        self.conf["game"]["num_sectors"] = 7
+        home = self.alice.region
+        # Put alice somewhere
+        self.alice.sector = 1
+        self.sess.commit()
+
+        with self.assertRaises(db.NoSuchSectorException):
+            self.alice.move(100, home, 0, sector=9, conf=self.conf)
+
+        self.assertEqual(self.alice.sector, 1)
+
+    def test_delayed_intrasector_movement(self):
+        DAY = 60 * 60 * 24
+        self.conf["game"]["num_sectors"] = 7
+        self.conf["game"]["intrasector_travel"] = DAY / 2
+        home = self.alice.region
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        DAY = 60 * 60 * 24
+        then = now()  # We'll need this to check timing
+
+        self.alice.move(100, home, DAY, sector=7, conf=self.conf)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 1)
+        first = movements[0]
+        self.assertEqual(first.source, self.get_region('Oraistedarg'))
+        self.assertEqual(first.dest, self.get_region('Oraistedarg'))
+        self.assertEqual(first.dest_sector, 7)
+        # Note, if self.alice.move takes longer than 10 minutes to run, this
+        # will fail.
+        self.assertAlmostEqual(first.arrival, then + DAY / 2, delta=600)
+
+        # Tired of waiting!
+        first.arrival = now()
+        self.sess.commit()
+        self.assert_(first.has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should still be home
+        self.assertEqual(home, self.alice.region)
+
+        # But in sector 7
+        self.assertEqual(self.alice.sector, 7)
+
+    def test_delayed_sector_movement(self):
+        self.conf["game"]["num_sectors"] = 7
+        londo = self.get_region("Orange Londo")
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        DAY = 60 * 60 * 24
+        then = now()  # We'll need this to check timing
+
+        self.alice.move(100, londo, DAY, sector=2, conf=self.conf)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 1)
+        first = movements[0]
+        self.assertEqual(first.source, self.get_region('Oraistedarg'))
+        self.assertEqual(first.dest, self.get_region('Orange Londo'))
+        self.assertEqual(first.dest_sector, 2)
+        # Note, if self.alice.move takes longer than 10 minutes to run, this
+        # will fail.
+        self.assertAlmostEqual(first.arrival, then + DAY, delta=600)
+
+        # Tired of waiting!
+        first.arrival = now()
+        self.sess.commit()
+        self.assert_(first.has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should be in londo
+        self.assertEqual(londo, self.alice.region)
+
+        # And in sector 2
+        self.assertEqual(self.alice.sector, 2)
+
     def test_srname(self):
         """Should be able to look up by srname"""
         londo = self.get_region("Orange Londo")
@@ -368,6 +493,9 @@ class TestPlaying(ChromaTest):
 
         orders = self.sess.query(MarchingOrder).count()
         self.assertEqual(orders, 0)
+
+        # Make sure she ended up in a sector
+        self.assertTrue(self.alice.sector)
 
     def test_disallow_unscheduled_invasion(self):
         """Can't move somewhere you don't own or aren't invading"""

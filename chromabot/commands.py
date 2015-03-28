@@ -246,10 +246,18 @@ class MoveCommand(Command):
             self.amount = int(tokens["amount"])
         else:
             self.amount = -1
-        self.where = [t.lower() for t in tokens["where"]]
+        self.where = tokens["where"][:]
+        self.names = [MoveCommand.canonicalize_name(d.destination)
+                      for d in self.where]
+
+    @staticmethod
+    def canonicalize_name(name):
+        if name:
+            return name.lower()
+        return name
 
     def execute(self, context):
-        dests = MoveCommand.expand_path(self.where, context)
+        dests = MoveCommand.expand_path(self.names, context)
         if dests and None not in dests:
             if self.amount == -1:  # -1 means 'everyone'
                 self.amount = context.player.loyalists
@@ -259,7 +267,10 @@ class MoveCommand(Command):
                 #hundred_followers = self.amount / 100
                 time_taken = speed  # * hundred_followers
 
-                orders = context.player.move(self.amount, dests, time_taken)
+                orders = context.player.move(
+                    self.amount, dests, time_taken,
+                    sector=self.where[-1].destination_sector,
+                    conf=context.config)
             except db.InsufficientException as ie:
                 context.reply(
                     "You cannot move %d of your people - you only have %d" %
@@ -273,6 +284,9 @@ class MoveCommand(Command):
                             "you are *already here*?") % nae.dest.markdown()
                 context.reply(text)
 
+                return
+            except db.NoSuchSectorException as nsse:
+                context.reply(str(nsse))
                 return
             except db.InProgressException as ipe:
                 # Determine if there's a move in progress or a battle
@@ -380,8 +394,8 @@ class StatusCommand(Command):
         found = context.player
 
         moving = context.player.is_moving()
-        encamp = ("You are currently encamped at %s" %
-                      found.region.markdown())
+        encamp = ("You are currently encamped in sector %d of  %s" %
+                  (found.sector, found.region.markdown()))
         forces = ""
         if moving:
             itinerary = [mo.markdown() for mo in moving]
@@ -609,6 +623,10 @@ class SkirmishCommand(Command):
                                   "created before you signed up.")
                 else:
                     context.reply("The battle has not yet begun!")
+        except db.WrongSectorException as wse:
+            context.reply(str(wse))
+        except db.NoSuchSectorException:
+            context.reply("You must first move to a sector")
 
     @failable
     def extract_subskirmish(self, context, battle):
