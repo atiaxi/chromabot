@@ -394,8 +394,11 @@ class StatusCommand(Command):
         found = context.player
 
         moving = context.player.is_moving()
+        sector = 0
+        if found.sector:
+            sector = found.sector
         encamp = ("You are currently encamped in sector %d of  %s" %
-                  (found.sector, found.region.markdown()))
+                  (sector, found.region.markdown()))
         forces = ""
         if moving:
             itinerary = [mo.markdown() for mo in moving]
