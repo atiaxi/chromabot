@@ -1269,6 +1269,7 @@ class SkirmishAction(Base):
 
             # Make sure we're in the same sector as the parent
             if self.sector != self.parent.sector:
+                sess.rollback()
                 raise WrongSectorException(self.sector, self.parent.sector)
 
         else:
@@ -1303,6 +1304,7 @@ class SkirmishAction(Base):
 
         # Can't be in sector zero
         if self.sector == 0:
+            sess.rollback()
             raise NoSuchSectorException(0)
 
         return self

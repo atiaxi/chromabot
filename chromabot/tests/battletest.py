@@ -699,9 +699,15 @@ class TestBattle(ChromaTest):
         """Can't oppose a fight in a sector you're not in"""
         battle = self.battle
         self.bob.sector = 7
+
         s1 = battle.create_skirmish(self.alice, 2)
+        prev_skirmishes = self.sess.query(db.SkirmishAction).count()
+
         with self.assertRaises(db.WrongSectorException):
             s1.react(self.bob, 2)
+
+        now_skirmishes = self.sess.query(db.SkirmishAction).count()
+        self.assertEqual(prev_skirmishes, now_skirmishes)
 
     def test_no_support_different_sectors(self):
         """Can't support a fight in a sector you're not in"""
@@ -709,16 +715,22 @@ class TestBattle(ChromaTest):
         self.carol.sector = 7
 
         s1 = battle.create_skirmish(self.alice, 2)
+        prev_skirmishes = self.sess.query(db.SkirmishAction).count()
         with self.assertRaises(db.WrongSectorException):
             s1.react(self.carol, 2, hinder=False)
+        now_skirmishes = self.sess.query(db.SkirmishAction).count()
+        self.assertEqual(prev_skirmishes, now_skirmishes)
 
     def test_cant_start_fight_in_sector_zero(self):
         """Sector zero isn't a valid place to fight"""
         battle = self.battle
         self.alice.sector = 0
 
+        prev_skirmishes = self.sess.query(db.SkirmishAction).count()
         with self.assertRaises(db.NoSuchSectorException):
             battle.create_skirmish(self.alice, 2)
+        now_skirmishes = self.sess.query(db.SkirmishAction).count()
+        self.assertEqual(prev_skirmishes, now_skirmishes)
 
     def test_complex_resolve_cancel(self):
         """Multilayer battle resolution that cancels itself out"""
