@@ -1,6 +1,6 @@
 
 
-def find_path(src, dest, team=None):
+def find_path(src, dest, team=None, traverse_neutrals=False):
     queue = []
     examined = set((src,))
     curr = (src,)
@@ -9,7 +9,9 @@ def find_path(src, dest, team=None):
             region = curr[-1]
             children = []
             for border in region.borders:
-                if team is None or border.enterable_by(team):
+                enterable = border.enterable_by(
+                    team, traverse_neutrals=traverse_neutrals)
+                if team is None or enterable:
                     if border in examined:
                         continue
                     examined.add(border)

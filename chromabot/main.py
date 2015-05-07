@@ -272,7 +272,7 @@ class Bot(object):
     @failable
     def update_game(self):
         session = self.session
-        MarchingOrder.update_all(session)
+        MarchingOrder.update_all(session, self.config)
 
         results = Region.update_all(session, self.config)
         to_add = []

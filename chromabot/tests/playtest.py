@@ -5,7 +5,7 @@ import unittest
 from collections import defaultdict
 
 from chromabot import db
-from chromabot.commands import Context
+from chromabot.commands import Context, MoveCommand
 from chromabot.db import (DB, Battle, Region, MarchingOrder, User)
 from chromabot.utils import now
 
@@ -524,6 +524,19 @@ class TestPlaying(ChromaTest):
 
         self.assertEqual(self.alice.region, londo)
 
+    def test_allow_neutral_traversal(self):
+        """Optionally, you can move through neutral territories"""
+        # See test_disallow_unscheduled_invasion for the inverse of this
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        self.conf["game"]["traversable_neutrals"] = True
+
+        self.alice.move(100, londo, 0, conf=self.conf)
+
+        self.assertEqual(self.alice.region, londo)
+
     def test_situation_changes(self):
         """Can't move somewhere that changes hands while you're moving"""
         started = self.alice.region
@@ -551,6 +564,64 @@ class TestPlaying(ChromaTest):
 
         n = self.sess.query(db.MarchingOrder).count()
         self.assertEqual(n, 0)
+
+    def test_situation_changes_neutral(self):
+        """Can't move somewhere that becomes neutral while you're moving"""
+        started = self.alice.region
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now alice's
+        londo.owner = self.alice.team
+
+        order = self.alice.move(100, londo, 60 * 60 * 24)[0]
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 1)
+
+        # What makes a man turn neutral?
+        londo.owner = None
+
+        # Push back arrival time
+        order.arrival = now()
+        self.sess.commit()
+
+        # Invoke the update routine to set everyone's location
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Alice should be back where she started, as she can't be in londo
+        self.assertEqual(started, self.alice.region)
+
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 0)
+
+    def test_situation_changes_neutral_ok(self):
+        """Can end up somewhere neutral if we allow it"""
+        self.conf["game"]["traversable_neutrals"] = True
+        started = self.alice.region
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now alice's
+        londo.owner = self.alice.team
+
+        order = self.alice.move(100, londo, 60 * 60 * 24, conf=self.conf)[0]
+        n = self.sess.query(db.MarchingOrder).count()
+        self.assertEqual(n, 1)
+
+        # What makes a man turn neutral?
+        londo.owner = None
+
+        # Push back arrival time
+        order.arrival = now()
+        self.sess.commit()
+
+        # Invoke the update routine to set everyone's location
+        arrived = MarchingOrder.update_all(self.sess, conf=self.conf)
+        self.assert_(arrived)
+
+        # Now we're there!
+        self.assertEqual(londo, self.alice.region)
+
+        # Shouldn't be any marching orders left
+        orders = self.sess.query(MarchingOrder).count()
+        self.assertEqual(orders, 0)
 
     def test_got_moved(self):
         """Make sure you can't finish moving if you're warped"""
@@ -952,6 +1023,28 @@ class TestPlaying(ChromaTest):
         self.assertEqual(sappmove.dest, self.get_region('Sapphire'))
         # Should arrive 4(!) days from now, thanks to freaking londo
         self.assertAlmostEqual(sappmove.arrival, then + (DAY * 4), delta=600)
+
+
+class TestPathfinding(ChromaTest):
+
+    def test_no_neutral_traversal(self):
+        """Normally, can't walk over the neutrals"""
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        path = MoveCommand.expand_path(["*", "Orange Londo"], self.context())
+        self.assertIsNone(path)
+
+    def test_allow_neutral_traversal(self):
+        londo = self.get_region("Orange Londo")
+        # For testing purposes, londo is now neutral
+        londo.owner = None
+
+        self.conf["game"]["traversable_neutrals"] = True
+
+        path = MoveCommand.expand_path(["*", "Orange Londo"], self.context())
+        self.assertIsNotNone(path)
 
 if __name__ == '__main__':
     unittest.main()

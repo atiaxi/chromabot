@@ -337,7 +337,15 @@ class MoveCommand(Command):
                 dest = Region.get_region(regions[index + 1], context)
                 if not dest:
                     return None
-                path = find_path(curr, dest, context.player.team)
+
+                # See if we allow neutral traversal
+                conf = context.config
+                traverse_neutrals = False
+                if conf:
+                    traverse_neutrals = conf["game"].get("traversable_neutrals",
+                                                         False)
+                path = find_path(curr, dest, context.player.team,
+                                 traverse_neutrals=traverse_neutrals)
                 if path:
                     path = path[1:-1]  # We already have the first and the last
                     if not path:

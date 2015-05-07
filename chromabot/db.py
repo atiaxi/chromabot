@@ -252,7 +252,11 @@ class User(Base):
             if dest not in src.borders:
                 raise NonAdjacentException(src, dest)
 
-            if not dest.enterable_by(self.team):
+            traverse_neutrals = False
+            if conf:
+                traverse_neutrals = conf["game"].get("traversable_neutrals", False)
+            if not dest.enterable_by(self.team,
+                                     traverse_neutrals=traverse_neutrals):
                 raise TeamException(dest)
 
         orders = []
@@ -329,11 +333,11 @@ class MarchingOrder(Base):
         sess.commit()
 
     @classmethod
-    def update_all(cls, sess):
+    def update_all(cls, sess, conf=None):
         orders = sess.query(cls).all()
         result = []
         for order in orders:
-            if order.update():
+            if order.update(conf=conf):
                 result.append(order)
         return result
 
@@ -356,12 +360,16 @@ class MarchingOrder(Base):
             dest_markdown,
             self.arrival_str())
 
-    def update(self):
+    def update(self, conf=None):
         sess = Session.object_session(self)
         if self.has_arrived():
             # Is this still a valid destination?
             samesource = self.leader.region == self.source
-            enterable = self.dest.enterable_by(self.leader.team)
+            traverse_neutrals = False
+            if conf:
+                traverse_neutrals = conf["game"].get("traversable_neutrals", False)
+            enterable = self.dest.enterable_by(
+                self.leader.team, traverse_neutrals=traverse_neutrals)
             if samesource and enterable:
                 self.leader.region = self.dest
                 self.leader.sector = self.dest_sector
@@ -565,7 +573,9 @@ class Region(Base):
         s = self.session()
         return s.query(Buff).filter_by(internal=buffname).first()
 
-    def enterable_by(self, team):
+    def enterable_by(self, team, traverse_neutrals=False):
+        if self.owner is None and traverse_neutrals:
+            return True
         return self.owner == team or self.battle
 
     def invade(self, by_who, when):
