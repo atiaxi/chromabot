@@ -1,0 +1,189 @@
+[
+{
+    "name": "O'Shaughnessey",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["O'Shaughnessey", "os", "O'whatever"],
+    "connections": ["Terra Archipelago", "Reddoran Bay"],
+    "owner": 1
+},
+
+{
+    "name": "Terra Archipelago",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["TerraArchipelago", "ta", "Terra"],
+    "connections": ["Reddoran Bay", "Plateau De La Sol", "The Gray Area"],
+    "owner": 1
+},
+
+{
+    "name": "Reddoran Bay",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["ReddoranBay", "rb", "reddoran"],
+    "connections": ["Cinnabar Cape"],
+    "owner": 1
+},
+{
+    "name": "Cinnabar Cape",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["CinnabarCape", "cc", "cinnabar"],
+    "connections": ["Vulcan's Domain", "Tangerium"],
+    "owner": 1
+},
+
+{
+    "name": "Plateau De La Sol",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["PlateauDeLaSol", "pdls", "ps"],
+    "connections": ["Carnation Canyon", "Ruby Cliffs"],
+    "owner": 1
+},
+{
+    "name": "Vulcan's Domain",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["vulcansdomain", "vd", "vulcans"],
+    "connections": ["San Naranja", "Chromehenge", "New Cerulean",
+        "Snooland"],
+    "owner": 1
+},
+{
+    "name": "Tangerium",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Tangerium", "tg"],
+    "connections": ["Ruby Cliffs", "Daybreak Desert", "San Naranja",
+        "Aliquam"],
+    "owner": 1
+},
+{
+    "name": "Ruby Cliffs",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["RubyCliffs", "rc", "ruby"],
+    "connections": ["Carnation Canyon"],
+    "owner": 1
+},
+{
+    "name": ""Carnation Canyon",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": [""CarnationCanyon", "car", "carnation"],
+    "connections": ["Daybreak Desert", "Redshire"],
+    "owner": 1
+},
+{
+    "name": "Daybreak Desert",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["DaybreakDesert", "dd", "daybreak"],
+    "connections": ["Aliquam", "Redshire", "Vedder"]
+},
+{
+    "name": "Redshire",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Redshire", "red", "the shire"],
+    "connections": ["Red Springs", "The Gray Area", "Vedder"]
+},
+{
+    "name": "The Gray Area",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["TheGrayArea", "tga", "The_Gray_Area"],
+    "connections": ["Regimonium"]
+},
+{
+    "name": "Regimonium",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Regimonium", "reg"],
+    "connections": ["The Gray Area"]
+},
+{
+    "name": "Aliquam",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Aliquam", "ali"],
+    "connections": ["Vedder", "Tango Fields", "Scarlata Pinpinela"]
+},
+{
+    "name": "Red Springs",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["redsprings", "rs"],
+    "connections": ["Vedder", "Frost Plains",
+        "Winterstar"]
+},
+{
+    "name": "Winterstar",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Winterstar", "ws"],
+    "connections": ["Frost Plains"]
+},
+{
+    "name": "Vedder",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Vedder", "ved"],
+    "connections": ["Tango Fields", "Frost Plains", "Aurora"]
+},
+
+{
+    "name": "Frost Plains",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["FrostPlains", "Frost Plain", "fp"],
+    "connections": ["Areus Antris", "Aegis"],
+    "owner": 0
+},
+{
+    "name": "Vuoria",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Vuoria", "vuo"],
+    "connections": ["Aurora"],
+    "owner": 0
+},
+{
+    "name": "Aurora",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Aurora"],
+    "connections": ["Tango Fields", "Hibiscus Valley", "Zeehaven],
+    "owner": 0
+},
+{
+    "name": "Tango Fields",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["TangoFields", "tf"],
+    "connections": ["Scarlata Pinpinela", "Hibiscus Valley"],
+    "owner": 0
+},
+{
+    "name": "Hibiscus Valley",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["HibiscusValley", "hv", "hibiscus"],
+    "connections": ["Zeehaven", "Scarlata Pinpinela"],
+    "owner": 0
+},
+
+{
+    "name": "Scarlata Pinpinela",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["ScarlataPinpinela", "sp"],
+    "connections": ["San Naranja"],
+    "owner": 0
+},
+{
+    "name": "San Naranja",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["SanNaranja", "sn"],
+    "connections": [],
+    "owner": 0
+},
+
+{
+    "name": "Zeehaven",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Zeehaven", "zee"],
+    "connections": ["Fenix"],
+    "owner": 0
+},
+
+{
+    "name": "Fenix",
+    "srname": "FieldOfKarmicGlory",
+    "aliases": ["Fenix"],
+    "connections": [
+        "arch-or-north-1",
+        "arch-neutral-1-1",
+        "arch-neutral-1-2"
+    ],
+    "owner": 0
+},

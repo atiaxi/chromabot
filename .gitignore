@@ -8,6 +8,7 @@ exploits.txt
 VERSION
 report.json
 report.txt
+chroma.graphview*
 bin/award.py
 bin/enlower.py
 bin/extract.py
