@@ -520,6 +520,7 @@
         "connections": [
 
         ],
-        "owner": 0
+        "owner": 0,
+        "capital": 0
     }
 ]
