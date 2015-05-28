@@ -13,8 +13,14 @@ from db import *
 from utils import *
 from chromabot.commands import Context, InvadeCommand
 
+
+def alias(region, name):
+    return region.create_alias(name)
+
+
 def all(cls, **kw):
     return query(cls, **kw).all()
+
 
 def all_as_dict(cls):
     result = {}
@@ -22,11 +28,13 @@ def all_as_dict(cls):
         result[item.name] = item
     return result
 
+
 def battle_adopt(battle, postid):
     battle.ends = battle.begins + 10800
     battle.display_ends = battle.ends
     battle.submission_id="t3_%s" % postid
     sess.commit()
+
 
 def cancel_battle(battle):
     global reddit
@@ -37,14 +45,17 @@ def cancel_battle(battle):
     sess.delete(battle)
     sess.commit()
 
+
 def context(player=None, comment=None):
     if not player:
         player = by_id(User, 1)
     return Context(player, config, sess, comment, reddit)
 
+
 def end_battle(battle):
     battle.ends = battle.begins + 1
     sess.commit()
+
 
 def fast_battle(named='snooland'):
     where = by_name(Region, named)
@@ -59,30 +70,42 @@ def fast_battle(named='snooland'):
     sess.commit()
     return battle
 
+
 def by_id(cls, id):
     result = query(cls, id=id).first()
     print result
     return result
+
 
 def by_name(cls, name):
     result = query(cls, name=name).first()
     print result
     return result
 
+
+def by_alias(name):
+    result = query(Alias, name=name).first()
+    print result
+    return result.region
+
 def commit():
     return sess.commit()
+
 
 def first(cls, **kw):
     return query(cls, **kw).first()
 
+
 def query(cls, **kw):
     return sess.query(cls).filter_by(**kw)
+
 
 def timestr(self, secs=None):
     if secs is None:
         secs = time.mktime(time.localtime())
     return time.strftime("%Y-%m-%d %H:%M:%S GMT",
                           time.gmtime(secs))
+
 
 def main():
     global reddit

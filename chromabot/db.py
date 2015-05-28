@@ -624,6 +624,8 @@ class Region(Base):
 
         prev = s.query(Alias).filter_by(name=name).first()
         if prev:
+            logging.warn("%s tried to re-create existing alias %s" %
+                         (self, prev))
             return prev
 
         a = Alias(name=name, region=self)

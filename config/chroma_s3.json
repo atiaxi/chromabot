@@ -173,7 +173,7 @@
     {
         "name": "Novum Persarum",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["NovumPersarum", "np"],
+        "aliases": ["NovumPersarum", "nov"],
         "connections": ["Londo Lazuli"],
         "owner": 1
     },
@@ -189,7 +189,7 @@
     {
         "name": "New Periopolis",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["NP", "N. Periopolis"],
+        "aliases": ["NP", "N. Periopolis", "newperiopolis"],
         "connections": [
             "Mozter Island",
             "Devil's Grasp"
