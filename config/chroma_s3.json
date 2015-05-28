@@ -287,7 +287,7 @@
         "aliases": ["Emerald Heights","Emerald","EH"],
         "travel_multiplier": 2.0,
         "connections": [
-            "Regimonium",
+            "O'Shaughnessey",
             "Anglona"
         ]
     },
@@ -298,8 +298,32 @@
         "aliases": ["Anglona","AN"],
         "travel_multiplier": 2.0,
         "connections": [
-            "Regimonium"
+            "O'Shaughnessey"
         ]
+    },
+
+    {
+        "name": "O'Shaughnessey",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["OShaughnessey", "os", "O'whatever"],
+        "connections": ["Terra Archipelago", "Reddoran Bay"],
+        "owner": 0
+    },
+
+    {
+        "name": "Terra Archipelago",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["TerraArchipelago", "ta", "Terra"],
+        "connections": ["Reddoran Bay", "Plateau De La Sol", "The Gray Area"],
+        "owner": 0
+    },
+
+    {
+        "name": "Reddoran Bay",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["ReddoranBay", "rb", "reddoran"],
+        "connections": ["Cinnabar Cape"],
+        "owner": 0
     },
 
     {
@@ -314,19 +338,7 @@
         "name": "The Gray Area",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["TheGrayArea", "tga", "The_Gray_Area"],
-        "connections": ["Redshire", "Terra Archipelago"],
-        "owner": 0
-    },
-
-    {
-        "name": "Terra Archipelago",
-        "srname": "FieldOfKarmicGlory",
-        "aliases": ["TerraArchipelago", "ta", "Terra"],
-        "connections": [
-            "Reddoran Bay",
-            "Plateau De La Sol",
-            "O'Shaughnessey"
-        ],
+        "connections": ["Redshire"],
         "owner": 0
     },
 
@@ -335,12 +347,10 @@
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Redshire", "red", "the shire"],
         "connections": [
-            "Winterstar",
-            "Frost Plains",
+            "Red Springs",
             "Vedder",
             "Daybreak Desert",
-            "Carnation Canyon",
-            "Red Springs"
+            "Carnation Canyon"
         ],
         "owner": 0
     },
@@ -366,18 +376,10 @@
     },
 
     {
-        "name": "Ruby Cliffs",
-        "srname": "FieldOfKarmicGlory",
-        "aliases": ["RubyCliffs", "rc", "ruby"],
-        "connections": ["Carnation Canyon"],
-        "owner": 0
-    },
-
-    {
         "name": "Carnation Canyon",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["CarnationCanyon", "car", "carnation"],
-        "connections": ["Daybreak Desert", "Plateau De La Sol"],
+        "connections": ["Daybreak Desert", "Plateau De La Sol", "Ruby Cliffs"],
         "owner": 0
     },
 
@@ -385,15 +387,7 @@
         "name": "Plateau De La Sol",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["PlateauDeLaSol", "pdls", "ps"],
-        "connections": ["Tangerium"],
-        "owner": 0
-    },
-
-    {
-        "name": "O'Shaughnessey",
-        "srname": "FieldOfKarmicGlory",
-        "aliases": ["O'Shaughnessey", "os", "O'whatever"],
-        "connections": ["Reddoran Bay"],
+        "connections":  ["Ruby Cliffs"],
         "owner": 0
     },
 
@@ -425,7 +419,15 @@
         "name": "Daybreak Desert",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["DaybreakDesert", "dd", "daybreak"],
-        "connections": ["Aliquam", "Tangerium", "Plateau De La Sol"],
+        "connections": ["Aliquam", "Tangerium", "Ruby Cliffs"],
+        "owner": 0
+    },
+
+    {
+        "name": "Ruby Cliffs",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["RubyCliffs", "rc", "ruby"],
+        "connections": ["Tangerium"],
         "owner": 0
     },
 
@@ -433,7 +435,7 @@
         "name": "Aliquam",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Aliquam", "ali"],
-        "connections": ["Tango Fields", "Scarlata Pinpinela", "Tangerium"],
+        "connections": ["Scarlata Pinpinela", "Tangerium", "Tango Fields"],
         "owner": 0
     },
 
@@ -442,17 +444,8 @@
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Tangerium", "tg"],
         "connections": [
-            "Ruby Cliffs",
             "San Naranja"
         ],
-        "owner": 0
-    },
-
-    {
-        "name": "Reddoran Bay",
-        "srname": "FieldOfKarmicGlory",
-        "aliases": ["ReddoranBay", "rb", "reddoran"],
-        "connections": ["Cinnabar Cape"],
         "owner": 0
     },
 
@@ -460,7 +453,7 @@
         "name": "Cinnabar Cape",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["CinnabarCape", "cc", "cinnabar"],
-        "connections": ["Vulcan's Domain", "Tangerium"],
+        "connections": ["Vulcan's Domain"],
         "owner": 0
     },
 
