@@ -324,7 +324,6 @@ class MarchingOrder(Base):
     source_id = Column(Integer, ForeignKey("regions.id"))
     dest_id = Column(Integer, ForeignKey("regions.id"))
 
-
     @classmethod
     def cancel_all_for(cls, user, sess):
         orders = sess.query(MarchingOrder).filter_by(leader=user).all()
@@ -913,6 +912,9 @@ class Alias(Base):
 
     region_id = Column(Integer, ForeignKey("regions.id"))
     region = relationship("Region", backref="aliases")
+
+    def __repr__(self):
+        return "<Alias(name='%s')>" % self.name
 
 
 class Processed(Base):

@@ -16,6 +16,7 @@ bin/extract.py
 .project
 .pydevproject
 .settings
+*.bak
 *.db
 *.pyc
 *.log
