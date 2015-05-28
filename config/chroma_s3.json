@@ -517,10 +517,7 @@
         "name": "Fenix",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Fenix"],
-        "connections": [
-        "capital": 0
-
-        ],
+        "connections": [],
         "owner": 0,
         "capital": 0
     }
