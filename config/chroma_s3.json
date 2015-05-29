@@ -2,7 +2,7 @@
     {
         "name": "Cote d'azur",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["cote_dazur", "cd"],
+        "aliases": ["cote_dazur", "cote", "cotedazur", "cd"],
         "connections": ["Sapphire District"],
         "capital": 1
     },
@@ -10,7 +10,7 @@
     {
         "name": "Sapphire District",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["SapphireDistrict", "sd"],
+        "aliases": ["SapphireDistrict", "sapphire", "sd"],
         "connections": ["Amethyst Cove", "Turquoise Moors"],
         "owner": 1
     },
@@ -18,14 +18,14 @@
     {
         "name": "Amethyst Cove",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["AmethystCove", "ac"],
+        "aliases": ["AmethystCove", "amethyst", "ac"],
         "connections": ["Turquoise Moors", "Kyanite Cove", "Periwin Grove"],
         "owner": 1
     },
     {
         "name": "Turquoise Moors",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["TurquoiseMoors", "tm"],
+        "aliases": ["TurquoiseMoors", "turquoise", "moors", "tm"],
         "connections": ["New Cerulean", "Fort Iris", "Periwin Grove"],
         "owner": 1
     },
@@ -33,14 +33,14 @@
     {
         "name": "Kyanite Cove",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["kyanitecove", "kc"],
+        "aliases": ["kyanitecove", "Kyanite", "kc"],
         "connections": ["Raider's Pinnacle", "Nordwalder", "Periwin Grove"],
         "owner": 1
     },
     {
         "name": "Periwin Grove",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Periwin_Grove", "pg"],
+        "aliases": ["Periwin_Grove", "periwingrove", "pg"],
         "connections": ["Nordwalder", "Chromehenge", "New Cerulean",
             "Snooland"],
         "owner": 1
@@ -57,7 +57,7 @@
     {
         "name": "Fort Iris",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["FortIris", "fi"],
+        "aliases": ["FortIris", "Iris", "fi"],
         "connections": ["Midnight Marsh", "Viper's Peak",
             "Republic of Bezold", "Pervinca"],
         "owner": 1
@@ -72,42 +72,42 @@
     {
         "name": "Raider's Pinnacle",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["raiderspinnacle", "rp"],
+        "aliases": ["raiderspinnacle", "raiders", "rp"],
         "connections": ["Nordwalder", "Tentorahogo", "Caerulus Antris"],
         "owner": 1
     },
     {
         "name": "Nordwalder",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["nordwalder", "nw"],
+        "aliases": ["nordwalder", "nord", "nw"],
         "connections": ["Caerulus Antris", "Chromehenge", "Tentorahogo"],
         "owner": 1
     },
     {
         "name": "Chromehenge",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["chromehenge", "ch"],
+        "aliases": ["chromehenge", "chrome", "ch"],
         "connections": ["Caerulus Antris", "Pasto Range", "Snooland"],
         "owner": 1
     },
     {
         "name": "Snooland",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["snooland", "sl"],
+        "aliases": ["snooland", "snoo", "sl"],
         "connections": ["Pasto Range", "Viridian Union", "Midnight Marsh"],
         "owner": 1
     },
     {
         "name": "Midnight Marsh",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["MidnightMarsh", "mm"],
+        "aliases": ["MidnightMarsh", "Marsh", "mm"],
         "connections": ["Viridian Union", "Viper's Peak", "Pasto Range"],
         "owner": 1
     },
     {
         "name": "Viper's Peak",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["viperspeak", "vp"],
+        "aliases": ["viperspeak", "vipers", "vp"],
         "connections": ["Viridian Union", "Metropolis Daja",
             "Republic of Bezold"],
         "owner": 1
@@ -115,7 +115,7 @@
     {
         "name": "Republic of Bezold",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["RepublicofBezold", "be"],
+        "aliases": ["RepublicofBezold", "bezold", "be"],
         "connections": ["Metropolis Daja"],
         "owner": 1
     },
@@ -130,50 +130,50 @@
     {
         "name": "Tentorahogo",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Tentorahogo", "te"],
-        "connections": ["Caerulus Antris", "Aegis"],
+        "aliases": ["Tentorahogo", "tento", "te"],
+        "connections": ["Caerulus Antris", "Aegis Imperial"],
         "owner": 1
     },
     {
         "name": "Caerulus Antris",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Caelurus", "ca"],
-        "connections": ["Pasto Range", "Aegis"],
+        "aliases": ["Caelurus", "caerulusantris", "antris", "ca"],
+        "connections": ["Pasto Range", "Aegis Imperial"],
         "owner": 1
     },
     {
         "name": "Pasto Range",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Pasto_Range", "pr"],
-        "connections": ["Aegis", "Viridian Union"],
+        "aliases": ["Pasto_Range", "pasto", "pastorange" "pr"],
+        "connections": ["Aegis Imperial", "Viridian Union"],
         "owner": 1
     },
     {
         "name": "Viridian Union",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Vermillion Union", "VU", "Taco"],
-        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis"],
+        "aliases": ["Vermillion Union", "VU", "vermillionunion", "Viridianunion", "Taco"],
+        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis Imperial"],
         "owner": 1
     },
     {
         "name": "Metropolis Daja",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["MetropolisDaja", "md"],
+        "aliases": ["MetropolisDaja", "daja", "md"],
         "connections": [],
         "owner": 1
     },
 
     {
-        "name": "Aegis",
+        "name": "Aegis Imperial",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Aegis_Imperial", "ae", "Aegis Imperial"],
+        "aliases": ["Aegis", "Aegis Imperial", "aegis_imperial", "imperial", "ai", "equus", "eu", "aegisimperial"],
         "connections": ["Novum Persarum", "Londo Lazuli"],
         "owner": 1
     },
     {
         "name": "Novum Persarum",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["NovumPersarum", "np"],
+        "aliases": ["NovumPersarum", "novum persarum", "novum", "nov", "persarum", "nope"],
         "connections": ["Londo Lazuli"],
         "owner": 1
     },
@@ -181,7 +181,7 @@
     {
         "name": "Londo Lazuli",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Londo", "ll"],
+        "aliases": ["Londo", "Lazuli", "londolazuli", "ll"],
         "connections": ["New Periopolis"],
         "owner": 1
     },
@@ -189,7 +189,7 @@
     {
         "name": "New Periopolis",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["NP", "N. Periopolis"],
+        "aliases": ["NP", "newperiopolis", "periopolis", "oraistedearg"],
         "connections": [
             "Mozter Island",
             "Devil's Grasp"
@@ -200,7 +200,7 @@
     {
         "name": "Mozter Island",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["MozterIsland", "Moz", "Mozter", "MI"],
+        "aliases": ["MozterIsland", "Moz", "mozter island", "Mozter", "MI"],
         "connections": ["Devil's Grasp", "Dutchman's Grounds"],
         "travel_multiplier": 2.0
     },
@@ -208,7 +208,7 @@
     {
         "name": "Devil's Grasp",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Devils Grasp", "Grasp", "DG"],
+        "aliases": ["Devils Grasp", "devilsgrasp", "Devil's grasp", "Grasp", "DG"],
         "travel_multiplier": 2.0,
         "connections": ["Dutchman's Grounds", "Chalkowa"]
     },
@@ -216,7 +216,7 @@
     {
         "name": "Dutchman's Grounds",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Dutchman's","Dutchmans","Dutchman","Dutchmans Grounds","DUG","Grounds"],
+        "aliases": ["Dutchman's", "Dutchmans", "Dutchman", "Dutchmans Grounds", "DUG", "Grounds", "dutch", "dutchmansgrounds"],
         "travel_multiplier": 2.0,
         "connections": [
             "Nayemnik Oblast",
@@ -229,7 +229,7 @@
     {
         "name": "Chalkowa",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Chalkowa","CW"],
+        "aliases": ["Chalkowa", "chalk", "CW"],
         "travel_multiplier": 2.0,
         "connections": [
             "RPCK",
@@ -240,7 +240,7 @@
     {
         "name": "Nayemnik Oblast",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Nayemnik Oblast","Nayemnik","Oblast","NO"],
+        "aliases": ["Nayemnik Oblast", "nayemnikoblast", "nayemnik_oblast", "nayem", "Nayemnik", "Oblast", "NO"],
         "travel_multiplier": 2.0,
         "connections": [
             "Emerald Heights",
@@ -263,7 +263,7 @@
     {
         "name": "RPCK",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["RPCK","Black Stone Mountain","Black Stone","Republika","Repulika Planina Crna Kamen"],
+        "aliases": ["RPCK","Black Stone Mountain","Black Stone","Republika","Republika Planina Crna Kamen", "republika", "rcpk"],
         "travel_multiplier": 2.0,
         "connections": [
             "Anglona",
@@ -274,7 +274,7 @@
     {
         "name": "Tallian Allied Islands",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Tallian Allied Islands","TAI","Tallian Islands"],
+        "aliases": ["Tallian Allied Islands","TAI","Tallian Islands", "tallianalliedislands", "tallian_allied_islands"],
         "travel_multiplier": 2.0,
         "connections": [
             "Anglona"
@@ -284,7 +284,7 @@
     {
         "name": "Emerald Heights",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Emerald Heights","Emerald","EH"],
+        "aliases": ["Emerald Heights","Emerald", "emeraldheights", "EH"],
         "travel_multiplier": 2.0,
         "connections": [
             "O'Shaughnessey",
@@ -305,7 +305,7 @@
     {
         "name": "O'Shaughnessey",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["OShaughnessey", "os", "O'whatever"],
+        "aliases": ["OShaughnessey", "os", "O'whatever", "Oshaunessy", "oshawn", "osean", "oshaun"],
         "connections": ["Terra Archipelago", "Reddoran Bay"],
         "owner": 0
     },
@@ -313,7 +313,7 @@
     {
         "name": "Terra Archipelago",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["TerraArchipelago", "ta", "Terra"],
+        "aliases": ["TerraArchipelago", "terra_archipelago", "terra archipelago", "ta", "Terra"],
         "connections": ["Reddoran Bay", "Plateau De La Sol", "The Gray Area"],
         "owner": 0
     },
@@ -321,7 +321,7 @@
     {
         "name": "Reddoran Bay",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["ReddoranBay", "rb", "reddoran"],
+        "aliases": ["ReddoranBay", "rb", "reddoran", "redbay", "bay", "reddoran_bay"],
         "connections": ["Cinnabar Cape"],
         "owner": 0
     },
@@ -329,7 +329,7 @@
     {
         "name": "Regimonium",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Regimonium", "reg"],
+        "aliases": ["Regimonium", "reg", "monium"],
         "connections": ["The Gray Area"],
         "owner": 0
     },
@@ -337,7 +337,7 @@
     {
         "name": "The Gray Area",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["TheGrayArea", "tga", "The_Gray_Area"],
+        "aliases": ["TheGrayArea", "tga", "The_Gray_Area", "gray", "gray area", "gray_area", "grey", "thegreyarea", "the grey area", "greyarea", "the_grey_area"],
         "connections": ["Redshire"],
         "owner": 0
     },
@@ -345,7 +345,7 @@
     {
         "name": "Redshire",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Redshire", "red", "the shire"],
+        "aliases": ["Redshire", "red", "shire", "the shire"],
         "connections": [
             "Red Springs",
             "Vedder",
@@ -358,7 +358,7 @@
     {
         "name": "Red Springs",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["redsprings", "rs"],
+        "aliases": ["redsprings", "rs", "red_springs", "red springs"],
         "connections": [
             "Vedder",
             "Frost Plains",
@@ -370,7 +370,7 @@
     {
         "name": "Winterstar",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Winterstar", "ws"],
+        "aliases": ["Winterstar", "ws", "winter", "star"],
         "connections": ["Frost Plains"],
         "owner": 0
     },
@@ -378,7 +378,7 @@
     {
         "name": "Carnation Canyon",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["CarnationCanyon", "car", "carnation"],
+        "aliases": ["CarnationCanyon", "car", "carnation", "canyon", "carnation_canyon", "carnation canyon"],
         "connections": ["Daybreak Desert", "Plateau De La Sol", "Ruby Cliffs"],
         "owner": 0
     },
@@ -386,7 +386,7 @@
     {
         "name": "Plateau De La Sol",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["PlateauDeLaSol", "pdls", "ps"],
+        "aliases": ["PlateauDeLaSol", "plateau", "sol", "delasol", "de la sol", "plateau de sol", "pdls", "ps"],
         "connections":  ["Ruby Cliffs"],
         "owner": 0
     },
@@ -394,7 +394,7 @@
     {
         "name": "Vuoria",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Vuoria", "vuo"],
+        "aliases": ["Vuoria", "vuo", "voria"],
         "connections": ["Frost Plains", "Aurora"],
         "owner": 0
     },
@@ -402,7 +402,7 @@
     {
         "name": "Frost Plains",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["FrostPlains", "Frost Plain", "fp"],
+        "aliases": ["FrostPlains", "Frost Plains", "frost_plains", "fp"],
         "connections": ["Aurora", "Vedder"],
         "owner": 0
     },
@@ -410,7 +410,7 @@
     {
         "name": "Vedder",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Vedder", "ved"],
+        "aliases": ["Vedder", "ved", "darth", "darthvedder"],
         "connections": ["Tango Fields", "Aurora", "Aliquam", "Daybreak Desert"],
         "owner": 0
     },
@@ -418,7 +418,7 @@
     {
         "name": "Daybreak Desert",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["DaybreakDesert", "dd", "daybreak"],
+        "aliases": ["DaybreakDesert", "dd", "daybreak", "daybreak desert", "daybreak_desert"],
         "connections": ["Aliquam", "Tangerium", "Ruby Cliffs"],
         "owner": 0
     },
@@ -426,7 +426,7 @@
     {
         "name": "Ruby Cliffs",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["RubyCliffs", "rc", "ruby"],
+        "aliases": ["RubyCliffs", "rc", "ruby", "ruby cliffs", "ruby_cliffs"],
         "connections": ["Tangerium"],
         "owner": 0
     },
@@ -434,7 +434,7 @@
     {
         "name": "Aliquam",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Aliquam", "ali"],
+        "aliases": ["Aliquam", "quam", "ali"],
         "connections": ["Scarlata Pinpinela", "Tangerium", "Tango Fields"],
         "owner": 0
     },
@@ -442,7 +442,7 @@
     {
         "name": "Tangerium",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Tangerium", "tg"],
+        "aliases": ["Tangerium", "tangerine", "tg"],
         "connections": [
             "San Naranja"
         ],
@@ -452,7 +452,7 @@
     {
         "name": "Cinnabar Cape",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["CinnabarCape", "cc", "cinnabar"],
+        "aliases": ["CinnabarCape", "cc", "cinnabar cape", "cinnabar_cape", "cinnabar"],
         "connections": ["Vulcan's Domain"],
         "owner": 0
     },
@@ -460,7 +460,7 @@
     {
         "name": "Aurora",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Aurora"],
+        "aliases": ["Aurora", "aur"],
         "connections": ["Tango Fields", "Hibiscus Valley", "Zeehaven"],
         "owner": 0
     },
@@ -468,7 +468,7 @@
     {
         "name": "Tango Fields",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["TangoFields", "tf"],
+        "aliases": ["TangoFields", "tango_fields", "tango", "tango fields", "tf"],
         "connections": ["Scarlata Pinpinela", "Hibiscus Valley"],
         "owner": 0
     },
@@ -476,7 +476,7 @@
     {
         "name": "Hibiscus Valley",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["HibiscusValley", "hv", "hibiscus"],
+        "aliases": ["HibiscusValley", "hibiscus_valley", "valley", "hibiscus valley", "hv", "hibiscus"],
         "connections": ["Zeehaven", "Scarlata Pinpinela"],
         "owner": 0
     },
@@ -484,7 +484,7 @@
     {
         "name": "Scarlata Pinpinela",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["ScarlataPinpinela", "sp"],
+        "aliases": ["ScarlataPinpinela", "scarlata", "scarlata pinpinela", "pinpinela", "scarlata_pinpinela", "scar", "pin", "pinpin", "sp"],
         "connections": ["San Naranja"],
         "owner": 0
     },
@@ -492,7 +492,7 @@
     {
         "name": "San Naranja",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["SanNaranja", "sn"],
+        "aliases": ["SanNaranja", "naranja", "san", "san naranja", "san_naranja", "sn"],
         "connections": ["Vulcan's Domain"],
         "owner": 0
     },
@@ -500,7 +500,7 @@
     {
         "name": "Vulcan's Domain",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["vulcansdomain", "vd", "vulcans"],
+        "aliases": ["vulcansdomain", "vd", "spock", "spocksdomain", "vulcan", "vulcans_domain", "domain", "vulcan's domain", "vulcan's", "vulcans"],
         "connections": [],
         "owner": 0
     },
@@ -508,7 +508,7 @@
     {
         "name": "Zeehaven",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Zeehaven", "zee"],
+        "aliases": ["Zeehaven", "zee", "haven"],
         "connections": ["Fenix"],
         "owner": 0
     },
@@ -516,7 +516,7 @@
     {
         "name": "Fenix",
         "srname": "FieldOfKarmicGlory",
-        "aliases": ["Fenix"],
+        "aliases": ["Fenix", "fen"],
         "connections": [],
         "owner": 0,
         "capital": 0
