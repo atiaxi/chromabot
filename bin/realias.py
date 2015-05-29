@@ -22,17 +22,18 @@ def main():
 
     for region_dict in unconverted:
         name = region_dict['name'].lower()
-        region = sess.query(cls).filter_by(name=name).first()
-        print "\t%s" % name
+        region = sess.query(Region).filter_by(name=name).first()
+        print "%s" % name
         aliases = region_dict.get("aliases", [])
 
         for alias in aliases:
+            alias = alias.lower()
             prev = sess.query(Alias).filter_by(name=alias).first()
             if prev:
-                print "\t\t[old] %s" % prev.name
+                print "\t[old] %s" % prev.name
             else:
                 new_alias = region.create_alias(alias)
-                print "\t\t[NEW] %s" % new_alias.name
+                print "\t[NEW] %s" % new_alias.name
 
 if __name__ == '__main__':
     main()

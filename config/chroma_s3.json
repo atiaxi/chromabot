@@ -131,28 +131,28 @@
         "name": "Tentorahogo",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Tentorahogo", "tento", "te"],
-        "connections": ["Caerulus Antris", "Aegis Imperial"],
+        "connections": ["Caerulus Antris", "Aegis"],
         "owner": 1
     },
     {
         "name": "Caerulus Antris",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Caelurus", "caerulusantris", "antris", "ca"],
-        "connections": ["Pasto Range", "Aegis Imperial"],
+        "connections": ["Pasto Range", "Aegis"],
         "owner": 1
     },
     {
         "name": "Pasto Range",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Pasto_Range", "pasto", "pastorange", "pr"],
-        "connections": ["Aegis Imperial", "Viridian Union"],
+        "connections": ["Aegis", "Viridian Union"],
         "owner": 1
     },
     {
         "name": "Viridian Union",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Vermillion Union", "VU", "vermillionunion", "Viridianunion", "Taco"],
-        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis Imperial"],
+        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis"],
         "owner": 1
     },
     {
@@ -164,7 +164,7 @@
     },
 
     {
-        "name": "Aegis Imperial",
+        "name": "Aegis",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["Aegis", "Aegis Imperial", "aegis_imperial", "imperial", "ai", "equus", "eu", "aegisimperial"],
         "connections": ["Novum Persarum", "Londo Lazuli"],
