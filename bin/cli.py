@@ -88,8 +88,16 @@ def by_alias(name):
     print result
     return result.region
 
+
 def commit():
     return sess.commit()
+
+
+def defect(player):
+    other_team = [0, 1][player.team - 1]
+    player.team = other_team
+    player.region = Region.capital_for(other_team, sess)
+    sess.commit()
 
 
 def first(cls, **kw):
