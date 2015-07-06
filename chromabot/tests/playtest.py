@@ -405,6 +405,46 @@ class TestPlaying(ChromaTest):
         # But in sector 7
         self.assertEqual(self.alice.sector, 7)
 
+    def test_movement_multiplier_does_not_affect_intrasector(self):
+        DAY = 60 * 60 * 24
+        self.conf["game"]["num_sectors"] = 7
+        self.conf["game"]["intrasector_travel"] = DAY / 2
+        home = self.alice.region
+        self.assertEqual(home, self.get_region('Oraistedarg'))
+        home.travel_multiplier = 2
+        self.sess.commit()
+
+        movements = self.sess.query(MarchingOrder).count()
+        self.assertEqual(movements, 0)
+
+        then = now()  # We'll need this to check timing
+
+        self.alice.move(100, home, DAY, sector=7, conf=self.conf)
+
+        movements = self.sess.query(MarchingOrder).all()
+        self.assertEqual(len(movements), 1)
+        first = movements[0]
+        self.assertEqual(first.source, home)
+        self.assertEqual(first.dest, home)
+        self.assertEqual(first.dest_sector, 7)
+
+        # Unaffected by travel multiplier
+        self.assertAlmostEqual(first.arrival, then + DAY / 2, delta=600)
+
+        # Tired of waiting!
+        first.arrival = now()
+        self.sess.commit()
+        self.assert_(first.has_arrived())
+        arrived = MarchingOrder.update_all(self.sess)
+        self.assert_(arrived)
+
+        # Should still be home
+        self.assertEqual(home, self.alice.region)
+
+        # But in sector 7
+        self.assertEqual(self.alice.sector, 7)
+
+
     def test_delayed_sector_movement(self):
         self.conf["game"]["num_sectors"] = 7
         londo = self.get_region("Orange Londo")

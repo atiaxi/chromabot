@@ -271,7 +271,8 @@ class User(Base):
                     if conf:
                         intrasector = conf["game"].get("intrasector_travel",
                                                        900)
-                        total_delay += (intrasector * travel_mult)
+                        # Travel multiplier doesn't apply to intrasector
+                        total_delay += intrasector
                 mo = MarchingOrder(arrival=time.mktime(time.localtime())
                                    + total_delay,
                                    leader=self,
