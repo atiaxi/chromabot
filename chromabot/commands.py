@@ -155,6 +155,8 @@ class DefectCommand(Command):
         except db.TimingException:
             context.reply("You can only defect if you haven't taken "
                                   "any actions.")
+        except db.DisabledException:
+            context.reply("Defection has been disabled.")
 
 
 class ExtractCommand(Command):

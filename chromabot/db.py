@@ -106,6 +106,15 @@ class WrongSectorException(Exception):
 
         Exception.__init__(self, err % data)
 
+
+class DisabledException(Exception):
+    def __init__(self, feature):
+        self.feature = feature
+        err = "%s is disabled" % feature
+
+        Exception.__init__(self, err)
+
+
 # Models
 class Model(object):
 
@@ -181,6 +190,10 @@ class User(Base):
 
         defectable = self.defectable
         if conf:
+            disabled = conf["game"].get("disable_defect", False)
+            if disabled:
+                raise DisabledException("defection")
+
             unlimited = conf["game"].get("unlimited_defect", False)
             if unlimited:
                 defectable = True

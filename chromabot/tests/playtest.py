@@ -288,6 +288,17 @@ class TestPlaying(ChromaTest):
         self.assertNotEqual(self.alice.team, old_team)
         self.assertNotEqual(self.alice.region, old_cap)
 
+    def test_disabled_defect(self):
+        """Can't defect if we disabled defecting"""
+        self.conf["game"]["disable_defect"] = True
+
+        old_team = self.alice.team
+
+        with self.assertRaises(db.DisabledException):
+            self.alice.defect(1, self.conf)
+
+        self.assertEqual(self.alice.team, old_team)
+
     def test_movement(self):
         """Move Alice from the Orangered capital to an adjacent region"""
         sess = self.sess
