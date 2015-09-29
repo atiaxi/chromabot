@@ -192,7 +192,15 @@
         "aliases": ["NP", "newperiopolis", "periopolis", "oraistedearg"],
         "connections": [
             "Mozter Island",
-            "Devil's Grasp"
+            "Devil's Grasp",
+            "Dutchman's Grounds",
+            "Chalkowa",
+            "Nayemnik Oblast",
+            "Avernus",
+            "RPCK",
+            "Tallian Allied Islands",
+            "Emerald Heights",
+            "Anglona"
         ],
         "owner": 1
     },
@@ -287,7 +295,6 @@
         "aliases": ["Emerald Heights","Emerald", "emeraldheights", "EH"],
         "travel_multiplier": 2.0,
         "connections": [
-            "O'Shaughnessey",
             "Anglona"
         ]
     },
@@ -298,7 +305,6 @@
         "aliases": ["Anglona","AN"],
         "travel_multiplier": 2.0,
         "connections": [
-            "O'Shaughnessey"
         ]
     },
 
@@ -306,7 +312,18 @@
         "name": "O'Shaughnessey",
         "srname": "FieldOfKarmicGlory",
         "aliases": ["OShaughnessey", "os", "O'whatever", "Oshaunessy", "oshawn", "osean", "oshaun"],
-        "connections": ["Terra Archipelago", "Reddoran Bay"],
+        "connections": ["Terra Archipelago", "Reddoran Bay",
+            "Mozter Island",
+            "Devil's Grasp",
+            "Dutchman's Grounds",
+            "Chalkowa",
+            "Nayemnik Oblast",
+            "Avernus",
+            "RPCK",
+            "Tallian Allied Islands",
+            "Emerald Heights",
+            "Anglona"
+        ],
         "owner": 0
     },
 
