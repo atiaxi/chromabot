@@ -37,7 +37,9 @@ class Config(object):
         """Return a praw.Reddit object configured according to this config"""
         ua = self.data["bot"]["useragent"]
         site = self.data["bot"].get('site')
-        return praw.Reddit(user_agent=ua, site_name=site)
+
+        result = praw.Reddit(user_agent=ua, site_name=site)
+        return result
 
     def refresh(self):
         with open(self.conffile) as data_file:

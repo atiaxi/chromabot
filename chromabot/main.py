@@ -7,8 +7,8 @@ import time
 from urllib import urlencode
 
 import praw
+from praw.errors import NotFound
 from pyparsing import ParseException
-from requests.exceptions import HTTPError
 
 import db
 from config import Config
@@ -220,7 +220,7 @@ class Bot(object):
             # save myself the lookup
             try:
                 author_id = comment.author.id
-            except HTTPError as e:
+            except NotFound:
                 logging.warn("Ignored banned user %s" % name)
                 return
 
