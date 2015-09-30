@@ -19,7 +19,7 @@ def failable(f):
     def wrapped(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except praw.errors.APIException:
+        except (praw.errors.APIException, praw.errors.HTTPException):
             full = traceback.format_exc()
             logging.warning("Reddit API call failed! %s" % full)
             return None
