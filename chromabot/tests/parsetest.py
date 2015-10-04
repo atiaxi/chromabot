@@ -289,30 +289,30 @@ class TestCommandExtraction(unittest.TestCase):
 
     def test_full_embed(self):
         text = ("Hello, world!  Today I intend to\n\n"
-                "&gt; status\n\n"
+                "> status\n\n"
                 "among other things!")
         self.goodparse(text)
 
     def test_alone(self):
-        text = "&gt; status"
+        text = "> status"
         self.goodparse(text)
 
     def test_beginning(self):
-        text = ("&gt; status\n\n"
+        text = ("> status\n\n"
                 "I wonder how things are?")
         self.goodparse(text)
 
     def test_end(self):
         text = ("And now, more stuff\n\n"
-                "&gt; status")
+                "> status")
         self.goodparse(text)
 
     def test_bad_inline(self):
-        text = "here's an inline &gt; status thingie"
+        text = "here's an inline > status thingie"
         self.badparse(text)
 
     def test_singlecrlf(self):
-        text = "here's an inline \n&gt; status\n thingie"
+        text = "here's an inline \n> status\n thingie"
         self.goodparse(text)
 
 

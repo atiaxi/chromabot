@@ -363,6 +363,8 @@ class Bot(object):
 
     def run(self):
         logging.info("Bot started up")
+        if self.config.bot.get("verbose_logging"):
+            logging.info("Verbose logging enabled")
         logged_in = self.login()
         while(logged_in):
             loop_start = now()

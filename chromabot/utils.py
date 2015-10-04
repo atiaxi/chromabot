@@ -11,7 +11,7 @@ def base36decode(number):
 
 def extract_command(text):
     text = text.strip()
-    regex = re.compile(r"(?:\n|^)&gt;(.*)")
+    regex = re.compile(r"(?:\n|^)>(.*)")
     result = regex.findall(text)
     return result
 
