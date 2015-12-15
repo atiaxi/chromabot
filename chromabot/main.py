@@ -172,7 +172,7 @@ class Bot(object):
                 udict['leader'] = u.leader
                 users[u.name] = udict
             jdict['users'] = users
-            j.write(json.dumps(jdict))
+            j.write(json.dumps(jdict, sort_keys=True, indent=4))
 
     def process_post_for_battle(self, post, battle, sess):
         p = sess.query(Processed).filter_by(battle=battle).all()
