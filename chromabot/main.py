@@ -146,6 +146,7 @@ class Bot(object):
 
         with open(os.path.join(rdir, "report.json"), 'w') as j:
             jdict = {}
+            jdict['regions'] = {}
             for r in regions:
                 rdict = {}
                 rdict['name'] = r.name
@@ -162,8 +163,15 @@ class Bot(object):
                         rdict['battle'] = 'preparing'
                 else:
                     rdict['battle'] = 'none'
-                jdict[r.name] = rdict
-            print "Dumping %s" % jdict
+                jdict['regions'][r.name] = rdict
+
+            users = {}
+            for u in s.query(User).all():
+                udict = {}
+                udict['team'] = u.team
+                udict['leader'] = u.leader
+                users[u.name] = udict
+            jdict['users'] = users
             j.write(json.dumps(jdict))
 
     def process_post_for_battle(self, post, battle, sess):
