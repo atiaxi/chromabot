@@ -141,7 +141,7 @@ class Bot(object):
                     owner = r.owner
                 else:
                     owner = -1
-                urldict[r.srname] = owner
+                urldict[r.name] = owner
             url.write(urlencode(urldict))
 
         with open(os.path.join(rdir, "report.json"), 'w') as j:
@@ -162,7 +162,8 @@ class Bot(object):
                         rdict['battle'] = 'preparing'
                 else:
                     rdict['battle'] = 'none'
-                jdict[r.srname] = rdict
+                jdict[r.name] = rdict
+            print "Dumping %s" % jdict
             j.write(json.dumps(jdict))
 
     def process_post_for_battle(self, post, battle, sess):
