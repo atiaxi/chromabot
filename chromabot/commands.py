@@ -738,6 +738,15 @@ class SkirmishCommand(Command):
             context.session.commit()
 
 
+class StopCommand(Command):
+
+    @failable
+    def execute(self, context):
+        context.player.cancel_movement()
+        context.reply("You have halted your troops in %s" %
+                      context.player.region.markdown())
+
+
 class TimeCommand(Command):
 
     def execute(self, context):

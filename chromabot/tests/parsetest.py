@@ -89,6 +89,11 @@ class TestMovement(unittest.TestCase):
         parsed = parse(src)
         self.assertIsInstance(parsed, ExtractCommand)
 
+    def test_stop(self):
+        src = "stop"
+        parsed = parse(src)
+        self.assertIsInstance(parsed, StopCommand)
+
 
 class TestBattle(unittest.TestCase):
 

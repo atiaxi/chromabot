@@ -8,6 +8,7 @@ from commands import (CodewordCommand,
                       PromoteCommand,
                       SkirmishCommand,
                       StatusCommand,
+                      StopCommand,
                       TimeCommand)
 
 
@@ -64,6 +65,9 @@ movecmd.setParseAction(MoveCommand)
 extractcmd = Keyword("extract")
 extractcmd.setParseAction(ExtractCommand)
 
+stopcmd = Keyword("stop")
+stopcmd.setParseAction(StopCommand)
+
 defect = Keyword("defect")
 team = Keyword("orangered") | Keyword("periwinkle")
 defectcmd = (defect + Optional(Keyword("to") + team("team")))
@@ -89,7 +93,7 @@ statuscmd = Keyword("status")
 statuscmd.setParseAction(StatusCommand)
 
 root = (statuscmd | movecmd | invadecmd | skirmishcmd | defectcmd |
-        promotecmd | timecmd | codewordcmd | extractcmd)
+        promotecmd | timecmd | codewordcmd | extractcmd | stopcmd)
 
 
 def parse(s):

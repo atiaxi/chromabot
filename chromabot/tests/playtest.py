@@ -548,6 +548,36 @@ class TestPlaying(ChromaTest):
         # Make sure she ended up in a sector
         self.assertTrue(self.alice.sector)
 
+    def test_stop_cancels_movement(self):
+        """Stopping movement should actually, you know, stop movement"""
+
+        sess = self.sess
+        cap = Region.capital_for(0, sess)
+        # Move Alice somewhere else
+        londo = self.get_region("Orange Londo")
+        self.alice.move(100, londo, 0)
+
+        # Should be in londo
+        self.assertEqual(self.alice.region, londo)
+
+        # Bloodless coup of Sapphire
+        sapp = self.get_region("Sapphire")
+        sapp.owner = self.alice.team
+        sess.commit()
+
+        # Start wandering that way
+        order = self.alice.move(100, sapp, 60 * 60 * 24)
+        self.assert_(order)
+
+        orders = self.sess.query(MarchingOrder).count()
+        self.assertEqual(orders, 1)
+
+        self.alice.cancel_movement()
+        self.assertEqual(self.alice.region, londo)
+
+        orders = self.sess.query(MarchingOrder).count()
+        self.assertEqual(orders, 0)
+
     def test_disallow_unscheduled_invasion(self):
         """Can't move somewhere you don't own or aren't invading"""
         londo = self.get_region("Orange Londo")
