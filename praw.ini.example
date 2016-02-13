@@ -1,0 +1,40 @@
+[chroma-test]
+api_domain: reddit.local:4443
+api_request_delay: 0
+validate_certs: false
+
+# In order to figure these out, do the following:
+# Make a user
+# Make a subreddit
+# Make a post in that subreddit (self posts are easier)
+# Make a comment on that post.
+# In your reddit clone, start `reddit-shell`
+#    >>> from r2.models import *
+#    >>> me = Account._by_name('reostra')
+#    >>> me._fullname
+#    't2_1g'
+# Substitute the username you created as appropriate.
+redditor_kind: t2
+# ﻿  >>> c = Comment._byID36('16v')
+#    >>> c._fullname
+#    't1_16v'
+# where '16v' is the id of a comment you made.  You can see
+#  the id36 of the comment at the end of the permalink, e.g.
+#  https://reddit.local/r/test/comments/24/more_test/16v
+# The first two letters of the fullname ('t1_16v') are the type:
+comment_kind: t1
+#    >>> post = Link._byID36('24')
+#    >>> post._fullname
+#    't5_24'
+submission_kind: t5
+#    >>> sr = Subreddit._by_name('test')
+#    >>> sr._fullname
+#    't4_7'
+subreddit_kind: t4
+# Finally, send a PM; to yourself works well.
+# Note the url, e.g. `https://reddit.local/message/messages/1`
+# The id36 is the bit at the end:
+#    >>> msg = Message._byID36('1')
+#    >>> msg._fullname
+#    't6_1'
+message_kind: t6

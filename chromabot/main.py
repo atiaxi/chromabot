@@ -141,11 +141,12 @@ class Bot(object):
                     owner = r.owner
                 else:
                     owner = -1
-                urldict[r.srname] = owner
+                urldict[r.name] = owner
             url.write(urlencode(urldict))
 
         with open(os.path.join(rdir, "report.json"), 'w') as j:
             jdict = {}
+            jdict['regions'] = {}
             for r in regions:
                 rdict = {}
                 rdict['name'] = r.name
@@ -162,8 +163,16 @@ class Bot(object):
                         rdict['battle'] = 'preparing'
                 else:
                     rdict['battle'] = 'none'
-                jdict[r.srname] = rdict
-            j.write(json.dumps(jdict))
+                jdict['regions'][r.name] = rdict
+
+            users = {}
+            for u in s.query(User).all():
+                udict = {}
+                udict['team'] = u.team
+                udict['leader'] = u.leader
+                users[u.name] = udict
+            jdict['users'] = users
+            j.write(json.dumps(jdict, sort_keys=True, indent=4))
 
     def process_post_for_battle(self, post, battle, sess):
         p = sess.query(Processed).filter_by(battle=battle).all()

@@ -12,6 +12,7 @@ chroma.graphview*
 bin/award.py
 bin/enlower.py
 bin/extract.py
+venv/
 .idea
 .project
 .pydevproject
