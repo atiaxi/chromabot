@@ -15,7 +15,7 @@ validate_certs: false
 #    't2_1g'
 # Substitute the username you created as appropriate.
 redditor_kind: t2
-# ﻿  >>> c = Comment._byID36('16v')
+#    >>> c = Comment._byID36('16v')
 #    >>> c._fullname
 #    't1_16v'
 # where '16v' is the id of a comment you made.  You can see
