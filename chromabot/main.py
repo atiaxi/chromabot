@@ -12,7 +12,7 @@ from pyparsing import ParseException
 
 import db
 from config import Config
-from db import DB, Battle, Region, User, MarchingOrder, Processed
+from db import DB, Battle, Region, User, MarchingOrder, Processed, TeamInfo
 from parser import parse
 from commands import (Command, Context, failable, InvadeCommand,
                       SkirmishCommand, StatusCommand)
@@ -263,6 +263,11 @@ class Bot(object):
                  num_to_team(newbie.team, self.config),
                  newbie.loyalists,
                  cap.markdown())
+
+            team = session.query(TeamInfo).filter_by(id=newbie.team).first()
+            if team:
+                reply = "%s\n\n%s" % (reply, team.greeting)
+
             comment.reply(reply)
         else:
             #logging.info("Already registered %s", comment.author.name)

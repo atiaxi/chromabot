@@ -4,7 +4,16 @@ import random
 import time
 
 from sqlalchemy import (
-    create_engine, Boolean, Column, Float, ForeignKey, Integer, String, Table)
+    create_engine,
+    Boolean,
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+)
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.orm.session import Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -1414,3 +1423,22 @@ class Buff(Base):
 
     def __repr__(self):
         return"<Buff(internal='%s')>" % self.internal
+
+
+class TeamInfo(Base):
+    __tablename__ = 'team_info'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    greeting = Column(Text)
+
+    @classmethod
+    def create_defaults(cls, sess, config):
+        for team_num in xrange(0, 2):
+            t = TeamInfo(id=team_num, name=num_to_team(team_num, config))
+            t.greeting = "For %s!" % t.name
+            sess.add(t)
+        sess.commit()
+
+    def __repr__(self):
+        return "<TeamInfo(id='%d', name='%s')>" % (self.id, self.name)

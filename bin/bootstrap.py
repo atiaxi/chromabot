@@ -9,8 +9,9 @@ sys.path.append(".") # For eclipse running
 import chromabot
 
 from chromabot import Config
-from chromabot.db import DB, User, Region
+from chromabot.db import DB, User, Region, TeamInfo
 from stamp import stamp
+
 
 def main():
     c = Config()
@@ -24,7 +25,10 @@ def main():
     
     source = sys.argv[1]
     regions = Region.create_from_json(sess, json_file=source)
-    
+
+    # Create team DB entries
+    TeamInfo.create_defaults(sess, c)
+
     stamp()
     
 if __name__ == '__main__':
