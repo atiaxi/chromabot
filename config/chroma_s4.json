@@ -1,0 +1,49 @@
+[
+    {
+        "name": "Emerald Imperial",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["peri", "periop", "pw", "emerald", "ei"],
+        "connections": ["Sapphire", "Snooland", "Aegis"],
+        "capital": 1
+    },
+    {
+        "name": "Sapphire",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["SapphireDistrict", "sd"],
+        "connections": ["Snooland", "Tentorahogo"],
+        "owner": 1
+    },
+    {
+        "name": "Tentorahogo",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Tentorahogo", "tento", "te"],
+        "connections": ["Snooland", "Crimson Cove"]
+    },
+    {
+        "name": "Snooland",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["snooland", "snoo", "sl"],
+        "connections": ["Aegis", "Orange Londo", "Crimson Cove"]
+    },
+    {
+        "name": "Aegis",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Aegis", "Aegis Imperial", "aegis_imperial", "imperial", "ai", "equus", "eu", "aegisimperial"],
+        "connections": ["Orange Londo"]
+    },
+    {
+        "name": "Orange Londo",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Londo", "Lazuli", "londolazuli", "ll", "ol"],
+        "connections": ["Crimson Cove"],
+        "owner": 0
+    },
+    {
+        "name": "Crimson Cove",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["NP", "newperiopolis", "periopolis", "or", "ora", "cc", "crimson"],
+        "connections": [],
+        "capital": 0
+    }
+    
+]

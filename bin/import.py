@@ -8,7 +8,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 sys.path.append(".") # For eclipse running
-from chromabot.db import User
+from chromabot.db import Region, User
+
 
 def main():
     full = "sqlite:///%s" % realpath(sys.argv[1])
@@ -24,7 +25,9 @@ def main():
         j = json.loads(text)
         for user in j:
             u = User(**user)
+            u.region = Region.capital_for(u.team, session)
             session.add(u)
+            print "Imported %s" % u.name
         session.commit()
 
 if __name__ == '__main__':
