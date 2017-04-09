@@ -14,13 +14,15 @@ def main():
     for region in regions:
         name = region['name']
         style = {"style": "filled"}
+        if "capital" in region:
+            region["owner"] = region["capital"]
         if "owner" in region:
             owner = region["owner"]
             if owner == 0:
-                style["color"] = "orange"
+                style["color"] = "red"
             else:
-                style["color"] = "blue"
-                style["fontcolor"] = "white"
+                style["color"] = "green"
+                #style["fontcolor"] = "white"
 
         g.node(name, **style)
         for conn in region['connections']:

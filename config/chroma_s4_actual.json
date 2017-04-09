@@ -1,0 +1,190 @@
+[
+    {
+        "name": "Cote d'azur",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["cote_dazur", "cote", "cotedazur", "cd"],
+        "connections": ["Sapphire District"],
+        "capital": 0
+    },
+
+    {
+        "name": "Sapphire District",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["SapphireDistrict", "sapphire", "sd"],
+        "connections": ["Amethyst Cove", "Turquoise Moors"],
+        "owner": 0
+    },
+
+    {
+        "name": "Amethyst Cove",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["AmethystCove", "amethyst", "ac"],
+        "connections": ["Turquoise Moors", "Kyanite Cove", "Periwin Grove"],
+        "owner": 0
+    },
+    {
+        "name": "Turquoise Moors",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["TurquoiseMoors", "turquoise", "moors", "tm"],
+        "connections": ["New Cerulean", "Fort Iris", "Periwin Grove"],
+        "owner": 0
+    },
+
+    {
+        "name": "Kyanite Cove",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["kyanitecove", "Kyanite", "kc"],
+        "connections": ["Raider's Pinnacle", "Nordwalder", "Periwin Grove"],
+        "owner": 0
+    },
+    {
+        "name": "Periwin Grove",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Periwin_Grove", "periwingrove", "pg"],
+        "connections": ["Nordwalder", "Chromehenge", "New Cerulean",
+            "Snooland"],
+        "owner": 0
+    },
+
+    {
+        "name": "New Cerulean",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["NewCerulean", "nc"],
+        "connections": ["Snooland", "Midnight Marsh", "Viper's Peak",
+            "Fort Iris"],
+        "owner": 0
+    },
+    {
+        "name": "Fort Iris",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["FortIris", "Iris", "fi"],
+        "connections": ["Midnight Marsh", "Viper's Peak",
+            "Republic of Bezold", "Pervinca"],
+        "owner": 0
+    },
+    {
+        "name": "Pervinca",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Pervinca", "pv"],
+        "connections": ["Republic of Bezold", "Island of Warriors"],
+        "owner": 0
+    },
+    {
+        "name": "Raider's Pinnacle",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["raiderspinnacle", "raiders", "rp"],
+        "connections": ["Nordwalder", "Tentorahogo", "Caerulus Antris"]
+    },
+    {
+        "name": "Nordwalder",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["nordwalder", "nord", "nw"],
+        "connections": ["Caerulus Antris", "Chromehenge", "Tentorahogo"]
+    },
+    {
+        "name": "Chromehenge",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["chromehenge", "chrome", "ch"],
+        "connections": ["Caerulus Antris", "Pasto Range", "Snooland"]
+    },
+    {
+        "name": "Snooland",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["snooland", "snoo", "sl"],
+        "connections": ["Pasto Range", "Viridian Union", "Midnight Marsh"]
+    },
+    {
+        "name": "Midnight Marsh",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["MidnightMarsh", "Marsh", "mm"],
+        "connections": ["Viridian Union", "Viper's Peak", "Pasto Range"]
+    },
+    {
+        "name": "Viper's Peak",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["viperspeak", "vipers", "vp"],
+        "connections": ["Viridian Union", "Metropolis Daja",
+            "Republic of Bezold"]
+    },
+    {
+        "name": "Republic of Bezold",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["RepublicofBezold", "bezold", "be"],
+        "connections": ["Metropolis Daja"]
+    },
+    {
+        "name": "Island of Warriors",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["IslandOfWarriors", "iow", "iw"],
+        "connections": ["Republic of Bezold", "Metropolis Daja"]
+    },
+
+    {
+        "name": "Tentorahogo",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Tentorahogo", "tento", "te"],
+        "connections": ["Caerulus Antris", "Aegis"],
+        "owner": 1
+    },
+    {
+        "name": "Caerulus Antris",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Caelurus", "caerulusantris", "antris", "ca"],
+        "connections": ["Pasto Range", "Aegis"],
+        "owner": 1
+    },
+    {
+        "name": "Pasto Range",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Pasto_Range", "pasto", "pastorange", "pr"],
+        "connections": ["Aegis", "Viridian Union"],
+        "owner": 1
+    },
+    {
+        "name": "Viridian Union",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Vermillion Union", "VU", "vermillionunion", "Viridianunion", "Taco"],
+        "connections": ["Metropolis Daja", "Novum Persarum", "Aegis"],
+        "owner": 1
+    },
+    {
+        "name": "Metropolis Daja",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["MetropolisDaja", "daja", "md"],
+        "connections": [],
+        "owner": 1
+    },
+
+    {
+        "name": "Aegis",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Aegis", "Aegis Imperial", "aegis_imperial", "imperial", "ai", "equus", "eu", "aegisimperial"],
+        "connections": ["Novum Persarum", "Londo Lazuli"],
+        "owner": 1
+    },
+    {
+        "name": "Novum Persarum",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["NovumPersarum", "novum persarum", "novum", "nov", "persarum", "nope"],
+        "connections": ["Londo Lazuli"],
+        "owner": 1
+    },
+
+    {
+        "name": "Londo Lazuli",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["Londo", "Lazuli", "londolazuli", "ll"],
+        "connections": ["New Periopolis"],
+        "owner": 1
+    },
+
+    {
+        "name": "New Periopolis",
+        "srname": "FieldOfKarmicGlory",
+        "aliases": ["NP", "newperiopolis", "periopolis", "oraistedearg"],
+        "connections": [
+        ],
+        "capital": 1
+    }
+
+]

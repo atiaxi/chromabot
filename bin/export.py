@@ -68,7 +68,7 @@ def main():
     results = [
         { 'id': u.id,
          'name': u.name,
-         'team': determine_team(u),
+         'team': u.team,
          'loyalists': 300,
          'defectable': True
         } for u in users
