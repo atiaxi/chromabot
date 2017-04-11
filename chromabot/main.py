@@ -241,9 +241,10 @@ class Bot(object):
             elif assignment == "random":
                 team = random.randint(0, 1)
             is_leader = name in self.config["game"]["leaders"]
+            loyalists = self.config["game"].get("starting_troops", 100)
             newbie = User(name=name,
                           team=team,
-                          loyalists=100,
+                          loyalists=loyalists,
                           leader=is_leader)
             session.add(newbie)
 
