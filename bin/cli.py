@@ -78,6 +78,8 @@ def by_id(cls, id):
 
 
 def by_name(cls, name):
+    if cls == User:
+        name = name.lower()
     result = query(cls, name=name).first()
     print result
     return result
