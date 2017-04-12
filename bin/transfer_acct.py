@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import sys
 
+sys.path.append(".")
+sys.path.append("./chromabot")
+
 from chromabot.config import Config
 from chromabot.db import DB, User
 
