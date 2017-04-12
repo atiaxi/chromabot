@@ -93,6 +93,15 @@ def commit():
     return sess.commit()
 
 
+def create_user(name, team):
+    newbie = User(name=name, team=team, loyalists=100, leader=True)
+    sess.add(newbie)
+    cap = Region.capital_for(team, sess)
+    newbie.region = cap
+    sess.commit()
+    return newbie
+
+
 def defect(player):
     other_team = [0, 1][player.team - 1]
     player.team = other_team
@@ -115,6 +124,10 @@ def timestr(self, secs=None):
                           time.gmtime(secs))
 
 
+def login(self):
+    reddit.login(config.username, config.password)
+
+
 def main():
     global reddit
     global sess
@@ -126,7 +139,7 @@ def main():
     dbconn = DB(config)
     sess = dbconn.session()
     reddit = config.praw()
-    reddit.login(config.username, config.password)
+    #reddit.login(config.username, config.password)
     
     vars = globals().copy()
     vars.update(locals())
